@@ -15,7 +15,7 @@ if( -not $svcConfig )
 }
 
 $uri = $svcConfig.appSettings.SelectSingleNode('add[@key=''IntegratedWebServer.Prefixes'']').Attributes['value'].Value
-$uri = $uri -replace '\*','localhost'
+$uri = $uri -replace '\*',$env:COMPUTERNAME
 $connString = $svcConfig.appSettings.SelectSingleNode('add[@key=''Core.DbConnectionString'']').Attributes['value'].Value
 
 $conn = New-Object 'Data.SqlClient.SqlConnection'
