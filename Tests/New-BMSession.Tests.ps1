@@ -3,8 +3,7 @@
 
 Describe 'New-BMSession.when passed parameters' {
     $uri = 'https://fubar.snafu'
-    $key = New-Object -TypeName 'Security.SecureString'
-    'a', 'b', 'c' | ForEach-Object { $key.AppendChar($_) }
+    $key = 'fubarsnafu'
 
     $session = New-BMSession -Uri $uri -ApiKey $key
 
@@ -17,6 +16,6 @@ Describe 'New-BMSession.when passed parameters' {
     }
 
     It 'should set API key' {
-        [object]::ReferenceEquals($session.ApiKey,$key) | Should  Be $true
+        $session.ApiKey | Should Be $key
     }
 }

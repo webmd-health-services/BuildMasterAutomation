@@ -21,7 +21,7 @@ function New-BMSession
         $Uri,
 
         [Parameter(Mandatory=$true)]
-        [securestring]
+        [string]
         # The API key to use when making requests to BuildMaster.
         $ApiKey
     )
