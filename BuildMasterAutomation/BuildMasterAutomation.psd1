@@ -66,7 +66,9 @@
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @()
+    FunctionsToExport = @(
+                            'New-BMSession'
+                         )
 
     # Cmdlets to export from this module
     CmdletsToExport = @()
