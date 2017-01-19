@@ -46,7 +46,7 @@ function Invoke-BMNativeApiMethod
 
     $contentType = 'application/json; charset=utf-8'
 
-    $DebugPreference = 'Continue'
+    #$DebugPreference = 'Continue'
     Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
     Write-Debug -Message $contentType
     Write-Debug -Message ($body -replace '("API_Key": +")[^"]+','$1********')
