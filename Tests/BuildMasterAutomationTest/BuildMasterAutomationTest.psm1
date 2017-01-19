@@ -69,6 +69,11 @@ finally
     $conn.Close()
 }
 
+function New-BMTestApplication
+{
+    
+}
+
 function New-BMTestSession
 {
     return New-BMSession -Uri $uri -ApiKey $apiKey
