@@ -50,7 +50,7 @@ function Invoke-BMNativeApiMethod
                     'X-ApiKey' = $Session.ApiKey;
                 }
 
-    $DebugPreference = 'Continue'
+    #$DebugPreference = 'Continue'
     Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
     Write-Debug -Message ('Content-Type: {0}' -f $contentType)
     foreach( $headerName in $headers.Keys )
