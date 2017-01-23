@@ -1,16 +1,35 @@
+[CmdletBinding()]
+param(
+)
 
-Save-Module -Name 'Pester' -Path '.' 
-Save-Module -Name 'Carbon' -Path '.'
+#Requires -Version 4
+Set-StrictMode -Version 'Latest'
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force
+foreach( $moduleName in @( 'Pester', 'Carbon' ) )
+{
+    if( (Test-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath $moduleName) -PathType Container) )
+    {
+        break
+    }
 
-$version = '5.6.4'
+    Save-Module -Name $moduleName -Path '.' 
+}
+
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force -Verbose:$false
+
+$version = '5.6.5'
+
+$installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-{0}.exe' -f $version)
+if( -not (Test-Path -Path $installerPath -PathType Leaf) )
+{
+    $uri = ('http://inedo.com/files/buildmaster/nosql/{0}.exe' -f $version)
+    Write-Verbose -Message ('Downloading {0}' -f $uri)
+    Invoke-WebRequest -Uri $uri -OutFile $installerPath
+}
+
 $bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
 if( -not $bmInstallInfo )
 {
-    $installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-{0}.exe' -f $version)
-    Invoke-WebRequest -Uri ('http://inedo.com/files/buildmaster/nosql/{0}.exe' -f $version) -OutFile $installerPath
-
     $appVeyorConnString = 'Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!'
 
     $connString = 'Server=.\InternalTools;Database=BuildMaster;Trusted_Connection=True'
@@ -19,10 +38,14 @@ if( -not $bmInstallInfo )
         $connString = $appVeyorConnString
     }
 
-    & $installerPath /S /Edition=Express /ConnectionString=$connString /LogFile=buildmaster.install.log
-    while( -not (Get-ProgramInstallInfo -Name 'BuildMaster') )
+    Write-Verbose -Message ('Running BuildMaster installer {0}.' -f $installerPath)
+    $logPath = Join-Path -Path $PSScriptRoot -ChildPath 'buildmaster.install.log'
+    $process = Start-Process -FilePath $installerPath -ArgumentList '/S','/Edition=Express',('/ConnectionString={0}' -f $connString),('/LogFile={0}' -f $logPath) -Wait -PassThru
+    $process.WaitForExit()
+
+    if( -not (Get-ProgramInstallInfo -Name 'BuildMaster') )
     {
-        Start-Sleep -Seconds 1
+        Write-Error -Message ('It looks like BuildMaster {0} didn''t install. The install log might have more information: {1}' -f $version,$logPath)
     }
 }
 elseif( $bmInstallInfo.DisplayVersion -notmatch ('^{0}\b' -f [regex]::Escape($version)) )
