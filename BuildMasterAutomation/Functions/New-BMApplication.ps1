@@ -12,7 +12,6 @@ function New-BMApplication
 
     * `ReleaseNumberScheme`: sets the release number scheme to use when you create a new release for the application. Options are `MajorMinorRevision`, `MajorMinor`, or `DateBased`.
     * `BuildNumberScheme`: sets the build number scheme to use when creating new packages/builds for an application. Options are `Unique`, `Sequential`, `DateBased`.
-    * `AllowMultipleActiveReleases`: a flag that indicates if the application is allowed to have multiple active releases.
     * `AllowMultipleActiveBuilds`: a flag that indicates if the application is allowed to have multiple active builds.
 
     .EXAMPLE
@@ -21,7 +20,7 @@ function New-BMApplication
     Demonstrates the simplest way to create an application. In this example, a `MyNewApplication` application will be created and all its fields set to BuildMaster's default values.
 
     .EXAMPLE
-    New-BMApplication -Session $session -Name 'MyNewApplication' -ReleaseNumberSchemeName MajorMinor -BuildNumberSchemeName Sequential -AllowMultipleActiveReleases -AllowMultipleActiveBuilds
+    New-BMApplication -Session $session -Name 'MyNewApplication' -ReleaseNumberSchemeName MajorMinor -BuildNumberSchemeName Sequential -AllowMultipleActiveBuilds
 
     This example demonstrates all the fields you can set when creating a new application. In this example, the new application will be called `MyNewApplication`, its release number scheme will be `MajorMinor`, its build number schema will be `Sequential`, it will allow multiple active releases, and it will allow multiple active builds.
     #>
@@ -56,10 +55,6 @@ function New-BMApplication
         $BuildNumberSchemeName,
 
         [Switch]
-        # Allow multiple active releases.
-        $AllowMultipleActiveReleases,
-
-        [Switch]
         # Allow multiple active builds.
         $AllowMultipleActiveBuilds
     )
@@ -79,11 +74,6 @@ function New-BMApplication
         $parameters['BuildNumber_Scheme_Name'] = $BuildNumberSchemeName;
     }
 
-    if( $AllowMultipleActiveReleases )
-    {
-        $parameters['AllowMultipleActiveReleases_Indicator'] = $true
-    }
-    
     if( $AllowMultipleActiveBuilds )
     {
         $parameters['AllowMultipleActiveBuilds_Indicator'] = $true;

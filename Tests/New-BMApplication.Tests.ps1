@@ -33,7 +33,7 @@ Describe 'New-BMApplication.when application exists' {
 
 Describe 'New-BMApplication.when creating application with all parameters' {
     $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-    $app = New-BMApplication -Session $conn -Name $appName -ReleaseNumberSchemeName DateBased -BuildNumberSchemeName DateTimeBased -AllowMultipleActiveRelease -AllowMultipleActiveBuild 
+    $app = New-BMApplication -Session $conn -Name $appName -ReleaseNumberSchemeName DateBased -BuildNumberSchemeName DateTimeBased -AllowMultipleActiveBuilds
     It 'should return the new application' {
         $app | Should -Not -BeNullOrEmpty
     }
