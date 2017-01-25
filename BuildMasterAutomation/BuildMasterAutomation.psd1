@@ -70,11 +70,13 @@
                             'Add-BMObjectParameter',
                             'Get-BMApplication',
                             'Get-BMRelease',
+                            'Get-BMReleasePackage',
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
                             'New-BMApplication',
                             'New-BMPipeline',
                             'New-BMRelease',
+                            'New-BMReleasePackage',
                             'New-BMSession'
                          )
 

@@ -9,3 +9,5 @@
  * Created `New-BMRelease` function for creating releases.
  * Created `Get-BMRelease` function for getting releases.
  * Created `Get-BMPipeline` function for creating pipelines.
+ * Created `Get-BMReleasePackage` function for getting release packages.
+ * Created `New-BMReleasePackage` function for creating release packages.
