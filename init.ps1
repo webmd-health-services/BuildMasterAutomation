@@ -17,12 +17,14 @@ foreach( $moduleName in @( 'Pester', 'Carbon' ) )
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force -Verbose:$false
 
+$runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
+
 $version = '5.6.5'
 
-$installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-{0}.exe' -f $version)
+$installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-SQL-{0}.exe' -f $version)
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 {
-    $uri = ('http://inedo.com/files/buildmaster/nosql/{0}.exe' -f $version)
+    $uri = ('http://inedo.com/files/buildmaster/sql/{0}.exe' -f $version)
     Write-Verbose -Message ('Downloading {0}' -f $uri)
     Invoke-WebRequest -Uri $uri -OutFile $installerPath
 }
@@ -30,12 +32,12 @@ if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 $bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
 if( -not $bmInstallInfo )
 {
-    $appVeyorConnString = 'Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!'
-
-    $connString = 'Server=.\InternalTools;Database=BuildMaster;Trusted_Connection=True'
-    if( (Test-Path -Path 'env:APPVEYOR') )
+    # Under AppVeyor, use the pre-installed database.
+    # Otherwise, install a SQL Express BuildMaster instance.
+    $dbParam = '/InstallSqlExpress'
+    if( $runningUnderAppVeyor )
     {
-        $connString = $appVeyorConnString
+        $dbParam = '"/ConnectionString=Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!"'
     }
 
     $outputRoot = Join-Path -Path $PSScriptRoot -ChildPath '.output'
@@ -50,7 +52,7 @@ if( -not $bmInstallInfo )
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',('"/ConnectionString={0}"' -f $connString),('"/LogFile={0}"' -f $logPath) `
+                             -ArgumentList '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath) `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
@@ -61,7 +63,7 @@ if( -not $bmInstallInfo )
 
     if( -not (Get-ProgramInstallInfo -Name 'BuildMaster') )
     {
-        if( (Test-Path -Path 'env:APPVEYOR') )
+        if( $runningUnderAppVeyor )
         {
             Get-ChildItem -Path $logRoot |
                 ForEach-Object {
