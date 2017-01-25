@@ -67,6 +67,7 @@
 
     # Functions to export from this module
     FunctionsToExport = @(
+                            'Add-BMObjectParameter',
                             'Get-BMApplication',
                             'New-BMApplication',
                             'New-BMSession'
