@@ -45,6 +45,10 @@ if( -not $bmInstallInfo )
 
     if( -not (Get-ProgramInstallInfo -Name 'BuildMaster') )
     {
+        if( (Test-Path -Path 'env:APPVEYOR') )
+        {
+            Get-Content -Path $logPath | Write-Output
+        }
         Write-Error -Message ('It looks like BuildMaster {0} didn''t install. The install log might have more information: {1}' -f $version,$logPath)
     }
 }
