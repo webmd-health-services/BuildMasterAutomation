@@ -4,7 +4,7 @@ param(
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'init.ps1' -Resolve)
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Pester' -Resolve) -Force
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Pester' -Resolve) -Force -Verbose:$false
 
 $outputdir = Join-Path -Path $PSScriptRoot -ChildPath '.output'
 
