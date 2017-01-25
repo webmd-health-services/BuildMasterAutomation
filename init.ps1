@@ -50,7 +50,7 @@ if( -not $bmInstallInfo )
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',('/ConnectionString={0}' -f $connString),('/LogFile={0}' -f $logPath) `
+                             -ArgumentList '/S','/Edition=Express',('"/ConnectionString={0}"' -f $connString),('"/LogFile={0}"' -f $logPath) `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
@@ -66,7 +66,7 @@ if( -not $bmInstallInfo )
             Get-ChildItem -Path $logRoot |
                 ForEach-Object {
                     $_
-                    $_ | Get-Content -Path $logPath
+                    $_ | Get-Content
                 }
         }
         Write-Error -Message ('It looks like BuildMaster {0} didn''t install. The install log might have more information: {1}' -f $version,$logPath)
