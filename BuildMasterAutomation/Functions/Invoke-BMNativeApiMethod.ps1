@@ -40,38 +40,6 @@ function Invoke-BMNativeApiMethod
 
     Set-StrictMode -Version 'Latest'
 
-    $uri = '{0}api/json/{1}' -f $Session.Uri,$Name,$Session.ApiKey
-    
-    $body = $Parameter | ConvertTo-Json -Depth ([int32]::MaxValue)
-
-    $contentType = 'application/json; charset=utf-8'
-
-    $headers = @{
-                    'X-ApiKey' = $Session.ApiKey;
-                }
-
-    #$DebugPreference = 'Continue'
-    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
-    Write-Debug -Message ('Content-Type: {0}' -f $contentType)
-    foreach( $headerName in $headers.Keys )
-    {
-        $value = $headers[$headerName]
-        if( $headerName -eq 'X-ApiKey' )
-        {
-            $value = '*' * 8
-        }
-
-        Write-Debug -Message ('{0}: {1}' -f $headerName,$value)
-    }
-    Write-Debug -Message ($body -replace '("API_Key": +")[^"]+','$1********')
-
-    try
-    {
-        Invoke-RestMethod -Method $Method -Uri $uri -Body $body -ContentType $contentType -Headers $headers | ForEach-Object { $_ } 
-    }
-    catch [Net.WebException]
-    {
-        Write-Error -ErrorRecord $_
-    }
+    Invoke-BMRestMethod -Session $Session -Name ('json/{0}' -f $Name) -Method $Method -Parameter $Parameter -AsJson
 
 }

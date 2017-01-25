@@ -69,6 +69,8 @@
     FunctionsToExport = @(
                             'Add-BMObjectParameter',
                             'Get-BMApplication',
+                            'Invoke-BMNativeApiMethod',
+                            'Invoke-BMRestMethod',
                             'New-BMApplication',
                             'New-BMSession'
                          )
