@@ -6,26 +6,8 @@ Set-StrictMode -Version 'Latest'
 
 $session = New-BMTestSession 
 $app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
-$pipelineParams = @{
-                        'Pipeline_Name' = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName());
-                        'Pipeline_Configuration' = @'
-<Inedo.BuildMaster.Pipelines.Pipeline Assembly="BuildMaster">
-  <Properties Name="Standard" Description="" EnforceStageSequence="True">
-     <Stages />
-     <PostDeploymentOptions>
-        <Inedo.BuildMaster.Pipelines.PipelinePostDeploymentOptions Assembly="BuildMaster">
-           <Properties CreateRelease="True" CancelReleases="True" DeployRelease="True" />
-        </Inedo.BuildMaster.Pipelines.PipelinePostDeploymentOptions>
-     </PostDeploymentOptions>
-  </Properties>
-</Inedo.BuildMaster.Pipelines.Pipeline>
-'@;
-                        'Active_Indicator' = $true;
-                        'Application_Id' = $app.Application_Id;
-                        'Pipeline_Color' = '#ffffff'
-                   }
-$pipelineId = Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_CreatePipeline' -Parameter $pipelineParams
-$pipeline = Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipeline' -Parameter @{ 'Pipeline_Id' = $pipelineId }
+$pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
+$pipeline = New-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff'
 
 function Assert-Release
 {

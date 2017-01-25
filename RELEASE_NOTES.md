@@ -8,3 +8,4 @@
  * Created `Add-BMObjectParameter` function to aid in converting and adding objects to parameter hashtables that get sent to BuildMaster in API requests.
  * Created `New-BMRelease` function for creating releases.
  * Created `Get-BMRelease` function for getting releases.
+ * Created `Get-BMPipeline` function for creating pipelines.

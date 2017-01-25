@@ -73,6 +73,7 @@
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
                             'New-BMApplication',
+                            'New-BMPipeline',
                             'New-BMRelease',
                             'New-BMSession'
                          )
