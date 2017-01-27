@@ -1,3 +1,6 @@
+[CmdletBinding()]
+param(
+)
 
 if( (Get-Module -Name 'BuildMasterAutomation') )
 {

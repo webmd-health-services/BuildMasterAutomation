@@ -6,7 +6,23 @@ function New-BMApplication
     Creates an application in BuildMaster.
 
     .DESCRIPTION
-    The `New-BMApplication` function creates an application in BuildMaster.
+    The `New-BMApplication` function creates an application in BuildMaster. This function uses the native BuildMaster API, which can change without notice between releases. Only a name is required to create an application. The name must be unique and not in use.
+
+    These parameters are also available:
+
+    * `ReleaseNumberScheme`: sets the release number scheme to use when you create a new release for the application. Options are `MajorMinorRevision`, `MajorMinor`, or `DateBased`.
+    * `BuildNumberScheme`: sets the build number scheme to use when creating new packages/builds for an application. Options are `Unique`, `Sequential`, `DateBased`.
+    * `AllowMultipleActiveBuilds`: a flag that indicates if the application is allowed to have multiple active builds.
+
+    .EXAMPLE
+    New-BMApplication -Session $session -Name 'MyNewApplication'
+
+    Demonstrates the simplest way to create an application. In this example, a `MyNewApplication` application will be created and all its fields set to BuildMaster's default values.
+
+    .EXAMPLE
+    New-BMApplication -Session $session -Name 'MyNewApplication' -ReleaseNumberSchemeName MajorMinor -BuildNumberSchemeName Sequential -AllowMultipleActiveBuilds
+
+    This example demonstrates all the fields you can set when creating a new application. In this example, the new application will be called `MyNewApplication`, its release number scheme will be `MajorMinor`, its build number schema will be `Sequential`, it will allow multiple active releases, and it will allow multiple active builds.
     #>
     [CmdletBinding()]
     param(
@@ -38,28 +54,37 @@ function New-BMApplication
         # * `DateTimeBased`
         $BuildNumberSchemeName,
 
-        [int]
-        # The ID of the issue tracking provider the application should use.
-        $IssueTrackerID,
-
-        [Switch]
-        # Allow multiple active releases.
-        $AllowMultipleActiveRelease,
-
         [Switch]
         # Allow multiple active builds.
-        $AllowMultipleActiveBuild,
-
-        [int]
-        # The ID of the application group the application should be part of.
-        $AplicationGroupID
+        $AllowMultipleActiveBuilds
     )
 
     Set-StrictMode -Version 'Latest'
 
     $parameters = @{
                         'Application_Name' = $Name;
-                   }
+                    }
+    if( $ReleaseNumberSchemeName )
+    {
+        $parameters['ReleaseNumber_Scheme_Name'] = $ReleaseNumberSchemeName;
+    }
 
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_CreateApplication' -Parameter $parameters
+    if( $BuildNumberSchemeName )
+    {
+        $parameters['BuildNumber_Scheme_Name'] = $BuildNumberSchemeName;
+    }
+
+    if( $AllowMultipleActiveBuilds )
+    {
+        $parameters['AllowMultipleActiveBuilds_Indicator'] = $true;
+    }
+
+    $appID = Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_CreateApplication' -Parameter $parameters
+    if( -not $appID )
+    {
+        return
+    }
+
+    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplication' -Parameter @{ 'Application_Id' = $appID } |
+        Select-Object -ExpandProperty 'Applications_Extended'
 }

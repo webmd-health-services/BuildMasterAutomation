@@ -69,6 +69,19 @@ finally
     $conn.Close()
 }
 
+function New-BMTestApplication
+{
+    param(
+        $Session,
+        $CommandPath
+    )
+
+    $Name = Split-Path -Path $CommandPath -Leaf
+    $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+
+    return New-BMApplication -Session $Session -Name $Name
+}
+
 function New-BMTestSession
 {
     return New-BMSession -Uri $uri -ApiKey $apiKey
