@@ -15,6 +15,7 @@ foreach( $moduleName in @( 'Pester', 'Carbon' ) )
     Save-Module -Name $moduleName -Path '.' 
 }
 
+if (Get-Module -Name 'Carbon') {Remove-Module -Name 'Carbon'}
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force -Verbose:$false
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
@@ -32,9 +33,22 @@ if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 $bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
 if( -not $bmInstallInfo )
 {
+    $bmConnectionString = '/ConnectionString="Data Source=localhost\BuildMaster; Initial Catalog=BuildMaster; Integrated Security=True;"'
+    $dbParam = '/InstallSqlExpress'
+    $pgInstallInfo = Get-ProgramInstallInfo -Name 'ProGet'
+    if ($pgInstallInfo) {
+        Write-Verbose -Message 'ProGet is installed. BuildMaster will join existing SQL Server instance..'
+        $pgConfigLocation = Join-Path -Path (Get-ItemProperty -Path 'HKLM:\Software\Inedo\ProGet').ServicePath -ChildPath 'ProGet.Service.exe.config'
+    
+        $xml = [xml](Get-Content -Path $pgConfigLocation) 
+        $pgDbConfigSetting = $xml.SelectSingleNode("//add[@key = 'InedoLib.DbConnectionString']")
+        $pgConnectionString = $pgDbConfigSetting.Value.Substring(0,$pgDbConfigSetting.Value.IndexOf(';'))
+        $bmConnectionString = ('/ConnectionString="{0};Initial Catalog=BuildMaster; Integrated Security=True;"' -f $pgConnectionString)
+        $dbParam = '/InstallSqlExpress=False'
+    }
+    
     # Under AppVeyor, use the pre-installed database.
     # Otherwise, install a SQL Express BuildMaster instance.
-    $dbParam = '/InstallSqlExpress'
     if( $runningUnderAppVeyor )
     {
         $dbParam = '"/ConnectionString=Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!"'
@@ -52,7 +66,7 @@ if( -not $bmInstallInfo )
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath) `
+                             -ArgumentList '/S','/Edition=Express',$bmConnectionString,$dbParam,('"/LogFile={0}"' -f $logPath),'/Port=81' `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
