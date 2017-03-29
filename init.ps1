@@ -33,8 +33,8 @@ if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 $bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
 if( -not $bmInstallInfo )
 {
-    $bmConnectionString = '/ConnectionString="Data Source=localhost\BuildMaster; Initial Catalog=BuildMaster; Integrated Security=True;"'
-    $dbParam = '/InstallSqlExpress'
+    $installSqlParam = '/InstallSqlExpress'
+    $connString = '/S'
     $pgInstallInfo = Get-ProgramInstallInfo -Name 'ProGet'
     if ($pgInstallInfo) {
         Write-Verbose -Message 'ProGet is installed. BuildMaster will join existing SQL Server instance..'
@@ -43,15 +43,16 @@ if( -not $bmInstallInfo )
         $xml = [xml](Get-Content -Path $pgConfigLocation) 
         $pgDbConfigSetting = $xml.SelectSingleNode("//add[@key = 'InedoLib.DbConnectionString']")
         $pgConnectionString = $pgDbConfigSetting.Value.Substring(0,$pgDbConfigSetting.Value.IndexOf(';'))
-        $bmConnectionString = ('/ConnectionString="{0};Initial Catalog=BuildMaster; Integrated Security=True;"' -f $pgConnectionString)
-        $dbParam = '/InstallSqlExpress=False'
+        $connString = ('/ConnectionString="{0};Initial Catalog=BuildMaster; Integrated Security=True;"' -f $pgConnectionString)
+        $installSqlParam = '/InstallSqlExpress=False'
     }
     
     # Under AppVeyor, use the pre-installed database.
     # Otherwise, install a SQL Express BuildMaster instance.
     if( $runningUnderAppVeyor )
     {
-        $dbParam = '"/ConnectionString=Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!"'
+        $connString = '"/ConnectionString=Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!"'
+        $installSqlParam = '/InstallSqlExpress=False'
     }
 
     $outputRoot = Join-Path -Path $PSScriptRoot -ChildPath '.output'
@@ -66,7 +67,7 @@ if( -not $bmInstallInfo )
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',$bmConnectionString,$dbParam,('"/LogFile={0}"' -f $logPath),'/Port=81' `
+                             -ArgumentList '/S','/Edition=Express',$installSqlParam,$connString,('"/LogFile={0}"' -f $logPath),'/Port=81' `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
@@ -92,4 +93,3 @@ elseif( $bmInstallInfo.DisplayVersion -notmatch ('^{0}\b' -f [regex]::Escape($ve
 {
     Write-Warning -Message ('You''ve got an old version of BuildMaster installed. You''re on version {0}, but we expected version {1}. Please *completely* uninstall version {0} using the Programs and Features control panel, then re-run this script.' -f $bmInstallInfo.DisplayVersion,$version)
 }
-
