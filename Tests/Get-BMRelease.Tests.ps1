@@ -13,7 +13,7 @@ $release = New-BMRelease -Session $session -Application $app -Number '2.0' -Pipe
 $master = New-BMRelease -Session $session -Application $app -Number '3.0' -Pipeline $pipeline -Name 'master'
 
 Describe 'Get-BMRelease.when getting an application''s releases' {
-    $release = Get-BMRelease -Session $session -Application $app | Sort-Object -Property 'name'
+    $release = Get-BMRelease -Session $session -Application $app | Sort-Object -Property 'id'
 
     It 'should return releases' {
         $release | Should -Not -BeNullOrEmpty
@@ -25,10 +25,20 @@ Describe 'Get-BMRelease.when getting an application''s releases' {
 }
 
 Describe 'Get-BMRelease.when getting an application release by name' {
-    $release = Get-BMRelease -Session $session -Application $app -Name '2.0'
+    $release = Get-BMRelease -Session $session -Application $app -Name 'develop'
 
     It 'should return release' {
         $release | Should -Not -BeNullOrEmpty
-        $release.number | Should -Be '2.0'
+        $release.name | Should -Be 'develop'
+    }
+}
+
+Describe 'Get-BMRelease.when passed no parameters' {
+    $releases = Get-BMRelease -Session $session
+
+    It 'should return all releases' {
+        $releases | Where-Object { $_.id -eq $develop.id } | Should -Not -BeNullOrEmpty
+        $releases | Where-Object { $_.id -eq $release.id } | Should -Not -BeNullOrEmpty
+        $releases | Where-Object { $_.id -eq $master.id } | Should -Not -BeNullOrEmpty
     }
 }

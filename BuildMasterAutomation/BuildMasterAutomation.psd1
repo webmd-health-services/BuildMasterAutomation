@@ -123,6 +123,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 * Renamed `Get-BMReleasePackage` to `Get-BMPackage`.
 * Renamed `New-BMReleasePackage` to `New-BMPackage`.
 * `Get-BMPackage` can now return packages for a specific release. Pass the release or release ID to the new `Release` parameter.
+* Fixed: `Get-BMRelease` only filters by name only if getting a specific application's releases.
+* `Get-BMRelease` now returns all releases when passed no parameters.
 '@
 
         } # End of PSData hashtable
