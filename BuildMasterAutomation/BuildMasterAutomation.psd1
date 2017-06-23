@@ -12,13 +12,13 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '0.1.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
 
     # Author of this module
-    Author = 'Lifecycle Services'
+    Author = 'WebMD Health Services'
 
     # Company or vendor of this module
     CompanyName = 'WebMD Health Services'
@@ -27,7 +27,9 @@
     Copyright = '(c) 2017 WebMD Health Services. All rights reserved.'
 
     # Description of the functionality provided by this module
-    # Description = ''
+    Description = @'
+The BuildMasterAutomation module is a PowerShell module for working with BuildMaster web APIs. BuildMaster is an application deployment automation tool by Inedo software. This module wraps its web APIs in a PowerShell interface. It allows you to read and create applications, releases, packages, etc. If this module doesn't have a function for a specific API endpoint, it has generic `Invoke-BMRestMethod` and `Invoke-BMNativeApimethod` functions that take the pain out of creating the proper web requests.
+'@
 
     # Minimum version of the Windows PowerShell engine required by this module
     # PowerShellVersion = ''
@@ -105,19 +107,30 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            Tags = @( 'buildmaster', 'inedo', 'devops', 'automation', 'pipeline', 'deploy' )
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://www.apache.org/licenses/LICENSE-2.0'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri = 'https://github.com/webmd-health-services/ProGetAutomation'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = @'
+* Created `Get-BMApplication` function for getting applications.
+* Created `Get-BMRelese` function for getting releases.
+* Created `Get-BMReleasePackage` function for getting release packages.
+* Created `Invoke-BMNativeApiMethod'` function for invoking a method in BuildMaster's native API.
+* Created `Invoke-BMRestMethod` function for invoking a method in one of BuildMaster's REST APIs.
+* Created `New-BMApplication` function for creating an application.
+* Created `New-BMRelease` function for creating an application.
+* Created `New-BMReleasePackage` function for creating an application.
+* Created `New-BMSession` function for creating an application.
+* Created `Publish-BMReleasePackage` function for starting a deploy.
+'@
 
         } # End of PSData hashtable
 
