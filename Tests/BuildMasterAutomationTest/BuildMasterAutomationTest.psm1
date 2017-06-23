@@ -93,13 +93,25 @@ function GivenAnApplication
 {
     param(
         [Parameter(Mandatory=$true)]
-        $Name
+        $Name,
+
+        [Switch]
+        $ThatIsDisabled
     )
 
     $Name = Split-Path -Path $Name -Leaf
     $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
 
-    return New-BMApplication -Session $session -Name $Name
+    $app = New-BMApplication -Session $session -Name $Name
+    
+    if( $ThatIsDisabled )
+    {
+        Disable-BMApplication -Session $session -ID $app.Application_Id |
+            Out-String |
+            Write-Debug
+    }
+
+    return $app
 }
 
 function GivenARelease
@@ -174,7 +186,7 @@ $BMTestSession = $session
 Get-BMApplication -Session $session | 
     ForEach-Object {
         Write-Debug -Message ('Deactivating and purging application {0,5} {1}.' -f $_.Application_Id,$_.Application_Name)
-        Invoke-BMNativeApiMethod -Session $session -Name 'Applications_DeactivateApplication' -Method Post -Parameter @{ Application_Id = $_.Application_Id }
+        Disable-BMApplication -Session $session -ID $_.Application_Id
         Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Method Post -Parameter @{ Application_Id  = $_.Application_Id }
     }
 

@@ -70,6 +70,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
     # Functions to export from this module
     FunctionsToExport = @(
                             'Add-BMObjectParameter',
+                            'Disable-BMApplication',
                             'Get-BMApplication',
                             'Get-BMRelease',
                             'Get-BMPackage',
@@ -125,6 +126,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 * `Get-BMPackage` can now return packages for a specific release. Pass the release or release ID to the new `Release` parameter.
 * Fixed: `Get-BMRelease` only filters by name only if getting a specific application's releases.
 * `Get-BMRelease` now returns all releases when passed no parameters.
+* `Get-BMApplication` no longer returns inactive/disabled applications. Use the `Force` switch to return active *and* inactive applications.
+* Added `Disable-BMApplication` function for disabling/deactivating an application.
 '@
 
         } # End of PSData hashtable
