@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.1.0'
+    ModuleVersion = '0.2.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -72,7 +72,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'Add-BMObjectParameter',
                             'Get-BMApplication',
                             'Get-BMRelease',
-                            'Get-BMReleasePackage',
+                            'Get-BMPackage',
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
                             'New-BMApplication',
@@ -113,23 +113,14 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             LicenseUri = 'https://www.apache.org/licenses/LICENSE-2.0'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/webmd-health-services/ProGetAutomation'
+            ProjectUri = 'https://github.com/webmd-health-services/BuildMasterAutomation'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BMApplication` function for getting applications.
-* Created `Get-BMRelese` function for getting releases.
-* Created `Get-BMReleasePackage` function for getting release packages.
-* Created `Invoke-BMNativeApiMethod'` function for invoking a method in BuildMaster's native API.
-* Created `Invoke-BMRestMethod` function for invoking a method in one of BuildMaster's REST APIs.
-* Created `New-BMApplication` function for creating an application.
-* Created `New-BMRelease` function for creating an application.
-* Created `New-BMReleasePackage` function for creating an application.
-* Created `New-BMSession` function for creating an application.
-* Created `Publish-BMReleasePackage` function for starting a deploy.
+* Renamed `Get-BMReleasePackage` to `Get-BMPackage`.
 '@
 
         } # End of PSData hashtable

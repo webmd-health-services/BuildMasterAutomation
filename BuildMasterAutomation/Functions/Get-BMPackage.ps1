@@ -1,15 +1,15 @@
 
-function Get-BMReleasePackage
+function Get-BMPackage
 {
     <#
     .SYNOPSIS
     Gets a release package from BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMReleasePackage` function gets a release package from BuildMaster.
+    The `Get-BMPackage` function gets a release package from BuildMaster.
 
     .EXAMPLE
-    Get-BMReleasePackager -Session $session -Package $package
+    Get-BMPackager -Session $session -Package $package
 
     Demonstrates how to get a package using a package object.
     #>

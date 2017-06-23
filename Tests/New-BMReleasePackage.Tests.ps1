@@ -27,7 +27,7 @@ function Assert-Package
         $Package | Should -Not -BeNullOrEmpty
     }
 
-    $Package = Get-BMReleasePackage -Session $session -Package $package
+    $Package = Get-BMPackage -Session $session -Package $package
     Context 'the package' {
         It 'should exist' {
             $Package | Should -Not -BeNullOrEmpty
