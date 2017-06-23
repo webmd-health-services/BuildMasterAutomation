@@ -82,9 +82,107 @@ function New-BMTestApplication
     return New-BMApplication -Session $Session -Name $Name
 }
 
+$session = New-BMSession -Uri $uri -ApiKey $apiKey
+
 function New-BMTestSession
 {
-    return New-BMSession -Uri $uri -ApiKey $apiKey
+    return $session
 }
 
-Export-ModuleMember -Function '*'
+function GivenAnApplication
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name
+    )
+
+    $Name = Split-Path -Path $Name -Leaf
+    $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+
+    return New-BMApplication -Session $session -Name $Name
+}
+
+function GivenARelease
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        $Named,
+        [Parameter(Mandatory=$true)]
+        $ForApplication,
+        [Parameter(Mandatory=$true)]
+        $WithNumber,
+        [Parameter(Mandatory=$true)]
+        $UsingPipeline
+    )
+
+    $Named = Split-Path -Path $Named -Leaf
+    $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
+
+    return New-BMRelease -Session $session -Application $ForApplication -Number $WithNumber -Name $Named -Pipeline $UsingPipeline
+}
+
+function GivenAPipeline
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        $Named,
+
+        $ForApplication
+    )
+
+    $Named = Split-Path -Path $Named -Leaf
+    $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
+
+    $appParam = @{ }
+    if( $ForApplication )
+    {
+        $appParam['Application'] = $ForApplication
+    }
+
+    return New-BMPipeline -Session $session -Name $Named @appParam
+}
+
+function GivenAPackage
+{
+    [CmdletBinding(DefaultParameterSetName='WithAllTheTrimmings')]
+    param(
+        [Parameter(Mandatory=$true,ParameterSetName='WithAllTheTrimmings')]
+        [string]
+        $ForAnAppNamed,
+
+        [Parameter(Mandatory=$true,ParameterSetName='WithAllTheTrimmings')]
+        [string]
+        $ForReleaseNumber,
+
+        [Parameter(Mandatory=$true,ParameterSetName='ForARelease')]
+        $ForRelease
+    )
+
+    if( $PSCmdlet.ParameterSetName -eq 'ForARelease' )
+    {
+        return New-BMPackage -Session $session -Release $ForRelease
+    }
+
+    $app = GivenAnApplication -Name $ForAnAppNamed
+    $pipeline = GivenAPipeline -Named ('{0}.pipeline' -f $ForAnAppNamed)  -ForApplication $app
+    $release = GivenARelease -Named ('{0}.release' -f $ForAnAppNamed) -ForApplication $app -WithNumber $ForReleaseNumber -UsingPipeline $pipeline
+    return New-BMPackage -Session $session -Release $release
+}
+
+$BMTestSession = $session
+
+Get-BMApplication -Session $session | 
+    ForEach-Object {
+        Write-Debug -Message ('Deactivating and purging application {0,5} {1}.' -f $_.Application_Id,$_.Application_Name)
+        Invoke-BMNativeApiMethod -Session $session -Name 'Applications_DeactivateApplication' -Method Post -Parameter @{ Application_Id = $_.Application_Id }
+        Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Method Post -Parameter @{ Application_Id  = $_.Application_Id }
+    }
+
+Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' -Method Post -Parameter @{ } | 
+    ForEach-Object {
+        Write-Debug -Message ('Deleting pipeline {0,5} {1}.' -f $_.Pipeline_Id,$_.Pipeline_Name)
+        Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_DeletePipeline' -Method Post -Parameter @{ Pipeline_Id = $_.Pipeline_Id }
+    }
+    
+
+Export-ModuleMember -Function '*' -Variable 'BMTestSession'
