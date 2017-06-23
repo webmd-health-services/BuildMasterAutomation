@@ -35,7 +35,7 @@ $pipeline = New-BMPipeline -Session $session -Name $pipelineName -Application $a
 </Inedo.BuildMaster.Pipelines.PipelineStage>
 '@
 $release = New-BMRelease -Session $session -Application $app -Number '1.0' -Pipeline $pipeline
-$package = New-BMReleasePackage -Session $session -Release $release
+$package = New-BMPackage -Session $session -Release $release
 
 Describe 'Publish-BMReleasePackage.when using package object' {
     $deployment = Publish-BMReleasePackage -Session $session -Package $package

@@ -67,23 +67,23 @@ function Assert-Package
 
 }
 
-Describe 'New-BMReleasePackage.when creating package' {
-    New-BMReleasePackage -Session $session -Release $release |
+Describe 'New-BMPackage.when creating package' {
+    New-BMPackage -Session $session -Release $release |
         Assert-Package -HasNumber 1
 }
 
-Describe 'New-BMReleasePackage.when creating package with custom name' {
-    New-BMReleasePackage -Session $session -Release $release -PackageNumber '56.develop' |
+Describe 'New-BMPackage.when creating package with custom name' {
+    New-BMPackage -Session $session -Release $release -PackageNumber '56.develop' |
         Assert-Package -HasNumber '56.develop'
 }
 
-Describe 'New-BMReleasePackage.when creating package with package variables' {
+Describe 'New-BMPackage.when creating package with package variables' {
     $variable = @{ 'ProGetPackageName' = '17.125.56+develop.deadbee' } 
-    New-BMReleasePackage -Session $session -Release $release -PackageNumber '3' -Variable $variable |
+    New-BMPackage -Session $session -Release $release -PackageNumber '3' -Variable $variable |
         Assert-Package -HasNumber '3' -HasVariable $variable
 }
 
-Describe 'New-BMReleasePackage.when creating with release number and application' {
-    New-BMReleasePackage -Session $session -ReleaseNumber $release.number -Application $app |
+Describe 'New-BMPackage.when creating with release number and application' {
+    New-BMPackage -Session $session -ReleaseNumber $release.number -Application $app |
         Assert-Package -HasNumber '4'
 }

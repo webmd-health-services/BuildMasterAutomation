@@ -26,7 +26,6 @@ function Invoke-BMRestMethod
         # The HTTP/web method to use. The default is `POST`.
         $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post,
 
-        [Parameter(Mandatory=$true)]
         [hashtable]
         # That parameters to pass to the method. These are converted to JSON and sent to the API in the body of the request.
         $Parameter,
@@ -40,24 +39,29 @@ function Invoke-BMRestMethod
 
     $uri = '{0}api/{1}' -f $Session.Uri,$Name
     
-    if( $AsJson )
+    $contentType = 'application/json; charset=utf-8'
+    $debugBody = ''
+    $body = ''
+    if( $Parameter )
     {
-        $body = $Parameter | ConvertTo-Json -Depth ([int32]::MaxValue)
-        $contentType = 'application/json; charset=utf-8'
-        $debugBody = $body -replace '("API_Key": +")[^"]+','$1********'
-    }
-    else
-    {
-        $body = $Parameter.Keys | ForEach-Object { '{0}={1}' -f [Web.HttpUtility]::UrlEncode($_),[Web.HttpUtility]::UrlEncode($Parameter[$_]) }
-        $body = $body -join '&'
-        $contentType = 'application/x-www-form-urlencoded; charset=utf-8'
-        $debugBody = $Parameter.Keys | ForEach-Object {
-            $value = $Parameter[$_]
-            if( $_ -eq 'API_Key' )
-            {
-                $value = '********'
-            }
-            '{0}={1}' -f $_,$value }
+        if( $AsJson )
+        {
+            $body = $Parameter | ConvertTo-Json -Depth ([int32]::MaxValue)
+            $debugBody = $body -replace '("API_Key": +")[^"]+','$1********'
+        }
+        else
+        {
+            $body = $Parameter.Keys | ForEach-Object { '{0}={1}' -f [Web.HttpUtility]::UrlEncode($_),[Web.HttpUtility]::UrlEncode($Parameter[$_]) }
+            $body = $body -join '&'
+            $contentType = 'application/x-www-form-urlencoded; charset=utf-8'
+            $debugBody = $Parameter.Keys | ForEach-Object {
+                $value = $Parameter[$_]
+                if( $_ -eq 'API_Key' )
+                {
+                    $value = '********'
+                }
+                '{0}={1}' -f $_,$value }
+        }
     }
 
     $headers = @{

@@ -78,7 +78,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'New-BMApplication',
                             'New-BMPipeline',
                             'New-BMRelease',
-                            'New-BMReleasePackage',
+                            'New-BMPackage',
                             'New-BMSession',
                             'Publish-BMReleasePackage'
                          )
@@ -121,6 +121,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Renamed `Get-BMReleasePackage` to `Get-BMPackage`.
+* Renamed `New-BMReleasePackage` to `New-BMPackage`.
 '@
 
         } # End of PSData hashtable
