@@ -19,7 +19,7 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force -
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '5.6.5'
+$version = '5.6.9'
 
 $installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-SQL-{0}.exe' -f $version)
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
