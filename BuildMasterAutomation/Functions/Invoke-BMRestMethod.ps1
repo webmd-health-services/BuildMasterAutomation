@@ -46,7 +46,7 @@ function Invoke-BMRestMethod
     {
         if( $AsJson )
         {
-            $body = $Parameter | ConvertTo-Json -Depth ([int32]::MaxValue)
+            $body = $Parameter | ConvertTo-Json -Depth 100
             $debugBody = $body -replace '("API_Key": +")[^"]+','$1********'
         }
         else

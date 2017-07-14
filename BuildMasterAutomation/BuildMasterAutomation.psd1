@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.2.0'
+    ModuleVersion = '0.2.1'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -121,13 +121,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Renamed `Get-BMReleasePackage` to `Get-BMPackage`.
-* Renamed `New-BMReleasePackage` to `New-BMPackage`.
-* `Get-BMPackage` can now return packages for a specific release. Pass the release or release ID to the new `Release` parameter.
-* Fixed: `Get-BMRelease` only filters by name only if getting a specific application's releases.
-* `Get-BMRelease` now returns all releases when passed no parameters.
-* `Get-BMApplication` no longer returns inactive/disabled applications. Use the `Force` switch to return active *and* inactive applications.
-* Added `Disable-BMApplication` function for disabling/deactivating an application.
+Fixed: Calling any REST API that has a body in its request fails under PowerShell 5.1.
 '@
 
         } # End of PSData hashtable
