@@ -96,6 +96,14 @@ Describe 'Get-BMApplicationGroup.when getting a specific application group' {
     ThenShouldReturnApplicationGroup 'BMApplicationGroup2'
 }
 
+Describe 'Get-BMApplicationGroup.when for application group by wildcard' {
+    Init
+    GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BuildMasterAppGroup3'
+    WhenGettingApplicationGroup 'BMApplication*'
+    ThenShouldNotThrowErrors
+    ThenShouldReturnApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2'
+}
+
 Describe 'Get-BMApplicationGroup.when searching for application group that doesn''t exist' {
     Init
     GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'

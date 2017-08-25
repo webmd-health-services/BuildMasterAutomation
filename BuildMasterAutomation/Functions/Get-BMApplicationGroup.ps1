@@ -6,7 +6,7 @@ function Get-BMApplicationGroup
     Gets BuildMaster application groups.
     
     .DESCRIPTION
-    The `Get-BMApplicationGroup` function gets all application groups from an instance of BuildMaster. To get a specific application group, pass the name to the `Name` parameter. If an application group with the name doesn't exist, you'll get nothing back.
+    The `Get-BMApplicationGroup` function gets all application groups from an instance of BuildMaster. To get a specific application group, pass the name to the `Name` parameter. Wildcards '*' are supported. If an application group with the name doesn't exist, you'll get nothing back.
     
     Uses the BuildMaster native API, which can change without notice between releases. By default, this function returns *all* application groups.
     
@@ -40,7 +40,7 @@ function Get-BMApplicationGroup
         Where-Object {
             if( $Name )
             {
-                return $_.ApplicationGroup_Name -eq $Name
+                return $_.ApplicationGroup_Name -like $Name
             }
             return $true
         }
