@@ -124,6 +124,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             ReleaseNotes = @'
 * Created `Get-BMApplicationGroup` function to retrieve application groups.
 * Updated `New-BMApplication` function to allow defining an application group.
+* Updated `Publish-BMReleasePackage` function to support deploying to a specific stage of a release pipeline.
 '@
         } # End of PSData hashtable
 
