@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.3.0'
+    ModuleVersion = '0.4.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -82,7 +82,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'New-BMRelease',
                             'New-BMPackage',
                             'New-BMSession',
-                            'Publish-BMReleasePackage'
+                            'Publish-BMReleasePackage',
+                            'Stop-BMRelease'
                          )
 
     # Cmdlets to export from this module
@@ -122,9 +123,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BMApplicationGroup` function to retrieve application groups.
-* Updated `New-BMApplication` function to allow defining an application group.
-* Updated `Publish-BMReleasePackage` function to support deploying to a specific stage of a release pipeline.
+* Created `Stop-BMRelease` function for canceling releases.
 '@
         } # End of PSData hashtable
 
