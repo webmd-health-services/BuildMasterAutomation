@@ -60,6 +60,7 @@ function New-BMPipeline
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $pipelineParams = @{
                         'Pipeline_Name' = $Name;

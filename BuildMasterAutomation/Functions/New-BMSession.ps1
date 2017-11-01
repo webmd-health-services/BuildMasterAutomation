@@ -27,6 +27,7 @@ function New-BMSession
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     return [pscustomobject]@{
                                 Uri = $Uri;

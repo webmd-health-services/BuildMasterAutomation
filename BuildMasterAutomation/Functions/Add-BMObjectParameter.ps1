@@ -48,6 +48,7 @@ function Add-BMObjectParameter
     process
     {
         Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         $idParamName = '{0}Id' -f $Name
         $nameParamName = '{0}Name' -f $Name

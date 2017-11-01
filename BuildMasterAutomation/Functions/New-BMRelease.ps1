@@ -66,6 +66,7 @@ function New-BMRelease
     process
     {
         Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         $parameters = @{
                             releaseNumber = $Number;

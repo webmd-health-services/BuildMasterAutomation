@@ -48,6 +48,7 @@ function Publish-BMReleasePackage
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $parameters = @{} | Add-BMObjectParameter -Name 'package' -Value $Package -PassThru
     

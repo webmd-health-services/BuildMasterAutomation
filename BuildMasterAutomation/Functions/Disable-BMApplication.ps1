@@ -29,6 +29,7 @@ function Disable-BMApplication
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_DeactivateApplication' -Parameter @{ Application_Id = $ID } -Method Post
 }

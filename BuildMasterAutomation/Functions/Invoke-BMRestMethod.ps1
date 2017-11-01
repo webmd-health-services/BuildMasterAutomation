@@ -36,6 +36,7 @@ function Invoke-BMRestMethod
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $uri = '{0}api/{1}' -f $Session.Uri,$Name
     

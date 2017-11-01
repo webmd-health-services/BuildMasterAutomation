@@ -60,6 +60,7 @@ function Get-BMPackage
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $parameter = $null
     if( $PSCmdlet.ParameterSetName -eq 'SpecificPackage' )

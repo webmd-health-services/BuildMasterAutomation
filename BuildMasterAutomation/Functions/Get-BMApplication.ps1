@@ -44,6 +44,7 @@ function Get-BMApplication
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $parameters = @{
                         Application_Count = 0;

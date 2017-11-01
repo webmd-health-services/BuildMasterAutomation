@@ -124,6 +124,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Created `Stop-BMRelease` function for canceling releases.
+* Fixed: module functions don't respect calling scope preferences (e.g. VerbosePreference, ErrorActionPreference, etc.).
 '@
         } # End of PSData hashtable
 
