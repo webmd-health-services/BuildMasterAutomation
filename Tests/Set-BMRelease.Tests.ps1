@@ -84,3 +84,21 @@ Describe 'Set-BMRelease.when updating a release' {
     $updatedRelease = Set-BMRelease -Session $session -Release $release -PipelineID $newPipeline.pipeline_id -Name 'new name'
     Assert-Release -Release $updatedRelease -HasName 'new name' -HasNumber $release.number -HasPipelineID $newPipeline.pipeline_id
 }
+
+Describe 'Set-BMRelease.when not changing anything' {
+    $releaseNumber = New-TestReleaseNumber
+    $release = New-BMRelease -Session $session -Application $app -Number $releaseNumber -Pipeline $pipeline
+    $updatedRelease = Set-BMRelease -Session $session -Release $release
+    Assert-Release -Release $updatedRelease -HasName $release.name -HasNumber $release.number -HasPipelineID $release.pipelineId
+}
+
+Describe 'Set-BMRelease.when release doesn''t exist' {
+    $Global:Error.Clear()
+    $updatedRelease = Set-BMRelease -Session $session -Release -1 -ErrorAction SilentlyContinue
+    It ('should return nothing') {
+        $updatedRelease | Should -BeNullOrEmpty
+    }
+    It ('should write an error') {
+        $Global:Error | Should -Match 'Release\ "-1"\ does\ not\ exist\.'
+    }
+}

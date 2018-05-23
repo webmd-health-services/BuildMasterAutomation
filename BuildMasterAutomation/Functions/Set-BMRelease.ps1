@@ -3,14 +3,19 @@ function Set-BMRelease
 {
     <#
     .SYNOPSIS
-    Creates or updates a release in BuildMaster.
+    Updates a release's pipeline or name.
 
     .DESCRIPTION
-    The `Set-BMRelease` function creates or updates a release in BuildMaster. If a release doesn't exist, it is created. If it does exists, its name, number, and pipeline are updated.
+    The `Set-BMRelease` function updates a release's pipeline or name. To change a release's pipeline, pass the pipeline's ID to the `PipelineID` parameter. To change the pipeline's name, pass the new name to the `Name` parameter. 
     
+    This function uses the BuildMaster native API endpoint "Releases_CreateOrUpdateRelease".
+
+    Pass the release you want to update to the `Release` parameter. You may pass the release's ID (as an integer), the release's number, or a release object as returned by the `Get-BMRelease` function.
 
     .EXAMPLE
-    
+    Set-BMRelease -Release $release -PipelineID 45 -Name 'My New Name'
+
+    Demonstrates how to update the pipeline and name of a release.
     #>
     [CmdletBinding()]
     param(
@@ -23,7 +28,7 @@ function Set-BMRelease
         [object]
         # The release to update. Can be:
         #
-        # * The release's name.
+        # * The release's number.
         # * The release's ID.
         # * An release object with either a `Release_Id` or `Release_Name` property that represent the application's ID and name, respectively.
         $Release,
