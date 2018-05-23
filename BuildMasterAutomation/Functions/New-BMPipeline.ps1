@@ -82,7 +82,7 @@ function New-BMPipeline
                    }
     if( $Application )
     {
-        $pipelineParams | Add-BMObjectParameter -Name 'application' -Value $Application
+        $pipelineParams | Add-BMObjectParameter -Name 'application' -Value $Application -ForNativeApi
     }
 
     if( $Color )

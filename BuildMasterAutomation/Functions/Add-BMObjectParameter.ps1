@@ -42,7 +42,11 @@ function Add-BMObjectParameter
         $Value,
 
         [Switch]
-        $PassThru
+        $PassThru,
+
+        [Switch]
+        # The parameters are being used in the native API, which has a different naming convention.
+        $ForNativeApi
     )
 
     process
@@ -54,6 +58,12 @@ function Add-BMObjectParameter
         $nameParamName = '{0}Name' -f $Name
         $idPropertyName = '{0}_Id' -f $Name
         $namePropertyName = '{0}_Name' -f $Name
+
+        if( $ForNativeApi )
+        {
+            $idParamName = $idPropertyName
+            $nameParamName = $namePropertyName
+        }
 
         if( $Value -is [int] )
         {

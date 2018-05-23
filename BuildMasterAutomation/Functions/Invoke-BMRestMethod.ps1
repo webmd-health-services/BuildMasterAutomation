@@ -87,6 +87,7 @@ function Invoke-BMRestMethod
 
     try
     {
+        Write-Verbose -Message $body
         Invoke-RestMethod -Method $Method -Uri $uri -Body $body -ContentType $contentType -Headers $headers | 
             ForEach-Object { $_ } 
     }
