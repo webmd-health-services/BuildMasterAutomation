@@ -74,7 +74,7 @@ function WhenGettingPipeline
 
     if( $ForPipeline )
     {
-        $optionalParams['PipelineID'] = $ForPipeline
+        $optionalParams['ID'] = $ForPipeline
     }
 
     $script:result = Get-BMPipeline -Session $session @optionalParams
