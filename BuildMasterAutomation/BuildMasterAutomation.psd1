@@ -83,6 +83,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'New-BMPackage',
                             'New-BMSession',
                             'Publish-BMReleasePackage',
+                            'Set-BMRelease',
                             'Stop-BMRelease'
                          )
 
