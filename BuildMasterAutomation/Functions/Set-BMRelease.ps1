@@ -13,7 +13,7 @@ function Set-BMRelease
     Pass the release you want to update to the `Release` parameter. You may pass the release's ID (as an integer), the release's number, or a release object as returned by the `Get-BMRelease` function.
 
     .EXAMPLE
-    Set-BMRelease -Release $release -PipelineID 45 -Name 'My New Name'
+    Set-BMRelease -Session $session -Release $release -PipelineID 45 -Name 'My New Name'
 
     Demonstrates how to update the pipeline and name of a release.
     #>
