@@ -44,7 +44,11 @@ function Publish-BMReleasePackage
         
         [string]
         # The name of the pipeline stage where the package will be deployed.
-        $Stage
+        $Stage,
+
+        [Switch]
+        # Instructs BuildMaster to run the deploy even if the deploy to previous stages failed.
+        $Force
     )
 
     Set-StrictMode -Version 'Latest'
@@ -55,6 +59,11 @@ function Publish-BMReleasePackage
     if( $Stage )
     {
         $parameters['toStage'] = $Stage
+    }
+
+    if( $Force )
+    {
+        $parameters['force'] = 'true'
     }
     
     Invoke-BMRestMethod -Session $Session -Name 'releases/packages/deploy' -Parameter $parameters
