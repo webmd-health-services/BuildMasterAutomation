@@ -7,6 +7,12 @@ Build:
 - Version:
     Path: BuildMasterAutomation\BuildMasterAutomation.psd1
 
+- GetPowerShellModule:
+    Name: Carbon
+
+- PowerShell:
+    Path: init.ps1
+
 - Pester4:
     Path: Tests\*.Tests.ps1
     
