@@ -127,6 +127,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
 * Changed the default HTTP method on `Invoke-BMRestMethod` and `Invoke-BMNativeApiMethod` from `POST` to `GET`. Update all your usages of these functions to add an explicit `-Method Post` parameter.
 * Fixed: `Import-BuildMasterAutomation.ps1` script fails to remove exiting BuildMasterAutomation modules before re-importing when `WhatIfPreference` is `true`.
+* Added `WhatIf` support to `Invoke-BMRestMethod` and `Invoke-BMNativeApiMethod`.
+* Fixed: `Invoke-BMNativeApiMethod` fails when making HTTP GET requests.
 '@
         } # End of PSData hashtable
 
