@@ -14,7 +14,7 @@ function Init
     $script:getAppGroups = $null
 
     Get-BMApplicationGroup -Session $conn | ForEach-Object {
-        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_DeleteApplicationGroup' -Parameter @{ ApplicationGroup_Id = $_.ApplicationGroup_Id }
+        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_DeleteApplicationGroup' -Parameter @{ ApplicationGroup_Id = $_.ApplicationGroup_Id } -Method Post
     }
 }
 
@@ -26,7 +26,7 @@ function GivenApplicationGroup
     )
 
     $GroupName | ForEach-Object {
-        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = $_ }
+        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = $_ } -Method Post
     }
 }
 

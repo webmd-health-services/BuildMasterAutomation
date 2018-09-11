@@ -23,8 +23,8 @@ function Invoke-BMRestMethod
         $Name,
 
         [Microsoft.PowerShell.Commands.WebRequestMethod]
-        # The HTTP/web method to use. The default is `POST`.
-        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post,
+        # The HTTP/web method to use. The default is `GET`.
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get,
 
         [hashtable]
         # That parameters to pass to the method. These are converted to JSON and sent to the API in the body of the request.

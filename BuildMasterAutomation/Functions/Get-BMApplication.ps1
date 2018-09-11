@@ -51,7 +51,7 @@ function Get-BMApplication
                         IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
                    } 
 
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplications' -Parameter $parameters |
+    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplications' -Parameter $parameters -Method Post |
         Where-Object { 
             if( $Name )
             {

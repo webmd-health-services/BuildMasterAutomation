@@ -37,7 +37,7 @@ function Get-BMApplicationGroup
     
     $parameters = @{}
     
-    Invoke-BMNativeApiMethod -Session $Session -Name 'ApplicationGroups_GetApplicationGroups' -Parameter $parameters |
+    Invoke-BMNativeApiMethod -Session $Session -Name 'ApplicationGroups_GetApplicationGroups' -Parameter $parameters -Method Post |
         Where-Object {
             if( $Name )
             {

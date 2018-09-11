@@ -94,7 +94,7 @@ function ThenPackageShouldBeDeployed
         $deployment | Should -Not -BeNullOrEmpty
     }
 
-    $deployment = Invoke-BMRestMethod -Session $session -Name 'releases/packages/deployments' -Parameter @{ packageId = $package.id }
+    $deployment = Invoke-BMRestMethod -Session $session -Name 'releases/packages/deployments' -Parameter @{ packageId = $package.id } -Method Post
     It 'should create the deployment' {
         $deployment | Should -Not -BeNullOrEmpty
     }

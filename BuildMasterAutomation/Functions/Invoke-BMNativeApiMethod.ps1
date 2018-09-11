@@ -30,8 +30,8 @@ function Invoke-BMNativeApiMethod
         $Name,
 
         [Microsoft.PowerShell.Commands.WebRequestMethod]
-        # The HTTP/web method to use. The default is `POST`.
-        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post,
+        # The HTTP/web method to use. The default is `GET`.
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get,
 
         [Parameter(Mandatory=$true)]
         [hashtable]

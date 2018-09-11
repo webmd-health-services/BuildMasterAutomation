@@ -89,12 +89,12 @@ function New-BMApplication
         $parameters['ApplicationGroup_Id'] = $ApplicationGroupId
     }
     
-    $appID = Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_CreateApplication' -Parameter $parameters
+    $appID = Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_CreateApplication' -Parameter $parameters -Method Post
     if( -not $appID )
     {
         return
     }
 
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplication' -Parameter @{ 'Application_Id' = $appID } |
+    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplication' -Parameter @{ 'Application_Id' = $appID } -Method Post |
         Select-Object -ExpandProperty 'Applications_Extended'
 }
