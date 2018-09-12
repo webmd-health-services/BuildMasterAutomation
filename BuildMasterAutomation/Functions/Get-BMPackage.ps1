@@ -78,7 +78,7 @@ function Get-BMPackage
         $parameterParam['Parameter'] = $parameter
     }
 
-    Invoke-BMRestMethod -Session $Session -Name 'releases/packages' @parameterParam |
+    Invoke-BMRestMethod -Session $Session -Name 'releases/packages' @parameterParam -Method Post |
         Where-Object {
             # There's a bug in BuildMaster's API that returns packages for multiple releases. We don't want this. 
             if( $PSCmdlet.ParameterSetName -eq 'ReleasePackages' )

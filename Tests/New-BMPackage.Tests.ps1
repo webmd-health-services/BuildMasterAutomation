@@ -49,7 +49,7 @@ function Assert-Package
             $Package.releaseId | Should -Be $release.id
         }
 
-        $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetPackageVariables' -Parameter @{ 'Build_Id' = $Package.id }
+        $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetPackageVariables' -Parameter @{ 'Build_Id' = $Package.id } -Method Post
         if( $HasVariable )
         {
             foreach( $key in $HasVariable.Keys )

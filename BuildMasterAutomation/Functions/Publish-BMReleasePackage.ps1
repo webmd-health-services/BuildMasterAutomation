@@ -66,5 +66,5 @@ function Publish-BMReleasePackage
         $parameters['force'] = 'true'
     }
     
-    Invoke-BMRestMethod -Session $Session -Name 'releases/packages/deploy' -Parameter $parameters
+    Invoke-BMRestMethod -Session $Session -Name 'releases/packages/deploy' -Parameter $parameters -Method Post
 }

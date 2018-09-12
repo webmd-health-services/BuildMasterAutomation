@@ -6,11 +6,13 @@ function Invoke-BMRestMethod
     Invokes a BuildMaster REST method.
 
     .DESCRIPTION
-    The `Invoke-BMRestMethod` invokes a BuildMaster REST API method. You pass the path to the endpoint (everything after `/api/`) via the `Name` parameter, the HTTP method to use via the `Method` parameter, and the parameters to pass in the body of the request via the `Parameter` parameter.  This function converts the `Parameter` hashtable to JSON and sends it in the body of the request.
+    The `Invoke-BMRestMethod` invokes a BuildMaster REST API method. You pass the path to the endpoint (everything after `/api/`) via the `Name` parameter, the HTTP method to use via the `Method` parameter, and the parameters to pass in the body of the request via the `Parameter` parameter.  This function converts the `Parameter` hashtable to a URL-encoded query string and sends it in the body of the request. You can send the parameters as JSON by adding the `AsJson` parameter. You can pass your own custom body to the `Body` parameter. If you do, make sure you set an appropriate content type for the request with the `ContentType` parameter.
 
     You also need to pass an object that represents the BuildMaster instance and API key to use when connecting via the `Session` parameter. Use the `New-BMSession` function to create a session object.
+
+    When using the `WhatIf` parameter, only web requests that use the `Get` HTTP method are made.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true,DefaultParameterSetName='NoBody')]
     param(
         [Parameter(Mandatory=$true)]
         [object]
@@ -23,16 +25,34 @@ function Invoke-BMRestMethod
         $Name,
 
         [Microsoft.PowerShell.Commands.WebRequestMethod]
-        # The HTTP/web method to use. The default is `POST`.
-        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post,
+        # The HTTP/web method to use. The default is `GET`.
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get,
 
+        [Parameter(Mandatory=$true,ParameterSetName='BodyFromHashtable')]
         [hashtable]
         # That parameters to pass to the method. These are converted to JSON and sent to the API in the body of the request.
         $Parameter,
 
+        [Parameter(ParameterSetName='BodyFromHashtable')]
         [Switch]
         # Send the request as JSON. Otherwise, the data is sent as name/value pairs.
-        $AsJson
+        $AsJson,
+
+        [Parameter(Mandatory=$true,ParameterSetName='CustomBody')]
+        [string]
+        # The body to send.
+        $Body,
+
+        [string]
+        # The content type of the web request. 
+        #
+        # By default, 
+        # 
+        # * if passing a value to the `Parameter` parameter, the content type is set to `application/x-www-form-urlencoded`
+        # * if passing a value to the `Parameter` parameter and you're using the `AsJson` switch, the content type is set to `application/json`.
+        # 
+        # Otherwise, the content type is not set. If you're passing your own body to the `Body` parameter, you may have to set the appropriate content type for BuildMaster to respond.
+        $ContentType
     )
 
     Set-StrictMode -Version 'Latest'
@@ -40,21 +60,31 @@ function Invoke-BMRestMethod
 
     $uri = '{0}api/{1}' -f $Session.Uri,$Name
     
-    $contentType = 'application/json; charset=utf-8'
     $debugBody = ''
-    $body = ''
-    if( $Parameter )
+    $webRequestParam = @{ }
+    if( $Body )
+    {
+        $webRequestParam['Body'] = $Body
+    }
+    elseif( $Parameter )
     {
         if( $AsJson )
         {
-            $body = $Parameter | ConvertTo-Json -Depth 100
-            $debugBody = $body -replace '("API_Key": +")[^"]+','$1********'
+            $Body = $Parameter | ConvertTo-Json -Depth 100
+            $debugBody = $Body -replace '("API_Key": +")[^"]+','$1********'
+            if( -not $ContentType )
+            {
+                $ContentType = 'application/json; charset=utf-8'
+            }
         }
         else
         {
-            $body = $Parameter.Keys | ForEach-Object { '{0}={1}' -f [Web.HttpUtility]::UrlEncode($_),[Web.HttpUtility]::UrlEncode($Parameter[$_]) }
-            $body = $body -join '&'
-            $contentType = 'application/x-www-form-urlencoded; charset=utf-8'
+            $keyValues = $Parameter.Keys | ForEach-Object { '{0}={1}' -f [Web.HttpUtility]::UrlEncode($_),[Web.HttpUtility]::UrlEncode($Parameter[$_]) }
+            $Body = $keyValues -join '&'
+            if( -not $ContentType )
+            {
+                $ContentType = 'application/x-www-form-urlencoded; charset=utf-8'
+            }
             $debugBody = $Parameter.Keys | ForEach-Object {
                 $value = $Parameter[$_]
                 if( $_ -eq 'API_Key' )
@@ -63,6 +93,12 @@ function Invoke-BMRestMethod
                 }
                 '    {0}={1}' -f $_,$value }
         }
+        $webRequestParam['Body'] = $Body
+    }
+
+    if( $ContentType )
+    {
+        $webRequestParam['ContentType'] = $ContentType
     }
 
     $headers = @{
@@ -71,7 +107,10 @@ function Invoke-BMRestMethod
 
     #$DebugPreference = 'Continue'
     Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
-    Write-Debug -Message ('    Content-Type: {0}' -f $contentType)
+    if( $ContentType )
+    {
+        Write-Debug -Message ('    Content-Type: {0}' -f $ContentType)
+    }
     foreach( $headerName in $headers.Keys )
     {
         $value = $headers[$headerName]
@@ -87,9 +126,11 @@ function Invoke-BMRestMethod
 
     try
     {
-        Write-Verbose -Message $body
-        Invoke-RestMethod -Method $Method -Uri $uri -Body $body -ContentType $contentType -Headers $headers | 
-            ForEach-Object { $_ } 
+        if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($Uri,$Method) )
+        {
+            Invoke-RestMethod -Method $Method -Uri $uri @webRequestParam -Headers $headers | 
+                ForEach-Object { $_ } 
+        }
     }
     catch [Net.WebException]
     {

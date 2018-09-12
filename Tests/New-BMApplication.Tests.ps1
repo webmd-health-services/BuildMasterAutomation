@@ -52,7 +52,7 @@ Describe 'New-BMApplication.when creating application with all parameters' {
 }
 
 Describe 'New-BMApplication.when creating application with designated application group' {
-    $appGroupID = Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = 'TestBMAppGroup' }
+    $appGroupID = Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = 'TestBMAppGroup' } -Method Post
     $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
     $app = New-BMApplication -Session $conn -Name $appName -ApplicationGroupId $appGroupID
     It 'should return the new application' {
