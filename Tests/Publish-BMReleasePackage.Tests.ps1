@@ -69,11 +69,20 @@ function WhenDeployingPackage
 {
     param(
         [string]
-        $ToStage
+        $ToStage,
+
+        [Switch]
+        $Force
     )
     $Global:Error.Clear()
+
+    $optionalParam = @{ }
+    if( $Force )
+    {
+        $optionalParam['Force'] = $true
+    }
     
-    $Script:deployment = Publish-BMReleasePackage -Session $session -Package $package $ToStage
+    $Script:deployment = Publish-BMReleasePackage -Session $session -Package $package $ToStage @optionalParam
 }
 
 function ThenShouldNotThrowErrors
@@ -132,5 +141,14 @@ Describe 'Publish-BMReleasePackage.when package does not exist' {
 
     It 'should write an error' {
         $Global:Error.Count | Should -Be 1
+    }
+}
+
+Describe 'Publish-BMReleasePackage.when forcing deploy' {
+    GivenBMReleasePackage
+    Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
+    WhenDeployingPackage -ToStage 'Fubar2' -Force
+    It ('should use the force') {
+        Assert-MockCalled -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation' -ParameterFilter { $Parameter['force'] -eq 'true' }
     }
 }

@@ -125,8 +125,9 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Set-BMRelease` function for updating a release's pipeline and/or name.
-* Created `Get-BMPipeline` function for getting pipelines.
+* Created `Stop-BMRelease` function for canceling releases.
+* Fixed: module functions don't respect calling scope preferences (e.g. VerbosePreference, ErrorActionPreference, etc.).
+* Added `Force` switch to `Publish-BMReleasePackage` to force BuildMaster to deploy a package when it normally wouldn't.
 '@
         } # End of PSData hashtable
 
