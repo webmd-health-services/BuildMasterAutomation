@@ -44,7 +44,7 @@ function Invoke-BMNativeApiMethod
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $parameterParam = @{ }
-    if( $Parameter )
+    if( $Parameter -and $Parameter.Count )
     {
         $parameterParam['Parameter'] = $Parameter
         $parameterParam['AsJson'] = $true

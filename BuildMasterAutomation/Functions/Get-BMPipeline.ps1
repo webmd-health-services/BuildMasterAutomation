@@ -81,7 +81,14 @@ function Get-BMPipeline
         }
     }
 
-    Invoke-BMNativeApiMethod -Session $session -Name $methodName -Parameter $parameter |
+    $optionalParams = @{ }
+    if( $parameter.Count )
+    {
+        $optionalParams['Parameter'] = $parameter
+        $optionalParams['Method'] = 'Post'
+    }
+
+    Invoke-BMNativeApiMethod -Session $session -Name $methodName @optionalParams |
         Where-Object {
             if( $Name )
             {

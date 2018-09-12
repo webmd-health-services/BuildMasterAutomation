@@ -29,11 +29,11 @@ function GivenPipeline
 
 function Init
 {
-    Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' -Parameter @{ } |
-        ForEach-Object { Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_DeletePipeline' -Parameter @{ Pipeline_Id = $_.Pipeline_Id } }
+    Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' |
+        ForEach-Object { Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_DeletePipeline' -Parameter @{ Pipeline_Id = $_.Pipeline_Id } -Method Post }
 
     Get-BMApplication -Session $session |
-        ForEach-Object { Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Parameter @{ Application_Id = $_.Application_Id } }
+        ForEach-Object { Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Parameter @{ Application_Id = $_.Application_Id } -Method Post }
 
     $script:result = $null
 }
