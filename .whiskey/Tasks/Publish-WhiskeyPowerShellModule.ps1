@@ -75,7 +75,7 @@ function Publish-WhiskeyPowerShellModule
     $manifest | Set-Content $manifestPath
 
     $whiskeyRoot = Join-Path -Path $PSScriptRoot -ChildPath '..' -Resolve
-    Start-Job -ScriptBlock {
+    Invoke-Command -ScriptBlock {
                 param(
                     $RepositoryName,
                     $PublishLocation,
@@ -103,7 +103,7 @@ function Publish-WhiskeyPowerShellModule
                 # Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
                 Publish-Module -Path $path -Repository $repositoryName -NuGetApiKey $apiKey 
 
-            } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path |
-        Wait-Job | 
-        Receive-Job
+    } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
+        #Wait-Job | 
+        #Receive-Job
 }
