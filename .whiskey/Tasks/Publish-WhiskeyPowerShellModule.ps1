@@ -111,6 +111,10 @@ function Publish-WhiskeyPowerShellModule
 
                     Get-Module
 
+                    Get-Command -Module 'PackageManagement' | ft
+
+                    Get-Command -Module 'PowerShellGet' | ft
+
                     if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
                     {
                         Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
