@@ -87,9 +87,11 @@ function Publish-WhiskeyPowerShellModule
                 #$VerbosePreference = $using:VerbosePreference
                 #$DebugPreference = $using:DebugPreference
 
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PackageManagement' -Resolve)
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PowerShellGet' -Resolve)
+                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1') -Force
+                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PackageManagement' -Resolve) -Force
+                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PowerShellGet' -Resolve) -Force
+
+                Get-Module
 
                 if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
                 {
