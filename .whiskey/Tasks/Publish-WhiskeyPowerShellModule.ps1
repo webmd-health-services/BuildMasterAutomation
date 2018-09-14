@@ -84,8 +84,8 @@ function Publish-WhiskeyPowerShellModule
                     $Path
                 )
 
-                $VerbosePreference = $using:VerbosePreference
-                $DebugPreference = $using:DebugPreference
+                #$VerbosePreference = $using:VerbosePreference
+                #$DebugPreference = $using:DebugPreference
 
                 Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
                 Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PackageManagement' -Resolve)
@@ -105,5 +105,23 @@ function Publish-WhiskeyPowerShellModule
 
     } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
         #Wait-Job | 
-        #Receive-Job
+       <#
+       .SYNOPSIS
+       Short description
+       
+       .DESCRIPTION
+       Long description
+       
+       .PARAMETER TaskContext
+       Parameter description
+       
+       .PARAMETER TaskParameter
+       Parameter description
+       
+       .EXAMPLE
+       An example
+       
+       .NOTES
+       General notes
+       #>Receive-Job
 }
