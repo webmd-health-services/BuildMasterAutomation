@@ -96,7 +96,7 @@ function Publish-WhiskeyPowerShellModule
                     Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
                 }
 
-                Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -ForceBootstrap
+                Get-PackageProvider -Name 'NuGet' -ForceBootstrap
   
                 # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
                 # $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
