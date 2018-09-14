@@ -106,7 +106,7 @@ function Publish-WhiskeyPowerShellModule
 
                     foreach( $moduleName in @('PackageManagement', 'PowerShellGet') )
                     {
-                        Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath $moduleName -Resolve) -Force
+                        Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath $moduleName -Resolve) -Force -Scope Global
                     }
 
                     Get-Module
