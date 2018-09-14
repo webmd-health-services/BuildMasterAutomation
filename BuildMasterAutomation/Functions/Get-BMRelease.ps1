@@ -88,6 +88,6 @@ function Get-BMRelease
             $parameter['releaseName'] = $Name
         }
 
-        Invoke-BMRestMethod -Session $Session -Name 'releases' -Parameter $parameter
+        Invoke-BMRestMethod -Session $Session -Name 'releases' -Parameter $parameter -Method Post
     }
 }

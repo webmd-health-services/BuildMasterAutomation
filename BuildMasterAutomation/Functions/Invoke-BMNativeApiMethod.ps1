@@ -12,12 +12,14 @@ function Invoke-BMNativeApiMethod
 
     In other words, use a native API at your own peril.
 
+    When using the `WhatIf` parameter, only web requests that use the `Get` HTTP method are made.
+
     .EXAMPLE
     Invoke-BMNativeApiMethod -Session $session -Name 'Applications_CreateApplication' -Parameter @{ Application_Name = 'fubar' }
 
     Demonstrates how to call `Invoke-BMNativeApiMethod`. In this example, it is calling the `Applications_CreateApplication` method to create a new application named `fubar`.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param(
         [Parameter(Mandatory=$true)]
         [object]
@@ -30,17 +32,23 @@ function Invoke-BMNativeApiMethod
         $Name,
 
         [Microsoft.PowerShell.Commands.WebRequestMethod]
-        # The HTTP/web method to use. The default is `POST`.
-        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post,
+        # The HTTP/web method to use. The default is `GET`.
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get,
 
-        [Parameter(Mandatory=$true)]
         [hashtable]
+        # Any parameters to pass to the endpoint. The keys/values are sent in the body of the request as a JSON object.
         $Parameter
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    Invoke-BMRestMethod -Session $Session -Name ('json/{0}' -f $Name) -Method $Method -Parameter $Parameter -AsJson
+    $parameterParam = @{ }
+    if( $Parameter -and $Parameter.Count )
+    {
+        $parameterParam['Parameter'] = $Parameter
+        $parameterParam['AsJson'] = $true
+    }
 
+    Invoke-BMRestMethod -Session $Session -Name ('json/{0}' -f $Name) -Method $Method @parameterParam
 }

@@ -82,7 +82,7 @@ function New-BMPipeline
                    }
     if( $Application )
     {
-        $pipelineParams | Add-BMObjectParameter -Name 'application' -Value $Application
+        $pipelineParams | Add-BMObjectParameter -Name 'application' -Value $Application -ForNativeApi
     }
 
     if( $Color )
@@ -90,9 +90,9 @@ function New-BMPipeline
         $pipelineParams['Pipeline_Color'] = $Color
     }
 
-    $pipelineId = Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_CreatePipeline' -Parameter $pipelineParams
+    $pipelineId = Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_CreatePipeline' -Parameter $pipelineParams -Method Post
     if( $pipelineId )
     {
-        Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipeline' -Parameter @{ 'Pipeline_Id' = $pipelineId }    
+        Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipeline' -Parameter @{ 'Pipeline_Id' = $pipelineId } -Method Post
     }
 }

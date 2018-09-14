@@ -94,5 +94,5 @@ function New-BMPackage
         }
     }
 
-    Invoke-BMRestMethod -Session $Session -Name 'releases/packages/create' -Parameter $parameters          
+    Invoke-BMRestMethod -Session $Session -Name 'releases/packages/create' -Parameter $parameters -Method Post
 }

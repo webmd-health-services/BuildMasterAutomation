@@ -5,17 +5,10 @@ param(
 #Requires -Version 4
 Set-StrictMode -Version 'Latest'
 
-foreach( $moduleName in @( 'Pester', 'Carbon' ) )
-{
-    if( (Test-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath $moduleName) -PathType Container) )
-    {
-        break
-    }
-
-    Save-Module -Name $moduleName -Path '.' 
+& {
+    $VerbosePreference = 'SilentlyContinue'
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Modules\Carbon') -Force
 }
-
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon') -Force -Verbose:$false
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
