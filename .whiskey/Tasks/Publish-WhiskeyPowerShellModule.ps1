@@ -90,7 +90,7 @@ function Publish-WhiskeyPowerShellModule
 
                 try 
                 {
-                    $Global:PSModuleAutoLoadingPreference = "none"
+                    $Global:PSModuleAutoLoadingPreference = 'none'
 
                     foreach( $moduleName in @('PowerShellGet', 'PackageManagement') )
                     {
@@ -136,23 +136,5 @@ function Publish-WhiskeyPowerShellModule
 
     } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
         #Wait-Job | 
-       <#
-       .SYNOPSIS
-       Short description
-       
-       .DESCRIPTION
-       Long description
-       
-       .PARAMETER TaskContext
-       Parameter description
-       
-       .PARAMETER TaskParameter
-       Parameter description
-       
-       .EXAMPLE
-       An example
-       
-       .NOTES
-       General notes
-       #>Receive-Job
+       # Receive-Job
 }
