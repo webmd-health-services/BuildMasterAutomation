@@ -86,7 +86,7 @@ function Publish-WhiskeyPowerShellModule
 
                 $VerbosePreference = $using:VerbosePreference
                 $DebugPreference = $using:DebugPreference
-                
+
                 Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
                 Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PackageManagement' -Resolve)
                 Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PowerShellGet' -Resolve)
@@ -99,7 +99,7 @@ function Publish-WhiskeyPowerShellModule
                 # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
                 # $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
                 # Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
-                Publish-Module -Path $path -Repository $repositoryName -NuGetApiKey $apiKey
+                Publish-Module -Path $path -Repository $repositoryName -NuGetApiKey $apiKey -Force
 
             } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path |
         Wait-Job | 
