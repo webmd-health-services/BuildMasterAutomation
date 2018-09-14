@@ -87,10 +87,10 @@ function Publish-WhiskeyPowerShellModule
                 #$VerbosePreference = $using:VerbosePreference
                 #$DebugPreference = $using:DebugPreference
 
-                $currentAutoLoadPref = $Global:PSModuleAutoloadingPreference
+
                 try 
                 {
-                    $Global:PSModuleAutoloadingPreference = "none"
+                    $Global:PSModuleAutoLoadingPreference = "none"
 
                     foreach( $moduleName in @('PowerShellGet', 'PackageManagement') )
                     {
@@ -131,7 +131,7 @@ function Publish-WhiskeyPowerShellModule
                 finally
                 {
                     Get-Module
-                    $Global:PSModuleAutoloadingPreference = $currentAutoLoadPref
+                    Remove-Variable -Name 'PSModuleAutoLoadingPreference' -Scope 'Global'
                 }
 
     } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
