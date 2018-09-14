@@ -136,6 +136,7 @@ function Publish-WhiskeyPowerShellModule
                 {
                     Get-Module
                     Remove-Variable -Name 'PSModuleAutoLoadingPreference' -Scope 'Global'
+                    $Global:Error[0] | Format-List * -Force
                 }
 
     } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
