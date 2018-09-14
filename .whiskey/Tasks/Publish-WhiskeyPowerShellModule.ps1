@@ -87,46 +87,51 @@ function Publish-WhiskeyPowerShellModule
                 #$VerbosePreference = $using:VerbosePreference
                 #$DebugPreference = $using:DebugPreference
 
-                foreach( $moduleName in @('PowerShellGet', 'PackageManagement') )
-                {
-                    if( (Get-Module -Name $moduleName) )
-                    {
-                        Remove-Module -Name $moduleName -Force
-                    }
-                }
-
-                Get-Module
-
-                #Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
-
-                foreach( $moduleName in @('PackageManagement', 'PowerShellGet') )
-                {
-                    Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath $moduleName -Resolve) -Force
-                }
-
-                Get-Module
-
-                if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
-                {
-                    Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
-                }
-
-                Get-Module
-
-                Get-PackageProvider -Name 'NuGet' -ForceBootstrap
-  
-                Get-Module
-
-                # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
-                # $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
-                # Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
+                $currentAutoLoadPref = $Global:PSModuleAutoloadingPreference
                 try 
                 {
+                    $Global:PSModuleAutoloadingPreference = "none"
+
+                    foreach( $moduleName in @('PowerShellGet', 'PackageManagement') )
+                    {
+                        if( (Get-Module -Name $moduleName) )
+                        {
+                            Remove-Module -Name $moduleName -Force
+                        }
+                    }
+
+                    Get-Module
+
+                    #Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
+
+                    foreach( $moduleName in @('PackageManagement', 'PowerShellGet') )
+                    {
+                        Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath $moduleName -Resolve) -Force
+                    }
+
+                    Get-Module
+
+                    if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
+                    {
+                        Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
+                    }
+
+                    Get-Module
+
+                    Get-PackageProvider -Name 'NuGet' -ForceBootstrap
+                    Import-PackageProvider -Name 'NuGet'
+    
+                    Get-Module
+
+                    # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
+                    # $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
+                    # Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
                     Publish-Module -Path $path -Repository $repositoryName -NuGetApiKey $apiKey 
                 }
                 finally
                 {
                     Get-Module
+                    $Global:PSModuleAutoloadingPreference = $currentAutoLoadPref
                 }
 
     } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
