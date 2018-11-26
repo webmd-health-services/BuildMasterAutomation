@@ -75,7 +75,7 @@ function Publish-WhiskeyPowerShellModule
     $manifest | Set-Content $manifestPath
 
     $whiskeyRoot = Join-Path -Path $PSScriptRoot -ChildPath '..' -Resolve
-    Start-Job -ScriptBlock {
+    Invoke-Command -ScriptBlock {
                 param(
                     $RepositoryName,
                     $PublishLocation,
@@ -84,21 +84,62 @@ function Publish-WhiskeyPowerShellModule
                     $Path
                 )
 
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PackageManagement' -Resolve)
-                Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'PowerShellGet' -Resolve)
+                #$VerbosePreference = $using:VerbosePreference
+                #$DebugPreference = $using:DebugPreference
 
-                if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
+
+                try 
                 {
-                    Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
-                }
-  
-                # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
-                $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
-                Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
-                Publish-Module -Path $path -Repository $repositoryName -Verbose -NuGetApiKey $apiKey
+                    $Global:PSModuleAutoLoadingPreference = 'none'
 
-            } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path |
-        Wait-Job | 
-        Receive-Job
+                    foreach( $moduleName in @('PowerShellGet', 'PackageManagement') )
+                    {
+                        if( (Get-Module -Name $moduleName) )
+                        {
+                            Remove-Module -Name $moduleName -Force
+                        }
+                    }
+
+                    Get-Module
+
+                    #Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath 'Whiskey.psd1')
+
+                    foreach( $moduleName in @('PackageManagement', 'PowerShellGet') )
+                    {
+                        Import-Module -Name (Join-Path -Path $whiskeyRoot -ChildPath $moduleName -Resolve) -Force -Scope Global
+                    }
+
+                    Get-Module
+
+                    Get-Command -Module 'PackageManagement' | ft
+
+                    Get-Command -Module 'PowerShellGet' | ft
+
+                    if( -not (Get-PSRepository -Name $repositoryName -ErrorAction Ignore) )
+                    {
+                        Register-PSRepository -Name $repositoryName -SourceLocation $publishLocation -PublishLocation $publishLocation -InstallationPolicy Trusted -PackageManagementProvider NuGet  -Verbose
+                    }
+
+                    Get-Module
+
+                    Get-PackageProvider -Name 'NuGet' -ForceBootstrap
+                    Import-PackageProvider -Name 'NuGet'
+    
+                    Get-Module
+
+                    # Publish-Module needs nuget.exe. If it isn't in the PATH, it tries to install it, which doesn't work when running non-interactively.
+                    # $binPath = Join-Path -Path $whiskeyRoot -ChildPath 'bin' -Resolve
+                    # Set-Item -Path 'env:PATH' -Value ('{0};{1}' -f $binPath,$env:PATH)
+                    Publish-Module -Path $path -Repository $repositoryName -NuGetApiKey $apiKey 
+                }
+                finally
+                {
+                    Get-Module
+                    Remove-Variable -Name 'PSModuleAutoLoadingPreference' -Scope 'Global'
+                    $Global:Error[0] | Format-List * -Force
+                }
+
+    } -ArgumentList $repositoryName,$publishLocation,$apiKey,$whiskeyRoot,$path #|
+        #Wait-Job | 
+       # Receive-Job
 }
