@@ -123,8 +123,8 @@ function GivenDeployment
 function WhenGettingBMDeployment
 {
     param(
-        [object]
-        $Deployment,
+        [int]
+        $ID,
 
         [object]
         $Package,
@@ -138,9 +138,9 @@ function WhenGettingBMDeployment
 
     $Global:Error.Clear()
 
-    if( $Deployment )
+    if( $ID )
     {
-        $script:getDeployment = @(Get-BMDeployment -Session $session -Deployment $Deployment)
+        $script:getDeployment = @(Get-BMDeployment -Session $session -ID $ID)
     }
     elseif( $Package )
     {
@@ -246,7 +246,7 @@ Describe 'Get-BMDeployment.when getting a specific deployment' {
     $deployment = GivenDeployment $package
     $deployment2 = GivenDeployment $package -Stage 'Testing'
     $deployment3 = GivenDeployment $package2
-    WhenGettingBMDeployment -Deployment $deployment.id
+    WhenGettingBMDeployment -ID $deployment.id
     ThenShouldNotThrowErrors
     ThenDeploymentShouldBeReturned $deployment
     ThenDeploymentShouldNotBeReturned $deployment2

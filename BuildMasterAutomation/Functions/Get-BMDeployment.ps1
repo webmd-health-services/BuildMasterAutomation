@@ -22,7 +22,7 @@ function Get-BMDeployment
     Demonstrates how to get all deployments from the instance of BuildMaster.
 
     .EXAMPLE
-    Get-BMDeployment -Session $session -Deployment $deployment
+    Get-BMDeployment -Session $session -ID $deployment
 
     Demonstrates how to get a specific deployment by passing a deployment object to the `Deployment` parameter. The `Get-BMDeployment` function looks for an `id` property on the object.
 
@@ -54,11 +54,11 @@ function Get-BMDeployment
         $Session,
 
         [Parameter(Mandatory,ParameterSetName='ByDeployment')]
-        [object]
+        [int]
         # The deployment to get. You can pass:
         #
         # * A deployment ID (as an integer)
-        $Deployment,
+        $ID,
 
         [Parameter(Mandatory,ParameterSetName='ByPackage')]
         [object]
@@ -93,7 +93,7 @@ function Get-BMDeployment
         $parameter = @{ }
         if( $PSCmdlet.ParameterSetName -eq 'ByDeployment' )
         {
-            $parameter | Add-BMObjectParameter -Name 'deployment' -Value $Deployment
+            $parameter | Add-BMObjectParameter -Name 'deployment' -Value $ID
         }
         elseif( $PSCmdlet.ParameterSetName -eq 'ByPackage' )
         {
