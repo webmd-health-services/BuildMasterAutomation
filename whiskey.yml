@@ -10,11 +10,11 @@ Build:
 - GetPowerShellModule:
     Name: Carbon
 
-#- PowerShell:
-#    Path: init.ps1
-#
-#- Pester4:
-#    Path: Tests\*.Tests.ps1
+- PowerShell:
+    Path: init.ps1
+
+- Pester4:
+    Path: Tests\*.Tests.ps1
     
 - Exec: .whiskey\bin\7-Zip\7z.exe a $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation.zip .\BuildMasterAutomation .\LICENSE .\NOTICE '-xr!*.pdb' '-xr!*.orig
 
