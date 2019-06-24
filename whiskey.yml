@@ -1,11 +1,14 @@
 PublishOn:
  - master
+ - prerelease
 
 Build:
 # The Version task sets the current build's version number. You should almost always 
 # have one of these.
 - Version:
     Path: BuildMasterAutomation\BuildMasterAutomation.psd1
+    Prerelease:
+    - prerelease: beta$(WHISKEY_BUILD_NUMBER)
 
 - GetPowerShellModule:
     Name: Carbon
@@ -16,12 +19,17 @@ Build:
 - Pester4:
     Path: Tests\*.Tests.ps1
     
-- Exec: .whiskey\bin\7-Zip\7z.exe a $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation.zip .\BuildMasterAutomation .\LICENSE .\NOTICE '-xr!*.pdb' '-xr!*.orig
-
+- Zip:
+    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY\BuildMasterAutomation.zip
+    Path:
+    - BuildMasterAutomation
+    - LICENSE
+    - NOTICE
 
 Publish:
 
 - PublishPowerShellModule:
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
     Path: BuildMasterAutomation
     RepositoryName: PSGallery
     RepositoryUri: https://www.powershellgallery.com/api/v2/
@@ -35,6 +43,7 @@ Publish:
                 ReleaseNotes: RELEASE_NOTES
 
 - GitHubRelease:
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
     RepositoryName: webmd-health-services/BuildMasterAutomation
     ApiKeyID: github.com
     Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)

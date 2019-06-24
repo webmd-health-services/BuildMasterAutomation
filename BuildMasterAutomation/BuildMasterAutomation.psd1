@@ -124,6 +124,9 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # A URL to an icon representing this module.
             # IconUri = ''
 
+            # Any prerelease to use when publishing to a repository.
+            Prerelease = ''
+
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Created `Get-BMDeployment` function to retrieve deployment information for release packages.

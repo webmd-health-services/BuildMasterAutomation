@@ -2,7 +2,8 @@
 param(
 )
 
-#Requires -Version 4
+#Requires -RunAsAdministrator
+#Requires -Version 5
 Set-StrictMode -Version 'Latest'
 
 & {
