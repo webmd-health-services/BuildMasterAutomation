@@ -45,6 +45,7 @@ foreach( $item in (Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::M
 
     if( -not $item.InstanceName -or $item.InstanceName -in @( 'Inedo', 'SQL2016' ) )
     {
+        Write-Verbose -Message ('Found SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
         $installerPath = 'NO{0}' -f $installerPath
         $installerUri = 'no{0}' -f $installerUri
         $sqlServer = $item
