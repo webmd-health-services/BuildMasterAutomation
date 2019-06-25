@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Gets the local machine ready for BuildMasterAutomation development.
+
+.DESCRIPTION
+The `init.ps1` script gets the local machine ready for BuildMasterAutomation development. It:
+
+* installs BuildMaster
+
+BuildMaster requires a SQL Server database. This script tries to use an existing database if possible. It uses the `SqlServer` PowerShell module to enumerate local instances of SQL Server. It uses the first instance to be returned from this set: the default instance, an `INEDO` instance name, or a `SQL2016` instance name. If none are installed, the BuildMaster installer will install an `INEDO` SQL Server Express instance.
+
+If BuildMaster is already installed, nothing happens.
+#>
 [CmdletBinding()]
 param(
 )
