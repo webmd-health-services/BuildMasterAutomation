@@ -68,18 +68,6 @@ function Invoke-WhiskeyTask
         }
     }
 
-    $knownTasks = Get-WhiskeyTask
-
-    $task = $knownTasks | Where-Object { $_.Name -eq $Name }
-
-    $errorPrefix = '{0}: {1}[{2}]: {3}: ' -f $TaskContext.ConfigurationPath,$TaskContext.PipelineName,$TaskContext.TaskIndex,$Name
-
-    if( -not $task )
-    {
-        $knownTaskNames = $knownTasks | Select-Object -ExpandProperty 'Name' | Sort-Object
-        throw ('{0}: {1}[{2}]: ''{3}'' task does not exist. Supported tasks are:{4} * {5}' -f $TaskContext.ConfigurationPath,$Name,$TaskContext.TaskIndex,$Name,[Environment]::NewLine,($knownTaskNames -join ('{0} * ' -f [Environment]::NewLine)))
-    }
-
     function Merge-Parameter
     {
         param(
@@ -123,7 +111,55 @@ function Invoke-WhiskeyTask
             Where-Object { $_ -is [Whiskey.RequiresToolAttribute] }
     }
 
+    $knownTasks = Get-WhiskeyTask -Force
+
+    $task = $knownTasks | Where-Object { $_.Name -eq $Name }
+
+    if( -not $task )
+    {
+        $task = $knownTasks | Where-Object { $_.Aliases -contains $Name }
+        $taskCount = ($task | Measure-Object).Count
+        if( $taskCount -gt 1 )
+        {
+            Stop-WhiskeyTask -TaskContext $TaskContext -Message ('Found {0} tasks with alias "{1}". Please update to use one of these task names: {2}.' -f $taskCount,$Name,(($task | Select-Object -ExpandProperty 'Name') -join ', '))
+            return
+        }
+        if( $task -and $task.WarnWhenUsingAlias )
+        {
+            Write-Warning -Message ('Task "{0}" is an alias to task "{1}". Please update "{2}" to use the task''s actual name, "{1}", instead of the alias.' -f $Name,$task.Name,$TaskContext.ConfigurationPath)
+        }
+    }
+
+    if( -not $task )
+    {
+        $knownTaskNames = $knownTasks | Select-Object -ExpandProperty 'Name' | Sort-Object
+        throw ('{0}: {1}[{2}]: ''{3}'' task does not exist. Supported tasks are:{4} * {5}' -f $TaskContext.ConfigurationPath,$Name,$TaskContext.TaskIndex,$Name,[Environment]::NewLine,($knownTaskNames -join ('{0} * ' -f [Environment]::NewLine)))
+    }
+
+    $taskCount = ($task | Measure-Object).Count
+    if( $taskCount -gt 1 )
+    {
+        Stop-WhiskeyTask -TaskContext $TaskContext -Message ('Found {0} tasks named "{1}". We don''t know which one to use. Please make sure task names are unique.' -f $taskCount,$Name)
+        return
+    }
+
     $TaskContext.TaskName = $Name
+
+    if( $task.Obsolete )
+    {
+        $message = 'The "{0}" task is obsolete and shouldn''t be used.' -f $task.Name
+        if( $task.ObsoleteMessage )
+        {
+            $message = $task.ObsoleteMessage
+        }
+        Write-WhiskeyWarning -TaskContext $TaskContext -Message $message
+    }
+
+    if( -not $task.Platform.HasFlag($CurrentPlatform) )
+    {
+        Write-Error -Message ('Unable to run task "{0}": it is only supported on the {1} platform(s) and we''re currently running on {2}.' -f $task.Name,$task.Platform,$CurrentPlatform) -ErrorAction Stop
+        return
+    }
 
     if( $TaskContext.TaskDefaults.ContainsKey( $Name ) )
     {
@@ -132,10 +168,15 @@ function Invoke-WhiskeyTask
 
     Resolve-WhiskeyVariable -Context $TaskContext -InputObject $Parameter | Out-Null
 
-    $taskProperties = $Parameter.Clone()
-    foreach( $commonPropertyName in @( 'OnlyBy', 'ExceptBy', 'OnlyOnBranch', 'ExceptOnBranch', 'OnlyDuring', 'ExceptDuring', 'WorkingDirectory', 'IfExists', 'UnlessExists' ) )
+    [hashtable]$taskProperties = $Parameter.Clone()
+    $commonProperties = @{}
+    foreach( $commonPropertyName in @( 'OnlyBy', 'ExceptBy', 'OnlyOnBranch', 'ExceptOnBranch', 'OnlyDuring', 'ExceptDuring', 'WorkingDirectory', 'IfExists', 'UnlessExists', 'OnlyOnPlatform', 'ExceptOnPlatform' ) )
     {
-        $taskProperties.Remove($commonPropertyName)
+        if ($taskProperties.ContainsKey($commonPropertyName))
+        {
+            $commonProperties[$commonPropertyName] = $taskProperties[$commonPropertyName]
+            $taskProperties.Remove($commonPropertyName)
+        }
     }
 
     $workingDirectory = $TaskContext.BuildRoot
@@ -148,129 +189,15 @@ function Invoke-WhiskeyTask
     $requiredTools = Get-RequiredTool -CommandName $task.CommandName
     $startedAt = Get-Date
     $result = 'FAILED'
+    $currentDirectory = [IO.Directory]::GetCurrentDirectory()
     Push-Location -Path $workingDirectory
+    [IO.Directory]::SetCurrentDirectory($workingDirectory)
     try
     {
-        if( $Parameter['OnlyBy'] )
+        if( Test-WhiskeyTaskSkip -Context $TaskContext -Properties $commonProperties)
         {
-            [Whiskey.RunBy]$onlyBy = [Whiskey.RunBy]::Developer
-            if( -not ([enum]::TryParse($Parameter['OnlyBy'], [ref]$onlyBy)) )
-            {
-                Stop-WhiskeyTask -TaskContext $TaskContext -PropertyName 'OnlyBy' -Message ('invalid value: ''{0}''. Valid values are ''{1}''.' -f $Parameter['OnlyBy'],([enum]::GetValues([Whiskey.RunBy]) -join ''', '''))
-            }
-
-            if( $onlyBy -ne $TaskContext.RunBy )
-            {
-                Write-WhiskeyVerbose -Context $TaskContext -Message ('OnlyBy.{0} -ne Build.RunBy.{1}' -f $onlyBy,$TaskContext.RunBy)
-                $result = 'SKIPPED'
-                return
-            }
-        }
-
-        $branch = $TaskContext.BuildMetadata.ScmBranch
-        $executeTaskOnBranch = $true
-
-        if( $Parameter['OnlyOnBranch'] -and $Parameter['ExceptOnBranch'] )
-        {
-            Stop-WhiskeyTask -TaskContext $TaskContext -Message ('This task defines both OnlyOnBranch and ExceptOnBranch properties. Only one of these can be used. Please remove one or both of these properties and re-run your build.')
-        }
-
-        if( $Parameter['OnlyOnBranch'] )
-        {
-            $runTask = $false
-            Write-WhiskeyVerbose -Context $TaskContext -Message ('OnlyOnBranch')
-            foreach( $wildcard in $Parameter['OnlyOnBranch'] )
-            {
-                if( $branch -like $wildcard )
-                {
-                    $runTask = $true
-                    Write-WhiskeyVerbose -Context $TaskContext -Message ('              {0}     -like  {1}' -f $branch, $wildcard)
-                    break
-                }
-
-                Write-WhiskeyVerbose -Context $TaskContext -Message     ('              {0}  -notlike  {1}' -f $branch, $wildcard)
-            }
-            if( -not $runTask )
-            {
-                $result = 'SKIPPED'
-                return
-            }
-        }
-
-        if( $Parameter['ExceptOnBranch'] )
-        {
-            $runTask = $true
-            Write-WhiskeyVerbose -Context $TaskContext -Message ('ExceptOnBranch')
-            foreach( $wildcard in $Parameter['ExceptOnBranch'] )
-            {
-                if( $branch -like $wildcard )
-                {
-                    $runTask = $false
-                    Write-WhiskeyVerbose -Context $TaskContext -Message ('                {0}     -like  {1}' -f $branch, $wildcard)
-                    break
-                }
-
-                Write-WhiskeyVerbose -Context $TaskContext -Message     ('                {0}  -notlike  {1}' -f $branch, $wildcard)
-            }
-            if( -not $runTask )
-            {
-                $result = 'SKIPPED'
-                return
-            }
-        }
-
-        $modes = @( 'Clean', 'Initialize', 'Build' )
-        $onlyDuring = $Parameter['OnlyDuring']
-        $exceptDuring = $Parameter['ExceptDuring']
-
-        if ($onlyDuring -and $exceptDuring)
-        {
-            Stop-WhiskeyTask -TaskContext $TaskContext -Message 'Both ''OnlyDuring'' and ''ExceptDuring'' properties are used. These properties are mutually exclusive, i.e. you may only specify one or the other.'
-        }
-        elseif ($onlyDuring -and ($onlyDuring -notin $modes))
-        {
-            Stop-WhiskeyTask -TaskContext $TaskContext -Message ('Property ''OnlyDuring'' has an invalid value: ''{0}''. Valid values are: ''{1}''.' -f $onlyDuring,($modes -join "', '"))
-        }
-        elseif ($exceptDuring -and ($exceptDuring -notin $modes))
-        {
-            Stop-WhiskeyTask -TaskContext $TaskContext -Message ('Property ''ExceptDuring'' has an invalid value: ''{0}''. Valid values are: ''{1}''.' -f $exceptDuring,($modes -join "', '"))
-        }
-
-        if ($onlyDuring -and ($TaskContext.RunMode -ne $onlyDuring))
-        {
-            Write-WhiskeyVerbose -Context $TaskContext -Message ('OnlyDuring.{0} -ne Build.RunMode.{1}' -f $onlyDuring,$TaskContext.RunMode)
             $result = 'SKIPPED'
             return
-        }
-        elseif ($exceptDuring -and ($TaskContext.RunMode -eq $exceptDuring))
-        {
-            Write-WhiskeyVerbose -Context $TaskContext -Message ('ExceptDuring.{0} -ne Build.RunMode.{1}' -f $exceptDuring,$TaskContext.RunMode)
-            $result = 'SKIPPED'
-            return
-        }
-
-        if( $Parameter['IfExists'] )
-        {
-            $exists = Test-Path -Path $Parameter['IfExists']
-            if( -not $exists )
-            {
-                Write-WhiskeyVerbose -Context $TaskContext -Message ('IfExists  {0}  not exists' -f $Parameter['IfExists']) -Verbose
-                $result = 'SKIPPED'
-                return
-            }
-            Write-WhiskeyVerbose -Context $TaskContext -Message     ('IfExists  {0}      exists' -f $Parameter['IfExists']) -Verbose
-        }
-
-        if( $Parameter['UnlessExists'] )
-        {
-            $exists = Test-Path -Path $Parameter['UnlessExists']
-            if( $exists )
-            {
-                Write-WhiskeyVerbose -Context $TaskContext -Message ('UnlessExists  {0}      exists' -f $Parameter['UnlessExists']) -Verbose
-                $result = 'SKIPPED'
-                return
-            }
-            Write-WhiskeyVerbose -Context $TaskContext -Message     ('UnlessExists  {0}  not exists' -f $Parameter['UnlessExists']) -Verbose
         }
 
         $inCleanMode = $TaskContext.ShouldClean
@@ -311,7 +238,9 @@ function Invoke-WhiskeyTask
         {
             New-Item -Path $TaskContext.Temp -ItemType 'Directory' -Force | Out-Null
         }
-        & $task.CommandName -TaskContext $TaskContext -TaskParameter $taskProperties
+
+        $parameter = Get-TaskParameter -Name $task.CommandName -TaskProperty $taskProperties -Context $TaskContext
+        & $task.CommandName @parameter
         $result = 'COMPLETED'
     }
     finally
@@ -333,6 +262,7 @@ function Invoke-WhiskeyTask
         $duration = $endedAt - $startedAt
         Write-WhiskeyVerbose -Context $TaskContext -Message ('{0} in {1}' -f $result,$duration)
         Write-WhiskeyVerbose -Context $TaskContext -Message ''
+        [IO.Directory]::SetCurrentDirectory($currentDirectory)
         Pop-Location
     }
 

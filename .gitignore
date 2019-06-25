@@ -1,4 +1,4 @@
-Modules/**
-.output/**
+/PSModules/**
+/.output/**
 *.log
 .psgallerykey

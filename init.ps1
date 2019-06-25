@@ -2,12 +2,13 @@
 param(
 )
 
-#Requires -Version 4
+#Requires -RunAsAdministrator
+#Requires -Version 5
 Set-StrictMode -Version 'Latest'
 
 & {
     $VerbosePreference = 'SilentlyContinue'
-    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Modules\Carbon') -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon') -Force
 }
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
