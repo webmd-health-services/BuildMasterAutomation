@@ -35,6 +35,8 @@ $dbParam = '/InstallSqlExpress'
 
 foreach( $item in (Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)) )
 {
+    $item | Format-List | Out-String | Write-Verbose
+
     if( -not $item.InstanceName -or $item.InstanceName -in @( 'Inedo', 'SQL2016' ) )
     {
         $installerPath = 'NO{0}' -f $installerPath
@@ -73,8 +75,10 @@ if( -not $bmInstallInfo )
     $installerFileName = $installerPath | Split-Path -Leaf
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
+    $argumentList = '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath)
+    Write-Verbose ('{0} {1}' -f $installerPath,($argumentPath -join ' '))
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath) `
+                             -ArgumentList $argumentList `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
