@@ -2,21 +2,22 @@
 $apiKey = 'HKgaAKWjjgB9YRrTbTpHzw=='
 
 $bmNotInstalledMsg = 'It looks like BuildMaster isn''t installed. Please run init.ps1 to install and configure a local BuildMaster instance so we can run automated tests against it.'
-$svcRoot = Get-ItemProperty -Path 'hklm:\SOFTWARE\Inedo\BuildMaster' -Name 'ServicePath' | Select-Object -ExpandProperty 'ServicePath'
-if( -not $svcRoot )
+$svcSharedConfigPath = Join-Path -Path $env:ProgramData -ChildPath 'Inedo\SharedConfig\BuildMaster.config' -Resolve
+if( -not $svcSharedConfigPath )
 {
     throw $bmNotInstalledMsg
 }
 
-$svcConfig = [xml](Get-Content -Path (Join-Path -Path $svcRoot -ChildPath 'app_appSettings.config' -Resolve) -Raw)
+
+$svcConfig = [xml](Get-Content -Path $svcSharedConfigPath -Raw)
 if( -not $svcConfig )
 {
     throw $bmNotInstalledMsg
 }
 
-$uri = $svcConfig.appSettings.SelectSingleNode('add[@key=''IntegratedWebServer.Prefixes'']').Attributes['value'].Value
+$uri = $svcConfig.SelectSingleNode('/InedoAppConfig/WebServer').Attributes['Urls'].Value
 $uri = $uri -replace '\*',$env:COMPUTERNAME
-$connString = $svcConfig.appSettings.SelectSingleNode('add[@key=''Core.DbConnectionString'']').Attributes['value'].Value
+$connString = $svcConfig.SelectSingleNode('/InedoAppConfig/ConnectionString').InnerText
 
 $conn = New-Object 'Data.SqlClient.SqlConnection'
 $conn.ConnectionString = $connString

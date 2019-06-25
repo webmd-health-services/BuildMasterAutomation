@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.6.0'
+    ModuleVersion = '0.7.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -24,7 +24,7 @@
     CompanyName = 'WebMD Health Services'
 
     # Copyright statement for this module
-    Copyright = '(c) 2017 - 2018 WebMD Health Services. All rights reserved.'
+    Copyright = '(c) 2017 - 2019 WebMD Health Services. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description = @'
@@ -129,7 +129,6 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BMDeployment` function to retrieve deployment information for release packages.
 '@
         } # End of PSData hashtable
 

@@ -12,6 +12,11 @@ Build:
 
 - GetPowerShellModule:
     Name: Carbon
+    Version: 2.*
+
+- GetPowerShellModule:
+    Name: SqlServer
+    Version: 21.*
 
 - PowerShell:
     OnlyDuring: Build
