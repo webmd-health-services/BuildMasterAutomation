@@ -35,6 +35,12 @@ $dbParam = '/InstallSqlExpress'
 
 foreach( $item in (Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)) )
 {
+    if( $item.Status -ne [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online )
+    {
+        Write-Verbose -Message ('Skipping SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
+        continue
+    }
+
     $item | Format-List | Out-String | Write-Verbose
 
     if( -not $item.InstanceName -or $item.InstanceName -in @( 'Inedo', 'SQL2016' ) )
