@@ -76,7 +76,7 @@ if( -not $bmInstallInfo )
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
     $argumentList = '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath)
-    Write-Verbose ('{0} {1}' -f $installerPath,($argumentPath -join ' '))
+    Write-Verbose ('{0} {1}' -f $installerPath,($argumentList -join ' '))
     $process = Start-Process -FilePath $installerPath `
                              -ArgumentList $argumentList `
                              -Wait `
