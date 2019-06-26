@@ -189,5 +189,20 @@ function New-BMServer
         }
     }
 
+    if( $Environment )
+    {
+        $parameter['environments'] = $Environment
+    }
+
+    if( $Role )
+    {
+        $parameter['roles'] = $Role
+    }
+
+    if( $Variable )
+    {
+        $parameter['variables'] = $Variable
+    }
+
     Invoke-BMRestMethod -Session $Session -Name ('infrastructure/servers/create/{0}' -f $encodedName) -Method Post -Parameter $parameter -AsJson
 }

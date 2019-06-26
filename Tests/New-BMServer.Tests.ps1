@@ -12,6 +12,36 @@ function Init
     $Global:Error.Clear()
     $script:result = $null
     Get-BMServer -Session $session | Remove-BMServer -Session $session
+    Get-BMServerRole -Session $session | Remove-BMServerRole -Session $session
+    Invoke-BMRestMethod -Session $session -Name 'infrastructure/environments/list' |
+        ForEach-Object { 
+            Invoke-BMRestMethod -Session $session -Name ('infrastructure/environments/delete/{0}' -f ([uri]::EscapeDataString($_.name))) -Method Delete }
+}
+
+function GivenEnvironment
+{
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Named
+    )
+
+    # Environments can't actually be deleted. They can only be disabled. So, we have to re-enable any environments that were deactivated.
+    $environments = Invoke-BMNativeApiMethod -Session $session -Name 'Environments_GetEnvironments' -Parameter @{ IncludeInactive_Indicator = $true } -Method Post
+    foreach( $name in $Named )
+    {
+        $environment = $environments | Where-Object { $_.Environment_Name -eq $name }
+        if( $environment )
+        {
+            if( -not $environment.Active_Indicator )
+            {
+                Invoke-BMNativeApiMethod -Session $session -Name 'Environments_UndeleteEnvironment' -Parameter @{ 'Environment_Id' = $environment.environment_Id } -Method Post
+            }
+        }
+        else
+        {
+            Invoke-BMRestMethod -Session $session -Name ('infrastructure/environments/create/{0}' -f ([uri]::EscapeDataString($name))) -Method Post -Body ('{{ "name": "{0}" }}' -f $name)
+        }
+    }
 }
 
 function GivenServer
@@ -34,7 +64,19 @@ function GivenServer
     {
         New-BMServer -Session $session -Name $Named @{ $WithType = $true }
     }
+}
 
+function GivenServerRole
+{
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Named
+    )
+
+    foreach( $name in $Named )
+    {
+        New-BMServerRole -Session $session -Name $name
+    }
 }
 
 function ThenError
@@ -79,7 +121,13 @@ function ThenServerExists
 
         [object]$Port,
 
-        [object]$HostName
+        [object]$HostName,
+
+        [string[]]$Environment,
+
+        [string[]]$Role,
+
+        [hashtable]$Variable
     )
 
     function Assert-Property
@@ -89,6 +137,7 @@ function ThenServerExists
             [string[]]$Name,
 
             [Parameter(Mandatory,ParameterSetName='ShouldBeOrNull')]
+            [AllowNull()]
             [object]$ShouldBeOrNull,
 
             [Parameter(Mandatory,ParameterSetName='ShouldBeNullOrEmpty')]
@@ -99,7 +148,19 @@ function ThenServerExists
         {
             if( $ShouldBeOrNull )
             {
-                $server.$propertyName | Should -Be $ShouldBeOrNull
+                $actualValue = $server.$propertyName
+                if( $ShouldBeOrNull -is [hashtable] )
+                {
+                    $actualValue | Get-Member -MemberType NoteProperty | Should -HaveCount $ShouldBeOrNull.Count
+                    foreach( $key in $ShouldBeOrNull.Keys )
+                    {
+                        $actualValue.$key | Should -Be $ShouldBeOrNull[$key]
+                    }
+                }
+                else
+                {
+                    $actualValue | Should -Be $ShouldBeOrNull
+                }
             }
             else
             {
@@ -180,6 +241,10 @@ function ThenServerExists
     {
         Assert-Property 'hostName','port','encryptionType','encryptionKey','requireSsl','credentialsName','tempPath','wsManUrl' -ShouldBeNullOrEmpty
     }
+
+    Assert-Property 'environments' -ShouldBeOrNull $Environment
+    Assert-Property 'roles' -ShouldBeOrNull $Role
+    Assert-Property 'variables' -ShouldBeOrNull $Variable
 }
 
 function ThenServerDoesNotExist
@@ -218,7 +283,13 @@ function WhenCreatingServer
 
         [uint16]$Port,
         
-        [string]$HostName
+        [string]$HostName,
+
+        [string[]]$InEnvironments,
+
+        [string[]]$AsRoles,
+
+        [hashtable]$WithVariables
     )
 
     $optionalParams = @{
@@ -267,6 +338,21 @@ function WhenCreatingServer
     if( $HostName )
     {
         $optionalParams['HostName'] = $HostName
+    }
+
+    if( $InEnvironments )
+    {
+        $optionalParams['Environment'] = $InEnvironments
+    }
+
+    if( $AsRoles )
+    {
+        $optionalParams['Role'] = $AsRoles
+    }
+
+    if( $WithVariables )
+    {
+        $optionalParams['Variable'] = $WithVariables
     }
 
     $script:result = New-BMServer -Session $session -Name $Named @optionalParams
@@ -422,5 +508,17 @@ Describe 'New-BMServer.when configuring powershell agent and customizing setting
         WhenCreatingServer -Named 'One' -OfType 'powershell' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -WSManUrl 'http://example.com'
         ThenNoErrorWritten
         ThenServerExists -Named 'One' -OfType 'powershell' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -WSManUrl 'http://example.com'
+    }
+}
+
+Describe 'New-BMServer.when setting roles, environments, and variables' {
+    It ('should create the server') {
+        $variables = @{ 'one' = 'a'; 'two' = 'three'; 'four' = 'five'; }
+        Init
+        GivenEnvironment 'one','two'
+        GivenServerRole 'role1','role2'
+        WhenCreatingServer -Named 'rev' -OfType 'local' -InEnvironment 'one','two' -AsRoles 'role1','role2' -WithVariables $variables
+        ThenNoErrorWritten
+        ThenServerExists -Named 'rev' -OfType 'local' -Environment 'one','two' -Role 'role1','role2' -Variable $variables
     }
 }
