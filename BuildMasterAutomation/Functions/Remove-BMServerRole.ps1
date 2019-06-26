@@ -38,7 +38,7 @@ function Remove-BMServerRole
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $encodedName = [uri]::EscapeUriString($Name)
+        $encodedName = [uri]::EscapeDataString($Name)
         Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/delete/{0}' -f $encodedName) -Method Delete
     }
 }
