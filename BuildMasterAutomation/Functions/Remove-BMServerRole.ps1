@@ -25,7 +25,7 @@ function Remove-BMServerRole
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        # The instance of BuildMaster to connect to.
+        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
         [object]$Session,
 
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
