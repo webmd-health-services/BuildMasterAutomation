@@ -25,7 +25,7 @@ function Remove-BMServerRole
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        # The instance of BuildMaster to connect to.
+        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
         [object]$Session,
 
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
@@ -38,7 +38,7 @@ function Remove-BMServerRole
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $encodedName = [uri]::EscapeUriString($Name)
+        $encodedName = [uri]::EscapeDataString($Name)
         Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/delete/{0}' -f $encodedName) -Method Delete
     }
 }
