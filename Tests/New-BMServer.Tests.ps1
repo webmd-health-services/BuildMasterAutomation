@@ -21,10 +21,20 @@ function GivenServer
         [string]$Named,
 
         [Parameter(Mandatory)]
+        [ValidateSet('windows','ssh','powershell','local')]
         [string]$WithType
     )
 
-    New-BMServer -Session $session -Name $Named -Type $WithType
+    if( $WithType -eq 'windows' )
+    {
+        # PowerShell can't find this parameter set if you splat the Windows switch. Weird.
+        New-BMServer -Session $session -Name $Named -Windows
+    }
+    else
+    {
+        New-BMServer -Session $session -Name $Named @{ $WithType = $true }
+    }
+
 }
 
 function ThenError
@@ -44,6 +54,7 @@ function ThenNoErrorWritten
 
 function ThenServerExists
 {
+    [CmdletBinding(DefaultParameterSetName='AnyType')]
     param(
         [Parameter(Mandatory)]
         [string]$Named,
@@ -51,59 +62,123 @@ function ThenServerExists
         [Parameter(Mandatory)]
         [string]$OfType,
 
+        [Parameter(ParameterSetName='Windows')]
         [string]$WithEncryptionKey,
 
+        [Parameter(ParameterSetName='Windows')]
         [Switch]$Ssl,
 
+        [Parameter(ParameterSetName='Windows')]
         [Switch]$ForceSsl,
 
         [string]$CredentialName,
 
-        [string]$TempPath
+        [string]$TempPath,
+
+        [string]$WSManUrl,
+
+        [object]$Port,
+
+        [object]$HostName
     )
 
-    $server = Get-BMServer -Session $session -Name $Named 
+    function Assert-Property
+    {
+        param(
+            [Parameter(Mandatory,Position=0)]
+            [string[]]$Name,
+
+            [Parameter(Mandatory,ParameterSetName='ShouldBeOrNull')]
+            [object]$ShouldBeOrNull,
+
+            [Parameter(Mandatory,ParameterSetName='ShouldBeNullOrEmpty')]
+            [Switch]$ShouldBeNullOrEmpty
+        )
+
+        foreach( $propertyName in $Name )
+        {
+            if( $ShouldBeOrNull )
+            {
+                $server.$propertyName | Should -Be $ShouldBeOrNull
+            }
+            else
+            {
+                $server.$propertyName | Should -BeNullOrEmpty
+            }
+        }
+    }
+
+    $server = Get-BMServer -Session $session -Name $Named
+
     $server | Should -Not -BeNullOrEmpty
     $server.serverType | Should -Be $OfType
-    $server.port | Should -Be 46336
-    $server.hostName | Should -Be $Named
-    
-    if( $WithEncryptionKey )
+    $server.name | Should -Be $Named
+
+    if( -not $HostName )
     {
-        $server.encryptionType | Should -Be 'aes'
-        $keyAsCred = New-Object 'pscredential' 'encryptionkey',$server.encryptionKey
-        $keyAsCred.GetNetworkCredential().Password | Should -Be $WithEncryptionKey
+        $HostName = $Named
     }
-    
-    if( $Ssl )
+
+    if( -not $TempPath )
     {
-        $server.encryptionType | Should -Be 'ssl'
-        if( $ForceSsl )
+        $TempPath = '/tmp/buildmaster'
+    }
+
+    if( $OfType -eq 'windows' )
+    {
+        if( -not $Port )
         {
-            $server.requireSsl | Should -BeTrue
+            $Port = 46336
+        }
+        $server.port | Should -Be $Port
+        $server.hostName | Should -Be $HostName
+        if( $WithEncryptionKey )
+        {
+            $server.encryptionType | Should -Be 'aes'
+            $keyAsCred = New-Object 'pscredential' 'encryptionkey',$server.encryptionKey
+            $keyAsCred.GetNetworkCredential().Password | Should -Be $WithEncryptionKey
+            $server.requireSsl | Should -Be $null
+        }
+        elseif( $Ssl )
+        {
+            $server.encryptionType | Should -Be 'ssl'
+            if( $ForceSsl )
+            {
+                $server.requireSsl | Should -BeTrue
+            }
+            else
+            {
+                $server.requireSsl | Should -BeFalse
+            }
         }
         else
         {
-            $server.requireSsl | Should -BeFalse
+            $server.encryptionType = 'none'
         }
+        Assert-Property 'credentialsName','tempPath','wsManUrl' -ShouldBeNullOrEmpty
     }
-
-    if( $CredentialName )
+    elseif( $OfType -eq 'ssh' )
     {
-        $server.credentialsName | Should -Be $CredentialName
+        if( -not $Port )
+        {
+            $Port = 22
+        }
+        $server.hostName | Should -Be $HostName
+        $server.port | Should -Be $Port
+        Assert-Property 'credentialsName' -ShouldBeOrNull $CredentialName
+        Assert-Property 'tempPath' -ShouldBeOrNull $TempPath
+        Assert-Property 'encryptionType','encryptionKey','requireSsl' -ShouldBeNullOrEmpty
     }
-    else
+    elseif( $OfType -eq 'powershell' )
     {
-        $server.credentialsName | Should -BeNullOrEmpty
+        Assert-Property 'credentialsName' -ShouldBeOrNull $CredentialName
+        Assert-Property 'tempPath' -ShouldBeOrNull $TempPath
+        Assert-Property 'wsManUrl' -ShouldBeOrNull $WSManUrl
+        Assert-Property 'hostName','port','encryptionType','encryptionKey','requireSsl' -ShouldBeNullOrEmpty
     }
-
-    if( $TempPath )
+    elseif( $OfType -eq 'local' )
     {
-        $server.tempPath | Should -Be $TempPath
-    }
-    else
-    {
-        $server.tempPath | Should -BeNullOrEmpty
+        Assert-Property 'hostName','port','encryptionType','encryptionKey','requireSsl','credentialsName','tempPath','wsManUrl' -ShouldBeNullOrEmpty
     }
 }
 
@@ -133,17 +208,22 @@ function WhenCreatingServer
 
         [Switch]$ForceSsl,
 
-        [AllowNull()]
         [string]$CredentialName,
 
-        [AllowNull()]
         [string]$TempPath,
 
-        [Switch]
-        $WhatIf
+        [string]$WSManUrl,
+
+        [Switch]$WhatIf,
+
+        [uint16]$Port,
+        
+        [string]$HostName
     )
 
-    $optionalParams = @{ }
+    $optionalParams = @{
+                            $OfType = $true;
+                      }
     if( $WhatIf )
     {
         $optionalParams['WhatIf'] = $true
@@ -174,16 +254,40 @@ function WhenCreatingServer
         $optionalParams['TempPath'] = $TempPath
     }
 
-    $script:result = New-BMServer -Session $session -Name $Named -Type $OfType @optionalParams
+    if( $WSManUrl )
+    {
+        $optionalParams['WSManUrl'] = $WSManUrl
+    }
+
+    if( $Port )
+    {
+        $optionalParams['Port'] = $Port
+    }
+
+    if( $HostName )
+    {
+        $optionalParams['HostName'] = $HostName
+    }
+
+    $script:result = New-BMServer -Session $session -Name $Named @optionalParams
     $result | Should -BeNullOrEmpty
 }
 
-Describe 'New-BMServer' {
+Describe 'New-BMServer.when creating basic windows server' {
     It ('should create server') {
         Init
         WhenCreatingServer -Named 'Fubar' -OfType 'windows'
         ThenNoErrorWritten
         ThenServerExists -Named 'Fubar' -OfType 'windows'
+    }
+}
+
+Describe 'New-BMServer.when creating local server' {
+    It ('should create server') {
+        Init
+        WhenCreatingServer -Named 'Fubar' -OfType 'local'
+        ThenNoErrorWritten
+        ThenServerExists -Named 'Fubar' -OfType 'local'
     }
 }
 
@@ -217,7 +321,7 @@ Describe ('New-BMServer.when name contains one letter') {
         Init
         WhenCreatingServer -Named $name -OfType 'windows'
         ThenNoErrorWritten
-        ThenServerExists -Named $name -OfType 'windows'
+        ThenServerExists -Named $name -OfType 'windows' -HostName $name
     }
 }
 
@@ -263,7 +367,7 @@ Describe 'New-BMServer.when creating server that uses AES encryption' {
         Init
         WhenCreatingServer -Named 'One' -OfType 'windows' -WithEncryptionKey '4F8F4BAC0E664780B63AF3350EB98551'
         ThenNoErrorWritten
-        ThenServerExists -Named 'One' -OfType 'windows' -WithEncryptionKey '4F8F4BAC0E664780B63AF3350EB98551'
+        ThenServerExists -Named 'One' -OfType 'windows' -WithEncryptionKey '4F8F4BAC0E664780B63AF3350EB98551' -HostName 'One'
     }
 }
 
@@ -272,7 +376,7 @@ Describe 'New-BMServer.when creating server that uses SSL encryption' {
         Init
         WhenCreatingServer -Named 'One' -OfType 'windows' -Ssl
         ThenNoErrorWritten
-        ThenServerExists -Named 'One' -OfType 'windows' -Ssl
+        ThenServerExists -Named 'One' -OfType 'windows' -Ssl -HostName 'One'
     }
 }
 
@@ -281,24 +385,42 @@ Describe 'New-BMServer.when creating server that requires SSL encryption' {
         Init
         WhenCreatingServer -Named 'One' -OfType 'windows' -Ssl -ForceSsl
         ThenNoErrorWritten
-        ThenServerExists -Named 'One' -OfType 'windows' -Ssl -ForceSsl
+        ThenServerExists -Named 'One' -OfType 'windows' -Ssl -ForceSsl -HostName 'One'
     }
 }
 
 Describe 'New-BMServer.when configuring an SSH agent' {
-    It ('should create the server with its encryption key') {
+    It ('should create the server') {
         Init
         WhenCreatingServer -Named 'One' -OfType 'ssh'
         ThenNoErrorWritten
-        ThenServerExists -Named 'One' -OfType 'ssh' -TempPath '/tmp/buildmaster'
+        ThenServerExists -Named 'One' -OfType 'ssh'
     }
 }
 
-Describe 'New-BMServer.when configuring an SSH agent' {
-    It ('should create the server with its encryption key') {
+Describe 'New-BMServer.when configuring an SSH agent and customizing properties' {
+    It ('should create the server') {
         Init
-        WhenCreatingServer -Named 'One' -OfType 'ssh' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp'
+        WhenCreatingServer -Named 'One' -OfType 'ssh' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -Port 7999 -HostName 'one.example.com'
         ThenNoErrorWritten
-        ThenServerExists -Named 'One' -OfType 'ssh' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp'
+        ThenServerExists -Named 'One' -OfType 'ssh' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -HostName 'one.example.com' -Port 7999
+    }
+}
+
+Describe 'New-BMServer.when configuring powershell agent' {
+    It ('should create the server') {
+        Init
+        WhenCreatingServer -Named 'One' -OfType 'powershell'
+        ThenNoErrorWritten
+        ThenServerExists -Named 'One' -OfType 'powershell'
+    }
+}
+
+Describe 'New-BMServer.when configuring powershell agent and customizing settings' {
+    It ('should create the server') {
+        Init
+        WhenCreatingServer -Named 'One' -OfType 'powershell' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -WSManUrl 'http://example.com'
+        ThenNoErrorWritten
+        ThenServerExists -Named 'One' -OfType 'powershell' -CredentialName 'blahblah' -TempPath '/var/inedo/buildmaster/temp' -WSManUrl 'http://example.com'
     }
 }

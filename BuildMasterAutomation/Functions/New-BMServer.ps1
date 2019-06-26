@@ -7,7 +7,7 @@ function New-BMServer
 
     .DESCRIPTION
     The `New-BMServer` function creates a new server in BuildMaster. Pass the name of the server to the `Name` parameter. Names may only contain letters, numbers, underscores, or dashes; they must begin with a letter; they must not end with dash or underscore. Pass the server type to the `Type` parameter. Type must be one of 'windows', 'powershell', 'ssh', or 'local'.
-    
+
     Every server must have a unique name. If you creat a server with a duplicate name, you'll get an error.
     
     This function uses BuildMaster's infrastructure management API.
@@ -22,7 +22,7 @@ function New-BMServer
 
     Demonstrates how to create a new server 
     #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='Basic')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
@@ -34,39 +34,67 @@ function New-BMServer
         # The name of the server to create. Must contain only letters, numbers, underscores, or dashes. Must begin with a letter. Must not end with an underscore or dash. Must be between 1 and 50 characters long.
         [string]$Name,
 
-        [Parameter(Mandatory)]
-        # The type of server to create. Must be one of 'windows', 'powershell', 'ssh', or 'local' (as of this writing). See https://inedo.com/support/documentation/buildmaster/reference/api/infrastructure#data-specification for the most up-to-date list.
-        [string]$Type,
+        [Parameter(Mandatory,ParameterSetName='Local')]
+        # Create a local server.
+        [Switch]$Local,
 
-        [Parameter(Mandatory,ParameterSetName='AES')]
+        [Parameter(Mandatory,ParameterSetName='Windows')]
+        [Parameter(Mandatory,ParameterSetName='WindowsAes')]
+        [Parameter(Mandatory,ParameterSetName='WindowsSsl')]
+        # Create a Windows server.
+        [Switch]$Windows,
+
+        [Parameter(Mandatory,ParameterSetName='Ssh')]
+        # Create an SSH server.
+        [Switch]$Ssh,
+
+        [Parameter(ParameterSetName='Windows')]
+        [Parameter(ParameterSetName='WindowsAes')]
+        [Parameter(ParameterSetName='WindowsSsl')]
+        [Parameter(ParameterSetName='Ssh')]
+        # The server's host name. The default is to use the server's name.
+        [string]$HostName,
+
+        [Parameter(ParameterSetName='Windows')]
+        [Parameter(ParameterSetName='WindowsAes')]
+        [Parameter(ParameterSetName='WindowsSsl')]
+        [Parameter(ParameterSetName='Ssh')]
+        # The port to use. When adding a Windows server, the default is `46336`. When adding an SSH server, the default is `22`.
+        [uint16]$Port,
+
+        [Parameter(Mandatory,ParameterSetName='WindowsAes')]
         # The encryption key to use for the server. When passed, also automatically sets the server's encryption type to AES. Only used by Windows agents.
         [securestring]$EncryptionKey,
 
-        [Parameter(Mandatory,ParameterSetName='Ssl')]
+        [Parameter(Mandatory,ParameterSetName='WindowsSsl')]
         # Use SSL to communicate with the server's agent. Only used by Windows agents.
         [Switch]$Ssl,
 
-        [Parameter(ParameterSetName='Ssl')]
+        [Parameter(ParameterSetName='WindowsSsl')]
         # The server's agent only uses SSL. Only used by Windows agents.
         [Switch]$ForceSsl,
 
-        [Parameter(ParameterSetName='SshOrRemoting')]
+        [Parameter(Mandatory,ParameterSetName='PowerShell')]
+        # Create a PowerShell server.
+        [Switch]$PowerShell,
+
+        [Parameter(ParameterSetName='PowerShell')]
+        # The PowerShell remoting URL to use.
+        [string]$WSManUrl,
+
+        [Parameter(ParameterSetName='Ssh')]
+        [Parameter(ParameterSetName='PowerShell')]
+        # The name of the credential to use when connecting to the server via SSH or PowerShell Remoting.
         [string]$CredentialName,
 
-        [Parameter(ParameterSetName='SshOrRemoting')]
+        [Parameter(ParameterSetName='Ssh')]
+        [Parameter(ParameterSetName='PowerShell')]
+        # The temp path directory to use when connecting to the server via SSH or PowerShell Remoting. Default is `/tmp/buildmaster`.
         [string]$TempPath,
-
-        [Parameter(ParameterSetName='SshOrRemoting')]
-        [string]$WSManUrl,
 
         [string[]]$Environment,
 
         [string[]]$Role,
-
-        # The server's host name. The default is to use the server's name.
-        [string]$HostName,
-
-        [uint16]$Port = 46336,
 
         [hashtable]$Variable,
 
@@ -79,32 +107,86 @@ function New-BMServer
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $encodedName = [uri]::EscapeUriString($Name)
-    $parameter = @{
-                    'serverType' = $Type;
+
+    $parameter = @{ 
                     'active' = (-not $InActive.IsPresent);
-                    'hostName' = $Name;
-                    'port' = $Port;
                  }
-    if( $EncryptionKey )
+
+    if( -not $HostName )
     {
-        $parameter['encryptionKey'] = (New-Object 'pscredential' 'encryptionkey',$EncryptionKey).GetNetworkCredential().Password
-        $parameter['encryptionType'] = 'aes'
+        $HostName = $Name
     }
 
-    if( $Ssl )
+    if( -not $TempPath )
     {
-        $parameter['encryptionType'] = 'ssl'
-        $parameter['requireSsl'] = $ForceSsl.IsPresent
+        $TempPath = '/tmp/buildmaster'
     }
 
-    if( $CredentialName )
+    $serverType = $null
+    if( $Windows )
     {
-        $parameter['credentialsName'] = $CredentialName
-    }
+        if( -not $Port )
+        {
+            $Port = 46336
+        }
 
-    if( $TempPath )
+        $serverType = 'windows'
+        $parameter['hostName'] = $HostName
+        $parameter['port'] = $Port
+
+        if( $EncryptionKey )
+        {
+            $parameter['encryptionKey'] = (New-Object 'pscredential' 'encryptionkey',$EncryptionKey).GetNetworkCredential().Password
+            $parameter['encryptionType'] = 'aes'
+        }
+
+        if( $Ssl )
+        {
+            $parameter['encryptionType'] = 'ssl'
+            $parameter['requireSsl'] = $ForceSsl.IsPresent
+        }
+    }
+    elseif( $Ssh )
     {
-        $parameter['tempPath'] = $TempPath
+        if( -not $Port )
+        {
+            $Port = 22
+        }
+
+        $serverType = 'ssh'
+        $parameter['hostName'] = $HostName
+        $parameter['port'] = $Port
+    }
+    elseif( $PowerShell )
+    {
+        $serverType = 'powershell'
+
+        if( $WSManUrl )
+        {
+            $parameter['wsManUrl'] = $WSManUrl
+        }
+    }
+    elseif( $Local )
+    {
+        $serverType = 'local'
+    }
+    else
+    {
+        throw 'Don''t know how you got to this code. Well done!'
+    }
+    $parameter['serverType'] = $serverType;
+
+    if( $Ssh -or $PowerShell )
+    {
+        if( $CredentialName )
+        {
+            $parameter['credentialsName'] = $CredentialName
+        }
+
+        if( $TempPath )
+        {
+            $parameter['tempPath'] = $TempPath
+        }
     }
 
     Invoke-BMRestMethod -Session $Session -Name ('infrastructure/servers/create/{0}' -f $encodedName) -Method Post -Parameter $parameter -AsJson
