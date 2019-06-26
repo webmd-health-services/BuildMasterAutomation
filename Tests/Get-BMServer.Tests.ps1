@@ -28,7 +28,7 @@ function GivenServer
     {
         $optionalParams['EncryptionKey'] = ConvertTo-SecureString -String $WithEncryptionKey -Force -AsPlainText
     }
-    New-BMServer -Session $session -Name $Name -Type 'windows' @optionalParams
+    New-BMServer -Session $session -Name $Name -Windows @optionalParams
 }
 
 function ThenError

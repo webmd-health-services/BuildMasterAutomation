@@ -19,7 +19,7 @@ function GivenServer
         [string]$Named
     )
 
-    New-BMServer -Session $session -Name $Named -Type 'windows'
+    New-BMServer -Session $session -Name $Named -Windows
 }
 
 function ThenError
