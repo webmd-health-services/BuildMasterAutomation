@@ -138,6 +138,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Created Get-BMServerRole, New-BMServerRole, and Remove-BMServerRole functions for managing server roles.
+* Created Get-BMServer, New-BMServer, and Remove-BMServer functions for managing servers.
 '@
         } # End of PSData hashtable
 
