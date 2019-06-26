@@ -62,7 +62,9 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
     # TypesToProcess = @()
 
     # Format files (.ps1xml) to be loaded when importing this module
-    # FormatsToProcess = @()
+    FormatsToProcess = @(
+                            'Formats\Inedo.BuildMaster.Server.ps1xml'
+                        )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
@@ -77,6 +79,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'Get-BMRelease',
                             'Get-BMPackage',
                             'Get-BMPipeline',
+                            'Get-BMServer',
                             'Get-BMServerRole',
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
@@ -85,8 +88,10 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'New-BMRelease',
                             'New-BMPackage',
                             'New-BMSession',
+                            'New-BMServer',
                             'New-BMServerRole',
                             'Publish-BMReleasePackage',
+                            'Remove-BMServer',
                             'Remove-BMServerRole',
                             'Set-BMRelease',
                             'Stop-BMRelease'
