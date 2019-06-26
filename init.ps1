@@ -1,39 +1,76 @@
+<#
+.SYNOPSIS
+Gets the local machine ready for BuildMasterAutomation development.
+
+.DESCRIPTION
+The `init.ps1` script gets the local machine ready for BuildMasterAutomation development. It:
+
+* installs BuildMaster
+
+BuildMaster requires a SQL Server database. This script tries to use an existing database if possible. It uses the `SqlServer` PowerShell module to enumerate local instances of SQL Server. It uses the first instance to be returned from this set: the default instance, an `INEDO` instance name, or a `SQL2016` instance name. If none are installed, the BuildMaster installer will install an `INEDO` SQL Server Express instance.
+
+If BuildMaster is already installed, nothing happens.
+#>
 [CmdletBinding()]
 param(
 )
 
 #Requires -RunAsAdministrator
-#Requires -Version 5
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
 & {
     $VerbosePreference = 'SilentlyContinue'
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon') -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\SqlServer') -Force
 }
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '5.8.2'
+$version = '6.1.8'
+$sqlServer = $null
+$installerPath = 'SQL'
+$installerUri = 'sql'
+$dbParam = '/InstallSqlExpress'
 
-$installerPath = Join-Path -Path $env:TEMP -ChildPath ('BuildMasterInstaller-SQL-{0}.exe' -f $version)
+foreach( $item in (Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)) )
+{
+    if( $item.Status -ne [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online )
+    {
+        Write-Verbose -Message ('Skipping SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
+        continue
+    }
+
+    $item | Format-List | Out-String | Write-Verbose
+
+    if( -not $item.InstanceName -or $item.InstanceName -in @( 'Inedo', 'SQL2016' ) )
+    {
+        Write-Verbose -Message ('Found SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
+        $installerPath = 'NO{0}' -f $installerPath
+        $installerUri = 'no{0}' -f $installerUri
+        $sqlServer = $item
+        $credentials = 'Integrated Security=true;'
+        if( $runningUnderAppVeyor )
+        {
+            $credentials = 'User ID=sa;Password=Password12!'
+        }
+        $dbParam = '"/ConnectionString=Server={0};Database=BuildMaster;{1}"' -f $sqlServer.Name,$credentials
+        break
+    }
+}
+
+$installerPath = Join-Path -Path $PSScriptRoot -ChildPath ('.output\BuildMasterInstaller{0}-{1}.exe' -f $installerPath,$version)
+$installerUri = 'http://inedo.com/files/buildmaster/{0}/{1}.exe' -f $installerUri,$version
+
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 {
-    $uri = ('http://inedo.com/files/buildmaster/sql/{0}.exe' -f $version)
-    Write-Verbose -Message ('Downloading {0}' -f $uri)
-    Invoke-WebRequest -Uri $uri -OutFile $installerPath
+    Write-Verbose -Message ('Downloading {0}' -f $installerUri)
+    Invoke-WebRequest -Uri $installerUri -OutFile $installerPath
 }
 
 $bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
 if( -not $bmInstallInfo )
 {
-    # Under AppVeyor, use the pre-installed database.
-    # Otherwise, install a SQL Express BuildMaster instance.
-    $dbParam = '/InstallSqlExpress'
-    if( $runningUnderAppVeyor )
-    {
-        $dbParam = '"/ConnectionString=Server=(local)\SQL2016;Database=BuildMaster;User ID=sa;Password=Password12!"'
-    }
-
     $outputRoot = Join-Path -Path $PSScriptRoot -ChildPath '.output'
     New-Item -Path $outputRoot -ItemType 'Directory' -ErrorAction Ignore
 
@@ -45,8 +82,10 @@ if( -not $bmInstallInfo )
     $installerFileName = $installerPath | Split-Path -Leaf
     $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
     $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
+    $argumentList = '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath)
+    Write-Verbose ('{0} {1}' -f $installerPath,($argumentList -join ' '))
     $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList '/S','/Edition=Express',$dbParam,('"/LogFile={0}"' -f $logPath) `
+                             -ArgumentList $argumentList `
                              -Wait `
                              -PassThru `
                              -RedirectStandardError $stdErrLogPath `
