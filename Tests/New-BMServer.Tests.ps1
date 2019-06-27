@@ -13,9 +13,6 @@ function Init
     $script:result = $null
     Get-BMServer -Session $session | Remove-BMServer -Session $session
     Get-BMServerRole -Session $session | Remove-BMServerRole -Session $session
-    Invoke-BMRestMethod -Session $session -Name 'infrastructure/environments/list' |
-        ForEach-Object { 
-            Invoke-BMRestMethod -Session $session -Name ('infrastructure/environments/delete/{0}' -f ([uri]::EscapeDataString($_.name))) -Method Delete }
 }
 
 function GivenEnvironment
