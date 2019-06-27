@@ -123,7 +123,8 @@ function Invoke-BMRestMethod
     }
     
     $debugBody | Write-Debug
-
+    
+    $numErrors = $Global:Error.Count
     try
     {
         if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($Uri,$Method) )
@@ -134,6 +135,13 @@ function Invoke-BMRestMethod
     }
     catch [Net.WebException]
     {
-        Write-Error -ErrorRecord $_
+        if( $ErrorActionPreference -eq 'Ignore' )
+        {
+            for( $idx = $numErrors; $idx -lt $Global:Error.Count; ++$idx )
+            {
+                $Global:Error.RemoveAt(0)
+            }
+        }
+        Write-Error -ErrorRecord $_ -ErrorAction $ErrorActionPreference
     }
 }

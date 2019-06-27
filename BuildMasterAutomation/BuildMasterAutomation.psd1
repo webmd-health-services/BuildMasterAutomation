@@ -77,6 +77,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'Get-BMRelease',
                             'Get-BMPackage',
                             'Get-BMPipeline',
+                            'Get-BMServerRole',
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
                             'New-BMApplication',
@@ -84,7 +85,9 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'New-BMRelease',
                             'New-BMPackage',
                             'New-BMSession',
+                            'New-BMServerRole',
                             'Publish-BMReleasePackage',
+                            'Remove-BMServerRole',
                             'Set-BMRelease',
                             'Stop-BMRelease'
                          )
@@ -129,6 +132,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+* Created Get-BMServerRole, New-BMServerRole, and Remove-BMServerRole functions for managing server roles.
 '@
         } # End of PSData hashtable
 
