@@ -91,6 +91,9 @@ $pipeline = New-BMPipeline -Session $session -Name 'Get-BMDeployment.Tests.Pipel
 $releaseAll = New-BMRelease -Session $session -Application $application -Number '1.0' -Pipeline $pipeline -Name 'releaseAll'
 $releaseRelease = New-BMRelease -Session $session -Application $application -Number '2.0' -Pipeline $pipeline -Name 'releasePackage'
 $releaseRelease2 = New-BMRelease -Session $session -Application $application -Number '3.0' -Pipeline $pipeline -Name 'releaseRelease'
+Enable-BMEnvironment -Session $session -Name 'Integration'
+Enable-BMEnvironment -Session $session -Name 'Testing'
+Enable-BMEnvironment -Session $session -Name 'Production'
 
 function Init
 {
