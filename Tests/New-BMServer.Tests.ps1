@@ -22,22 +22,10 @@ function GivenEnvironment
         [string[]]$Named
     )
 
-    # Environments can't actually be deleted. They can only be disabled. So, we have to re-enable any environments that were deactivated.
-    $environments = Invoke-BMNativeApiMethod -Session $session -Name 'Environments_GetEnvironments' -Parameter @{ IncludeInactive_Indicator = $true } -Method Post
     foreach( $name in $Named )
     {
-        $environment = $environments | Where-Object { $_.Environment_Name -eq $name }
-        if( $environment )
-        {
-            if( -not $environment.Active_Indicator )
-            {
-                Invoke-BMNativeApiMethod -Session $session -Name 'Environments_UndeleteEnvironment' -Parameter @{ 'Environment_Id' = $environment.environment_Id } -Method Post
-            }
-        }
-        else
-        {
-            Invoke-BMRestMethod -Session $session -Name ('infrastructure/environments/create/{0}' -f ([uri]::EscapeDataString($name))) -Method Post -Body ('{{ "name": "{0}" }}' -f $name)
-        }
+        New-BMEnvironment -Session $session -Name $name -ErrorAction Ignore
+        Enable-BMEnvironment -Session $session -Name $name
     }
 }
 
