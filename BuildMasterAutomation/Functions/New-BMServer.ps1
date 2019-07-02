@@ -8,7 +8,7 @@ function New-BMServer
     .DESCRIPTION
     The `New-BMServer` function creates a new server in BuildMaster. Pass the name of the server to the `Name` parameter. Names may only contain letters, numbers, underscores, or dashes; they must begin with a letter; they must not end with dash or underscore. Pass the server type to the `Type` parameter. Type must be one of 'windows', 'powershell', 'ssh', or 'local'.
 
-    Every server must have a unique name. If you creat a server with a duplicate name, you'll get an error.
+    Every server must have a unique name. If you create a server with a duplicate name, you'll get an error.
     
     This function uses BuildMaster's infrastructure management API.
 
@@ -18,9 +18,29 @@ function New-BMServer
     https://inedo.com/support/documentation/buildmaster/reference/api/infrastructure#data-specification
 
     .EXAMPLE
-    New-BMServer -Session $session -Name 'My Server' -Type 'windows'
+    New-BMServer -Session $session -Name 'example.com' -Windows
 
-    Demonstrates how to create a new server 
+    Demonstrates how to create a new server that uses the Inedo Agent on Windows that doesn't encrypt the communication between the agent and the server.
+
+    .EXAMPLE
+    New-BMServer -Session $session -Name 'example.com' -Windows -EncryptionKey 'DEADBEEDEADBEEDEADBEEDEADBEEDEAD'
+
+    Demonstrates how to create a new server that uses the Inedo Agent on Windows and uses an AES encryption key to encrypt the communication between the agent and server
+
+    .EXAMPLE
+    New-BMServer -Session $session -Name 'example.com' -Windows -Ssl -ForceSsl
+
+    Demonstrates how to create a new server that uses the Inedo Agent on Windows and uses SSL to protect server to agent communications. As of BuildMaster 6.1.8, you *must* use the `ForceSsl` switch, otherwise SSL won't actually be enabled.
+
+    .EXAMPLE
+    New-BMServer -Session $session -Name 'example.com' -Ssh
+
+    Demonstrates how to create a new server that uses SSH.
+
+    .EXAMPLE
+    New-BMServer -Session $session -Name 'example.com' -PowerShell
+
+    Demonstrates how to create a new server that uses PowerShell Remoting.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -92,10 +112,13 @@ function New-BMServer
         # The temp path directory to use when connecting to the server via SSH or PowerShell Remoting. Default is `/tmp/buildmaster`.
         [string]$TempPath,
 
+        # The environment(s) the server belongs in.
         [string[]]$Environment,
 
+        # The server roles the server is part of.
         [string[]]$Role,
 
+        # Any server-level variables to add to the server.
         [hashtable]$Variable,
 
         [Switch]

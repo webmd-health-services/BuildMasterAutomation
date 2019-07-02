@@ -6,7 +6,7 @@ function Get-BMServer
     Returns servers in BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMServer` function gets all the servers from an instance of BuildMaster. By default, this function returns all servers. To return a specific server, pass its name to the `Name` parameter. The `Name` parameter supports wildcards. If a server doesn't exist, you'll get an error.
+    The `Get-BMServer` function gets all the servers from an instance of BuildMaster. By default, this function returns all servers. To return a specific server, pass its name to the `Name` parameter.  If a server with that name doesn't exist, you'll get an error. The `Name` parameter supports wildcards. If you search with wildcards and a server doesn't exist, you won't get any errors.
 
     The BuildMaster API returns plaintext versions of a server's API key (if it is using AES encryption). This function converts those keys into `SecureString`s to make it harder to accidentally view/save them.
 
