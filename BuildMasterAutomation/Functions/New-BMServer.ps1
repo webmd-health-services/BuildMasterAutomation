@@ -129,8 +129,6 @@ function New-BMServer
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $encodedName = [uri]::EscapeUriString($Name)
-
     $parameter = @{ 
                     'active' = (-not $InActive.IsPresent);
                  }
@@ -227,5 +225,6 @@ function New-BMServer
         $parameter['variables'] = $Variable
     }
 
+    $encodedName = [uri]::EscapeDataString($Name)
     Invoke-BMRestMethod -Session $Session -Name ('infrastructure/servers/create/{0}' -f $encodedName) -Method Post -Parameter $parameter -AsJson
 }

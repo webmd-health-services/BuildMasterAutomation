@@ -106,3 +106,12 @@ Describe 'Remove-BMServer.when using -WhatIf' {
         ThenServerExists -Named 'One'
     }
 }
+
+Describe 'Remove-BMServer.when name contains URI senstive characters' {
+    It 'should encode the name' {
+        Init
+        Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
+        WhenRemovingServer -Named 'u r i?&'
+        Assert-MockCalled -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation' -ParameterFilter { $Name -eq 'infrastructure/servers/delete/u%20r%20i%3F%26' }
+    }
+}
