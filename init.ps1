@@ -33,7 +33,17 @@ $installerPath = 'SQL'
 $installerUri = 'sql'
 $dbParam = '/InstallSqlExpress'
 
-foreach( $item in (Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)) )
+$sqlServers = @()
+if( (Test-Path -Path 'env:APPVEYOR') )
+{
+    $sqlServers = Get-Item -Path ('SQLSERVER:\SQL\{0}\SQL2016' -f [Environment]::MachineName)
+}
+else
+{
+    $sqlServers = Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)
+}
+
+foreach( $item in $sqlServers )
 {
     if( $item.Status -ne [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online )
     {
