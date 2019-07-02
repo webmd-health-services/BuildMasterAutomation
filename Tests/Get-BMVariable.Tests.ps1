@@ -318,6 +318,30 @@ Describe 'Get-BMVariable.when getting an environment''s variables' {
     }
 }
 
+Describe 'Set-BMVariable.when getting a server variable' {
+    It 'should return the variable' {
+        Init
+        GivenServer 'GetBMVariable'
+        GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
+        GivenVariable 'ServerVar' -WithValue 'ServerValue' -ForServer 'GetBMVariable'
+        WhenGettingVariable 'ServerVar' -ForServer 'GetBMVariable'
+        ThenVariableReturned @{ 'ServerVar' = 'ServerValue' }
+        ThenNoErrorWritten
+    }
+}
+
+Describe 'Set-BMVariable.when getting a server role variable' {
+    It 'should return the variable' {
+        Init
+        GivenServerRole 'GetBMVariable'
+        GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
+        GivenVariable 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'GetBMVariable'
+        WhenGettingVariable 'ServerRoleVar' -ForServerRole 'GetBMVariable'
+        ThenVariableReturned @{ 'ServerRoleVar' = 'ServerRoleValue' }
+        ThenNoErrorWritten
+    }
+}
+
 Describe 'Get-BMVariable.when entity name contains URI-sensitive characters' {
     It 'should return the variable' {
         Init

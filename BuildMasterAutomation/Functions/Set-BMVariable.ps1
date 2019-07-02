@@ -105,10 +105,9 @@ function Set-BMVariable
     {
         $entityParamName = $entityParamNames[$PSCmdlet.ParameterSetName]
         $entityName = $PSBoundParameters[$entityParamName]
-        $endpointName = '{0}/{1}' -f $endpointName,$entityName
+        $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($entityName)
     }
-    $encodedName = $Name
-    $endpointName = '{0}/{1}' -f $endpointName,$encodedName
+    $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($Name)
 
     Invoke-BMRestMethod -Session $Session -Name $endpointName -Method Post -Body $Value
 }
