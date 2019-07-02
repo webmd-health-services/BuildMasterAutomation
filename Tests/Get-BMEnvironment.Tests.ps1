@@ -35,21 +35,6 @@ function GivenEnvironment
     }
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenNoEnvironmentsReturned
 {
     $environments | Should -BeNullOrEmpty

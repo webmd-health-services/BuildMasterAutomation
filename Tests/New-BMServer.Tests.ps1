@@ -64,21 +64,6 @@ function GivenServerRole
     }
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenServerExists
 {
     [CmdletBinding(DefaultParameterSetName='AnyType')]

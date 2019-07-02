@@ -40,21 +40,6 @@ function New-EnvironmentName
     return 'NewEnvironment{0}' -f ([IO.Path]::GetRandomFileName() -replace '\.','')
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenEnvironmentExists
 {
     param(
