@@ -22,7 +22,7 @@ function Remove-BMVariable
 
     Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use `New-BMSession` to create a session object.
 
-    This function uses BuildMaster's variables API.
+    This function uses BuildMaster's variables API. When deleting application and application group variables, it uses BuildMaster's native API.
 
     .EXAMPLE
     Remove-BMVariable -Session $session -Name 'Var' 
@@ -54,7 +54,7 @@ function Remove-BMVariable
 
     Demonstrates how to delete a variable from an application.
     #>
-    [CmdletBinding(DefaultParameterSetName='global')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='global')]
     param(
         [Parameter(Mandatory)]
         # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
@@ -103,12 +103,46 @@ function Remove-BMVariable
         {
             $entityParamName = $entityParamNames[$PSCmdlet.ParameterSetName]
             $entityName = $PSBoundParameters[$entityParamName]
-            $endpointName = '{0}/{1}' -f $endpointName,$entityName
+            $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($entityName)
         }
 
-        $encodedName = $Name
-        $endpointName = '{0}/{1}' -f $endpointName,$encodedName
-        Invoke-BMRestMethod -Session $Session -Name $endpointName -Method Delete
+        # Variables API doesn't delete application variables.
+        if( $PSCmdlet.ParameterSetName -eq 'application' )
+        {
+            $app = Get-BMApplication -Session $session -Name $ApplicationName
+            if( -not $app )
+            {
+                Write-Error -Message ('Application "{0}" does not exist.' -f $ApplicationName) -ErrorAction $ErrorActionPreference
+                return
+            }
+
+            $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id }
+            if( $variable )
+            {
+                Invoke-BMNativeApiMethod -Session $session -Name 'Variables_DeleteVariable' -Method Post -Parameter @{ 'Variable_Id' = $variable.Variable_Id }
+            }
+        }
+        # Variables API doesn't delete application group variables.
+        elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
+        {
+            $appGroup = Get-BMApplicationGroup -Session $session -Name $ApplicationGroupName
+            if( -not $appGroup )
+            {
+                Write-Error -Message ('Application group "{0}" does not exist.' -f $ApplicationGroupName) -ErrorAction $ErrorActionPreference
+                return
+            }
+
+            $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id }
+            if( $variable )
+            {
+                Invoke-BMNativeApiMethod -Session $session -Name 'Variables_DeleteVariable' -Method Post -Parameter @{ 'Variable_Id' = $variable.Variable_Id }
+            }
+        }
+        else
+        {
+            $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($Name)
+            Invoke-BMRestMethod -Session $Session -Name $endpointName -Method Delete
+        }
     }
 
 }
