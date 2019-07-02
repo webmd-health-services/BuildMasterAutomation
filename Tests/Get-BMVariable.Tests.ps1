@@ -294,6 +294,20 @@ Describe 'Get-BMVariable.when getting an application''s variables' {
     }
 }
 
+Describe 'Get-BMVariable.when getting an application variable and WhatIf is true' {
+    It 'should get the variable' {
+        Init
+        $app = GivenApplication
+        GivenVariable 'AppFubar' -WithValue 'Snafu' -ForApplication $app.Application_Name
+        $WhatIfPreference = $true
+        WhenGettingVariable 'AppFubar' -ForApplication $app.Application_Name
+        $WhatIfPreference | Should -BeTrue
+        $WhatIfPreference = $false
+        ThenVariableReturned @{ 'AppFubar' = 'Snafu' }
+        ThenNoErrorWritten
+    }
+}
+
 Describe 'Get-BMVariable.when getting an application group''s variables' {
     It 'should return the variable' {
         Init
@@ -301,6 +315,20 @@ Describe 'Get-BMVariable.when getting an application group''s variables' {
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
         GivenVariable 'AppGroupFubar' -WithValue 'Snafu' -ForApplicationGroup 'fizzbuzz'
         WhenGettingVariable 'AppGroupFubar' -ForApplicationGroup 'fizzbuzz'
+        ThenVariableReturned @{ 'AppGroupFubar' = 'Snafu' }
+        ThenNoErrorWritten
+    }
+}
+
+Describe 'Get-BMVariable.when getting an application group variable and WhatIf is true' {
+    It 'should get the variable' {
+        Init
+        $app = GivenApplicationGroup 'fizzbuzz'
+        GivenVariable 'AppGroupFubar' -WithValue 'Snafu' -ForApplicationGroup 'fizzbuzz'
+        $WhatIfPreference = $true
+        WhenGettingVariable 'AppGroupFubar' -ForApplicationGroup 'fizzbuzz'
+        $WhatIfPreference | Should -BeTrue
+        $WhatIfPreference = $false
         ThenVariableReturned @{ 'AppGroupFubar' = 'Snafu' }
         ThenNoErrorWritten
     }
@@ -318,7 +346,7 @@ Describe 'Get-BMVariable.when getting an environment''s variables' {
     }
 }
 
-Describe 'Set-BMVariable.when getting a server variable' {
+Describe 'Get-BMVariable.when getting a server variable' {
     It 'should return the variable' {
         Init
         GivenServer 'GetBMVariable'
@@ -330,7 +358,7 @@ Describe 'Set-BMVariable.when getting a server variable' {
     }
 }
 
-Describe 'Set-BMVariable.when getting a server role variable' {
+Describe 'Get-BMVariable.when getting a server role variable' {
     It 'should return the variable' {
         Init
         GivenServerRole 'GetBMVariable'

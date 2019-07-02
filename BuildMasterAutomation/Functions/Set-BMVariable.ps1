@@ -54,7 +54,7 @@ function Set-BMVariable
 
     Demonstrates how to create or set a variable for an application.
     #>
-    [CmdletBinding(DefaultParameterSetName='global')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='global')]
     param(
         [Parameter(Mandatory)]
         # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.

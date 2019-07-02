@@ -142,15 +142,23 @@ function Get-BMVariable
     {
         $appValues = @{ }
         & {
-            if( $PSCmdlet.ParameterSetName -eq 'application' )
+            $originalWhatIf = $WhatIfPreference
+            $WhatIfPreference = $false
+            try
             {
-                $app = Get-BMApplication -Session $Session -Name $ApplicationName
-                Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id } 
+                if( $PSCmdlet.ParameterSetName -eq 'application' )
+                {
+                    $app = Get-BMApplication -Session $Session -Name $ApplicationName
+                    Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id } 
+                }
+                elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
+                {
+                    $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
+                    Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id } 
+                }
             }
-            elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
+            finally
             {
-                $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
-                Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id } 
             }
         } |
             ForEach-Object {
@@ -171,30 +179,40 @@ function Get-BMVariable
 
     $foundVars = $null
 
-    $values | 
-        Get-Member -MemberType NoteProperty |
-        ForEach-Object {
-            $variableName = $_.Name
-            [pscustomobject]@{ 
-                                Name = $variableName;
-                                Value = $values.$variableName
-                            }
-        } |
-        Where-Object {
-            if( $Name )
-            {
-                return $_.Name -like $Name
-            }
-            return $true
-        } |
-        ForEach-Object {
-            if( $ValueOnly )
-            {
-                return $_.Value
-            }
-            return $_
-        } | 
-        Tee-Object -Variable 'foundVars'
+    # Tee-Object supports WhatIfPreference.
+    $originalWhatIf = $WhatIfPreference
+    $WhatIfPreference = $false
+    try
+    {
+        $values | 
+            Get-Member -MemberType NoteProperty |
+            ForEach-Object {
+                $variableName = $_.Name
+                [pscustomobject]@{ 
+                                    Name = $variableName;
+                                    Value = $values.$variableName
+                                }
+            } |
+            Where-Object {
+                if( $Name )
+                {
+                    return $_.Name -like $Name
+                }
+                return $true
+            } |
+            ForEach-Object {
+                if( $ValueOnly )
+                {
+                    return $_.Value
+                }
+                return $_
+            } | 
+            Tee-Object -Variable 'foundVars'
+    }
+    finally
+    {
+        $WhatIfPreference = $originalWhatIf
+    }
 
     if( $Name -and -not [wildcardpattern]::ContainsWildcardCharacters($Name) -and -not $foundVars )
     {

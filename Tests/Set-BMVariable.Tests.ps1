@@ -179,7 +179,8 @@ function WhenSettingVariable
         [string]$ForApplicationGroup,
         [string]$ForEnvironment,
         [string]$ForServer,
-        [string]$ForServerRole
+        [string]$ForServerRole,
+        [Switch]$WhatIf
     )
 
     $optionalParams = @{ }
@@ -207,6 +208,11 @@ function WhenSettingVariable
     if( $ForServerRole )
     {
         $optionalParams['ServerRoleName'] = $ForServerRole
+    }
+
+    if( $WhatIf )
+    {
+        $optionalParams['WhatIf'] = $true
     }
 
     $result = Set-BMVariable -Session $session -Name $Named -Value $WithValue @optionalParams
@@ -288,6 +294,25 @@ Describe 'Set-BMVariable.when setting a server role variable' {
         GivenServerRole 'SetBMVariable'
         WhenSettingVariable 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'SetBMVariable'
         ThenVariableSet 'ServerRoleVar' -To 'ServerRoleValue' -ForServerRole 'SetBMVariable'
+        ThenNoErrorWritten
+    }
+}
+
+Describe 'Set-BMVariable.when setting a variable and WhatIf is true' {
+    It 'should not create the variable' {
+        Init
+        WhenSettingVariable 'GlobalVar' -WithValue 'GlobalValue' -WhatIf
+        Get-BMVariable -Session $session -Name 'GlobalVar' -ErrorAction Ignore | Should -BeNullOrEmpty
+        ThenNoErrorWritten
+    }
+}
+
+Describe 'Set-BMVariable.when updating a variable and WhatIf is true' {
+    It 'should not create the variable' {
+        Init
+        GivenVariable 'GlobalVar' -WithValue 'OldValue'
+        WhenSettingVariable 'GlobalVar' -WithValue 'NewValue' -WhatIf
+        ThenVariableSet 'GlobalVar' -To 'OldValue'
         ThenNoErrorWritten
     }
 }
