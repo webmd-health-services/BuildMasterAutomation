@@ -95,7 +95,7 @@ function WhenCreatingEnvironment
 }
 
 Describe 'New-BMEnvironment.when creating a new environment' {
-    It ('should not create environment') {
+    It ('should create environment') {
         $name = New-EnvironmentName
         Init
         WhenCreatingEnvironment -Named $name

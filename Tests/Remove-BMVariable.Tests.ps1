@@ -261,7 +261,7 @@ Describe 'Remove-BMVariable.when removing an application variable' {
 }
 
 Describe 'Remove-BMVariable.when removing variable from an application that doesn''t exist' {
-    It 'should remove the variable' {
+    It 'should write an error' {
         Init
         WhenRemovingVariable 'AppFubar' -ForApplication 'ItIsHardTimes' -ErrorAction SilentlyContinue
         ThenError 'does\ not\ exist'
@@ -288,7 +288,7 @@ Describe 'Remove-BMVariable.when removing an application group variable' {
 }
 
 Describe 'Remove-BMVariable.when removing a variable from an application group that doesn''t exist' {
-    It 'should write an errore' {
+    It 'should write an error' {
         Init
         WhenRemovingVariable 'AppGroupFubar' -ForApplicationGroup 'SmogInCalifornia' -ErrorAction SilentlyContinue
         ThenError 'does\ not\ exist'
@@ -296,7 +296,7 @@ Describe 'Remove-BMVariable.when removing a variable from an application group t
 }
 
 Describe 'Remove-BMVariable.when ignoring when an application group doesn''t exist' {
-    It 'should write an errore' {
+    It 'should write an error' {
         Init
         WhenRemovingVariable 'AppGroupFubar' -ForApplicationGroup 'SmogInCalifornia' -ErrorAction Ignore
         ThenNoErrorWritten
