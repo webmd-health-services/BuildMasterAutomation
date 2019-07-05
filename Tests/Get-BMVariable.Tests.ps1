@@ -379,3 +379,66 @@ Describe 'Get-BMVariable.when entity name contains URI-sensitive characters' {
         ThenNoErrorWritten
     }
 }
+
+Describe 'Get-BMVariable.when server doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForServer 'Nope' -ErrorAction SilentlyContinue
+        ThenError 'server\ was\ not\ found'
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when server role doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForServerRole 'Nope' -ErrorAction SilentlyContinue
+        ThenError 'role\ was\ not\ found'
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when environment doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForEnvironment 'Nope' -ErrorAction SilentlyContinue
+        ThenError 'environment\ was\ not\ found'
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when application doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForApplication 'Nope' -ErrorAction SilentlyContinue
+        ThenError 'application\ "Nope"\ does\ not\ exist'
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when ignoring when an application doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForApplication 'Nope' -ErrorAction Ignore
+        ThenNoErrorWritten
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when application group doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction SilentlyContinue
+        ThenError 'application\ group\ "Nope"\ does\ not\ exist'
+        ThenNothingReturned
+    }
+}
+
+Describe 'Get-BMVariable.when ignoring when an application group doesn''t exist' {
+    It 'should write an error' {
+        Init
+        WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction Ignore
+        ThenNoErrorWritten
+        ThenNothingReturned
+    }
+}

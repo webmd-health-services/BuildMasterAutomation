@@ -140,27 +140,38 @@ function Get-BMVariable
 
     if( $PSCmdlet.ParameterSetName -in @( 'application', 'application-group' ) )
     {
+        $nativeVariables = @()
+        $originalWhatIf = $WhatIfPreference
+        $WhatIfPreference = $false
+        try
+        {
+            if( $PSCmdlet.ParameterSetName -eq 'application' )
+            {
+                $app = Get-BMApplication -Session $Session -Name $ApplicationName
+                if( -not $app )
+                {
+                    Write-Error -Message ('Application "{0}" does not exist.' -f $ApplicationName) -ErrorAction $ErrorActionPreference
+                    return
+                }
+                $nativeVariables = Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id } 
+            }
+            elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
+            {
+                $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
+                if( -not $appGroup )
+                {
+                    Write-Error -Message ('Application group "{0}" does not exist.' -f $ApplicationGroupName) -ErrorAction $ErrorActionPreference
+                    return
+                }
+                $nativeVariables = Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id } 
+            }
+        }
+        finally
+        {
+            $WhatIfPreference = $originalWhatIf
+        }
         $appValues = @{ }
-        & {
-            $originalWhatIf = $WhatIfPreference
-            $WhatIfPreference = $false
-            try
-            {
-                if( $PSCmdlet.ParameterSetName -eq 'application' )
-                {
-                    $app = Get-BMApplication -Session $Session -Name $ApplicationName
-                    Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id } 
-                }
-                elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
-                {
-                    $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
-                    Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id } 
-                }
-            }
-            finally
-            {
-            }
-        } |
+        $nativeVariables |
             ForEach-Object {
                 $bytes = [Convert]::FromBase64String($_.Variable_Value)
                 $appValues[$_.Variable_Name] = [Text.Encoding]::UTF8.GetString($bytes)
