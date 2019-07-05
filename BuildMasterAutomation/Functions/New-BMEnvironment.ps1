@@ -6,7 +6,7 @@ function New-BMEnvironment
     Creates a new environment in a BuildMaster instance.
 
     .DESCRIPTION
-    The `New-BMEnvironment` creates a new environment in BuildMaster. Pass the name of the environment to the `Name` parameter. Names may only contain letters, numbers, spaces, periods, underscores, or dashes.
+    The `New-BMEnvironment` creates a new environment in BuildMaster. Pass the name of the environment to the `Name` parameter. Names may only contain letters, numbers, periods, underscores, or dashes and may not end with an underscore or dash.
     
     Every environment must have a unique name. If you create a environment with a duplicate name, you'll get an error.
 

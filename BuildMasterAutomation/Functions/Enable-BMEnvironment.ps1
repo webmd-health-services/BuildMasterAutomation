@@ -6,7 +6,7 @@ function Enable-BMEnvironment
     Enable an environment in BuildMaster.
 
     .DESCRIPTION
-    The `Enable-BMEnvironment` function enabless an environment in BuildMaster. Environments are permanent and can only be disabled, never deleted. Pass the name of the environment to enable to the `Name` parameter. If the environment doesn't exist, you'll get an error.
+    The `Enable-BMEnvironment` function enables an environment in BuildMaster. Environments are permanent and can only be disabled, never deleted. Pass the name of the environment to enable to the `Name` parameter. If the environment doesn't exist, you'll get an error.
 
     Pass the session to the BuildMaster instance where you want to enable the environment to the `Session` parameter. Use `New-BMSession` to create a session object.
 
@@ -18,7 +18,7 @@ function Enable-BMEnvironment
     Demonstrates how to enable an environment
 
     .EXAMPLE
-    Get-BMEnvironment -Session $session -Name 'DevOld' | Enable-BMEnvironment -Session $session
+    Get-BMEnvironment -Session $session -Name 'DevOld' -Force | Enable-BMEnvironment -Session $session
 
     Demonstrates that you can pipe the objects returned by `Get-BMEnvironment` into `Enable-BMEnvironment` to enable those environments.
     #>

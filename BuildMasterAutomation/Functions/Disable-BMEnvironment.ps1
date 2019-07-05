@@ -6,7 +6,7 @@ function Disable-BMEnvironment
     Disable an environment in BuildMaster.
 
     .DESCRIPTION
-    The `Disable-BMEnvironment` function disables an environment in BuildMaster. Environments are permanent can only be disabled, never deleted. Pass the name of the environment to disable to the `Name` parameter. If the environment doesn't exist, you'll get an error.
+    The `Disable-BMEnvironment` function disables an environment in BuildMaster. Environments are permanent and can only be disabled, never deleted. Pass the name of the environment to disable to the `Name` parameter. If the environment doesn't exist, you'll get an error.
 
     Pass the session to the BuildMaster instance where you want to disable the environment to the `Session` parameter. Use `New-BMSession` to create a session object.
 
