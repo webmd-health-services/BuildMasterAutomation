@@ -337,7 +337,7 @@ Describe 'Remove-BMVariable.when removing a server role variable' {
     It 'should remove the variable' {
         Init
         GivenServerRole 'RemoveBMVariable'
-        GivenVariable -Named 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServer 'RemoveBMVariable'
+        GivenVariable -Named 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'RemoveBMVariable'
         WhenRemovingVariable 'ServerRoleVar' -ForServerRole 'RemoveBMVariable'
         ThenVariableRemoved 'ServerRoleVar' -ForServerRole 'RemoveBMVariable'
         ThenNoErrorWritten
