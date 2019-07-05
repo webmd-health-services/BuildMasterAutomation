@@ -144,8 +144,8 @@ Describe 'Get-BMEnvironment.when given wildcards and using the Force' {
         GivenEnvironment 'Onf'
         GivenEnvironment 'Ong' -Disabled
         GivenEnvironment 'Two'
-        WhenGettingEnvironments -Named 'On*'
-        ThenEnvironmentsReturned 'One','Onf'
+        WhenGettingEnvironments -Named 'On*' -Force
+        ThenEnvironmentsReturned 'One','Onf','Ong'
     }
 }
 
