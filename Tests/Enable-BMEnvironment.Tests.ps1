@@ -77,7 +77,7 @@ function WhenEnablingEnvironment
     $result | Should -BeNullOrEmpty
 }
 
-Describe 'Enable-BMEnvironment.when environment is enabled' {
+Describe 'Enable-BMEnvironment.when environment is disabled' {
     It ('should enable the environment') {
         Init
         GivenEnvironment -Named 'Fubar' -Disabled
