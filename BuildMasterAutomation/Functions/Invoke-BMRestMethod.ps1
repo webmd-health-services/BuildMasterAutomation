@@ -72,6 +72,13 @@ function Invoke-BMRestMethod
         {
             $Body = $Parameter | ConvertTo-Json -Depth 100
             $debugBody = $Body -replace '("API_Key": +")[^"]+','$1********'
+            $encryptionKeyRegex = '"encryptionKey":( +)"([^"]+)"'
+            if( $debugBody -match $encryptionKeyRegex )
+            {
+                $maskLength = $Matches[2].Length
+                $mask = '*' * $maskLength
+                $debugBody = $debugBody -replace $encryptionKeyRegex,('"encryptionKey":$1"{0}"' -f $mask)
+            }
             if( -not $ContentType )
             {
                 $ContentType = 'application/json; charset=utf-8'
@@ -123,7 +130,8 @@ function Invoke-BMRestMethod
     }
     
     $debugBody | Write-Debug
-
+    
+    $numErrors = $Global:Error.Count
     try
     {
         if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($Uri,$Method) )
@@ -134,6 +142,13 @@ function Invoke-BMRestMethod
     }
     catch [Net.WebException]
     {
-        Write-Error -ErrorRecord $_
+        if( $ErrorActionPreference -eq 'Ignore' )
+        {
+            for( $idx = $numErrors; $idx -lt $Global:Error.Count; ++$idx )
+            {
+                $Global:Error.RemoveAt(0)
+            }
+        }
+        Write-Error -ErrorRecord $_ -ErrorAction $ErrorActionPreference
     }
 }

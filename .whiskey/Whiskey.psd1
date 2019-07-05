@@ -12,7 +12,7 @@
     RootModule = 'Whiskey.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.37.1'
+    ModuleVersion = '0.42.0'
 
     # ID used to uniquely identify this module
     GUID = '93bd40f1-dee5-45f7-ba98-cb38b7f5b897'
@@ -23,14 +23,16 @@
     # Company or vendor of this module
     CompanyName = 'WebMD Health Services'
 
+    CompatiblePSEditions = @( 'Desktop', 'Core' )
+
     # Copyright statement for this module
-    Copyright = '(c) 2016 WebMD Health Services. All rights reserved.'
+    Copyright = '(c) 2016 - 2018 WebMD Health Services. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description = 'Continuous Integration/Continuous Delivery module.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    # PowerShellVersion = ''
+    PowerShellVersion = '5.1'
 
     # Name of the Windows PowerShell host required by this module
     # PowerShellHostName = ''
@@ -54,7 +56,7 @@
     RequiredAssemblies = @( 'bin\SemanticVersion.dll', 'bin\Whiskey.dll', 'bin\YamlDotNet.dll' )
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-    #ScriptsToProcess = @()
+    # ScriptsToProcess = @()
 
     # Type files (.ps1xml) to be loaded when importing this module
     # TypesToProcess = @()
@@ -64,16 +66,12 @@
                             'Formats\System.Exception.format.ps1xml',
                             'Formats\Whiskey.BuildInfo.format.ps1xml',
                             'Formats\Whiskey.BuildVersion.format.ps1xml',
-                            'Formats\Whiskey.Context.format.ps1xml'
+                            'Formats\Whiskey.Context.format.ps1xml',
+                            'Formats\Whiskey.TaskAttribute.format.ps1xml'
                         )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-    NestedModules = @(
-                        'BitbucketServerAutomation',
-                        'BuildMasterAutomation',
-                        'ProGetAutomation',
-                        'VSSetup'
-                     )
+    NestedModules = @( )
 
     # Functions to export from this module
     FunctionsToExport = @(
@@ -83,12 +81,15 @@
                             'Add-WhiskeyVariable',
                             'Assert-WhiskeyNodePath',
                             'Assert-WhiskeyNodeModulePath',
+                            'ConvertFrom-WhiskeyContext'
                             'ConvertFrom-WhiskeyYamlScalar',
+                            'ConvertTo-WhiskeyContext',
                             'ConvertTo-WhiskeySemanticVersion',
                             'Get-WhiskeyApiKey',
                             'Get-WhiskeyTask',
                             'Get-WhiskeyCredential',
                             'Get-WhiskeyMSBuildConfiguration',
+                            'Import-WhiskeyPowerShellModule',
                             'Install-WhiskeyTool',
                             'Invoke-WhiskeyNodeTask',
                             'Invoke-WhiskeyNpmCommand',
@@ -101,8 +102,9 @@
                             'Publish-WhiskeyProGetUniversalPackage',
                             'Publish-WhiskeyBBServerTag',
                             'Register-WhiskeyEvent',
+                            'Resolve-WhiskeyNodePath',
+                            'Resolve-WhiskeyNodeModulePath',
                             'Resolve-WhiskeyNuGetPackageVersion',
-                            'Resolve-WhiskeyPowerShellModule',
                             'Resolve-WhiskeyTaskPath',
                             'Resolve-WhiskeyVariable',
                             'Set-WhiskeyBuildStatus',
@@ -147,9 +149,16 @@
             # A URL to an icon representing this module.
             # IconUri = ''
 
+            # Any prerelease to use when publishing to a repository.
+            Prerelease = 'beta1105'
+
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Fixed: Detecting versions of installed MSBuild fails if expected registry keys exist but expected values don't exist.
+* Fixed: `Version` task uses the last matching item in the prerelease label branch map instead of the first match.
+* NUnit3 task supports running NUnit2 tests and uses version 3.10 of ConsoleRunner.
+* Task authors can now define task aliases. Use the `Aliases` property on your task's `TaskAttribute` attribute. Build scripts can then use your task using its name or one of its aliases. See `about_Whiskey_Writing_Tasks` for more information.
+* Whiskey tasks can now have named parameters and Whiskey will pass task properties from the build YAML file that match a parameter on a task's function. See about_Whiskey_Writing_Tasks for more information.
+* Task authors can now deprecate tasks. Set the `Obsolete` property on the task's `Whiskey.Task` attribute. See `about_Whiskey_Writing_Tasks` for more information.
 '@
         } # End of PSData hashtable
 

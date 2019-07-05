@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Copyright 2016 - 2018 WebMD Health Services
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+   
+       http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<Configuration>
+    <ViewDefinitions>
+        <View>
+            <Name>Inedo.BuildMaster.Server.Table</Name>
+            <ViewSelectedBy>
+                <TypeName>Inedo.BuildMaster.Server</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader />
+                    <TableColumnHeader>
+                        <Width>10</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader />
+                    <TableColumnHeader />
+                    <TableColumnHeader>
+                        <Width>6</Width>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>name</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>serverType</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>hostName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>port</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>active</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <View>
+            <Name>Whiskey.Context.List</Name>
+            <ViewSelectedBy>
+                <TypeName>Inedo.BuildMaster.Server</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>name</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>serverType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>hostName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>port</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>environments</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>roles</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>active</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>variables</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>encryptionType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>requireSsl</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>credentialsName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>tempPath</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>wsManUrl</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>
