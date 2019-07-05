@@ -182,6 +182,21 @@ function GivenAPackage
     return New-BMPackage -Session $session -Release $release
 }
 
+function ThenError
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$Matches
+    )
+
+    $Global:Error | Should -Match $Matches
+}
+
+function ThenNoErrorWritten
+{
+    $Global:Error | Should -BeNullOrEmpty
+}
+
 $BMTestSession = $session
 
 Get-BMApplication -Session $session | 

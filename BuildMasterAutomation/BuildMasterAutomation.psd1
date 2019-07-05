@@ -73,17 +73,22 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
     FunctionsToExport = @(
                             'Add-BMObjectParameter',
                             'Disable-BMApplication',
+                            'Disable-BMEnvironment',
+                            'Enable-BMEnvironment',
                             'Get-BMApplication',
                             'Get-BMApplicationGroup',
                             'Get-BMDeployment',
+                            'Get-BMEnvironment',
                             'Get-BMRelease',
                             'Get-BMPackage',
                             'Get-BMPipeline',
                             'Get-BMServer',
                             'Get-BMServerRole',
+                            'Get-BMVariable',
                             'Invoke-BMNativeApiMethod',
                             'Invoke-BMRestMethod',
                             'New-BMApplication',
+                            'New-BMEnvironment',
                             'New-BMPipeline',
                             'New-BMRelease',
                             'New-BMPackage',
@@ -93,7 +98,9 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
                             'Publish-BMReleasePackage',
                             'Remove-BMServer',
                             'Remove-BMServerRole',
+                            'Remove-BMVariable',
                             'Set-BMRelease',
+                            'Set-BMVariable',
                             'Stop-BMRelease'
                          )
 
@@ -139,6 +146,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             ReleaseNotes = @'
 * Created Get-BMServerRole, New-BMServerRole, and Remove-BMServerRole functions for managing server roles.
 * Created Get-BMServer, New-BMServer, and Remove-BMServer functions for managing servers.
+* Created Get-BMEnvironment, New-BMEnvironment, Disable-BMEnvironment, and Enable-BMEnvironment functions for managing environments.
+* Created Get-BMVariable, Remove-BMVariable, and Set-BMVariable functions for managing variables.
 '@
         } # End of PSData hashtable
 

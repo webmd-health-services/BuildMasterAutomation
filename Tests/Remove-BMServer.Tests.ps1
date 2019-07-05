@@ -22,21 +22,6 @@ function GivenServer
     New-BMServer -Session $session -Name $Named -Windows
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenServerExists
 {
     param(

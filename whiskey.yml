@@ -24,6 +24,7 @@ Build:
 
 - Pester4:
     Path: Tests\*.Tests.ps1
+    Verbose: false
     
 - Zip:
     ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation.zip

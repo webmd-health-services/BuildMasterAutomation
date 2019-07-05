@@ -22,21 +22,6 @@ function GivenRole
     New-BMServerRole -Session $session -Name $Named
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenRoleExists
 {
     param(

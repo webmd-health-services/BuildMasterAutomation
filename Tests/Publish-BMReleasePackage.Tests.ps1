@@ -59,6 +59,7 @@ $pipeline = New-BMPipeline -Session $session -Name $pipelineName -Application $a
 </Inedo.BuildMaster.Pipelines.PipelineStage>
 '@
 $release = New-BMRelease -Session $session -Application $app -Number '1.0' -Pipeline $pipeline
+Enable-BMEnvironment -Session $session -Name 'Integration'
 
 function GivenBMReleasePackage
 {

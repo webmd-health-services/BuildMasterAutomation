@@ -31,21 +31,6 @@ function GivenServer
     New-BMServer -Session $session -Name $Name -Windows @optionalParams
 }
 
-function ThenError
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Matches
-    )
-
-    $Global:Error | Should -Match $Matches
-}
-
-function ThenNoErrorWritten
-{
-    $Global:Error | Should -BeNullOrEmpty
-}
-
 function ThenNothingReturned
 {
     $servers | Should -BeNullOrEmpty
