@@ -42,7 +42,7 @@ function New-BMEnvironment
 
     $parameter = @{
                     name = $Name;
-                    parent = $ParentName;
+                    parentName = $ParentName;
                  }
     $encodedName = [uri]::EscapeDataString($Name)
     Invoke-BMRestMethod -Session $Session -Name ('infrastructure/environments/create/{0}' -f $encodedName) -Method Post -Parameter $parameter -AsJson

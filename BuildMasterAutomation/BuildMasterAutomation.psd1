@@ -145,6 +145,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Fixed: Get-BMApplication, Get-BMApplicationGroup, and Get-BMPipeline fail if the user's WhatIfPreference is true.
+* Fixed: New-BMEnvironment wasn't setting an environment's parent.
+* Fixed: Get-BMEnvironment wasn't returning an environments parent.
 '@
         } # End of PSData hashtable
 
