@@ -66,7 +66,8 @@ function Get-BMEnvironment
             [pscustomobject]@{
                                 id = $_.Environment_Id;
                                 name = $_.Environment_Name;
-                                active = $_.Active_Indicator
+                                active = $_.Active_Indicator;
+                                parentName = $_.Parent_Environment_Name;
                             }
         } |
         Where-Object {

@@ -46,7 +46,9 @@ function ThenEnvironmentExists
         [Parameter(Mandatory)]
         [string]$Named,
 
-        [Switch]$Disabled
+        [Switch]$Disabled,
+
+        [string]$WithParent
     )
 
     $environment = Get-BMEnvironment -Session $session -Name $Named
@@ -60,6 +62,15 @@ function ThenEnvironmentExists
     else
     {
         $environment.active | Should -BeTrue
+    }
+
+    if( $WithParent )
+    {
+        $environment.parentName | Should -Be $WithParent
+    }
+    else
+    {
+        $environment.parentName | Should -BeNullOrEmpty
     }
 }
 
@@ -80,7 +91,9 @@ function WhenCreatingEnvironment
         [Parameter(Mandatory)]
         [string]$Named,
 
-        [Switch]$WhatIf
+        [Switch]$WhatIf,
+
+        [string]$WithParent
     )
 
     $optionalParams = @{
@@ -88,6 +101,11 @@ function WhenCreatingEnvironment
     if( $WhatIf )
     {
         $optionalParams['WhatIf'] = $true
+    }
+
+    if( $WithParent )
+    {
+        $optionalParams['ParentName'] = $WithParent
     }
 
     $result = New-BMEnvironment -Session $session -Name $Named @optionalParams
@@ -175,5 +193,16 @@ Describe 'New-BMEnvironment.when using -WhatIf' {
         WhenCreatingEnvironment -Named $name -WhatIf
         ThenNoErrorWritten
         ThenEnvironmentDoesNotExist -Named $name
+    }
+}
+
+Describe 'New-BMEnvironment.when setting parent environment' {
+    It 'should set the parent environment' {
+        Init
+        GivenEnvironment 'parent'
+        $name = New-EnvironmentName
+        WhenCreatingEnvironment $name -WithParent 'parent'
+        ThenNoErrorWritten
+        ThenEnvironmentExists $name -WithParent 'parent'
     }
 }
