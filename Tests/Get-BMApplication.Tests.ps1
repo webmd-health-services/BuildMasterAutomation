@@ -55,11 +55,31 @@ function ThenReturnsAllApplications
 function WhenGettingAllApplications
 {
     param(
-        [Switch]
-        $Force
+        [Switch]$Force,
+
+        [Switch]$WhatIf
     )
 
-    $script:result = Get-BMApplication -Session $BMTestSession @PSBoundParameters
+    $originalWhatIf = $WhatIfPreference
+    if( $WhatIf )
+    {
+        $WhatIfPreference = $true
+    }
+
+    $optionalParams = @{ }
+    if( $Force )
+    {
+        $optionalParams['Force'] = $true
+    }
+
+    try
+    {
+        $script:result = Get-BMApplication -Session $BMTestSession @optionalParams
+    }
+    finally
+    {
+        $WhatIfPreference = $originalWhatIf
+    }
 }
 
 function WhenGettingAnApplication
@@ -107,3 +127,11 @@ Describe 'Get-BMApplication.when getting a specific disabled applicationn' {
     }
 }
 
+Describe 'Get-BMApplication.when user''s WhatIfPreference is true' {
+    It 'should return applications' {
+        $app1 = GivenAnApplication -Name $PSCommandPath
+        $app2 = GivenAnApplication -Name $PSCommandPath
+        WhenGettingAllApplications -WhatIf
+        ThenReturnsAllApplications $app1,$app2
+    }
+}

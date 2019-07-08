@@ -56,7 +56,8 @@ function WhenGettingPipeline
     param(
         $Name,
         $ForApplication,
-        $ForPipeline
+        $ForPipeline,
+        [Switch]$WhatIf
     )
 
     $optionalParams = @{ }
@@ -75,7 +76,20 @@ function WhenGettingPipeline
         $optionalParams['ID'] = $ForPipeline
     }
 
-    $script:result = Get-BMPipeline -Session $session @optionalParams
+    $originalWhatIf = $WhatIfPreference
+    try
+    {
+        if( $WhatIf )
+        {
+            $Global:WhatIfPreference = $true
+        }
+
+        $script:result = Get-BMPipeline -Session $session @optionalParams
+    }
+    finally
+    {
+        $Global:WhatIfPreference = $originalWhatIf
+    }
 }
 
 Describe 'Get-BMPipeline.when requesting all pipelines' {
@@ -127,6 +141,15 @@ Describe 'Get-BMPipeline.when requesting a pipeline by ID' {
         $p = GivenPipeline 'One'
         GivenPipeline 'Two'
         WhenGettingPipeline -ForPipeline $p.Pipeline_Id
+        ThenReturned 'One'
+    }
+}
+
+Describe 'Get-BMPipeline.when WhatIfPreference is true' {
+    It 'should still return pipelines' {
+        Init
+        $p = GivenPipeline 'One'
+        WhenGettingPipeline -ForPipeline $p.Pipeline_Id -WhatIf
         ThenReturned 'One'
     }
 }

@@ -34,6 +34,7 @@ function Get-BMApplicationGroup
     
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    $WhatIfPreference = $false
     
     $parameters = @{}
     

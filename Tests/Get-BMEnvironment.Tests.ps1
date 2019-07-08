@@ -69,7 +69,9 @@ function WhenGettingEnvironments
     param(
         [string]$Named,
 
-        [Switch]$Force
+        [Switch]$Force,
+
+        [Switch]$WhatIf
     )
 
     $optionalParams = @{ }
@@ -81,7 +83,20 @@ function WhenGettingEnvironments
     {
         $optionalParams['Force'] = $true
     }
-    $script:environments = Get-BMEnvironment -Session $session @optionalParams
+
+    $originalWhatIf = $Global:WhatIfPreference
+    if( $WhatIf )
+    {
+        $Global:WhatIfPreference = $true
+    }
+    try
+    {
+        $script:environments = Get-BMEnvironment -Session $session @optionalParams
+    }
+    finally
+    {
+        $Global:WhatIfPreference = $originalWhatIf
+    }
 }
 
 Describe 'Get-BMEnvironment.when given no name' {
@@ -176,6 +191,16 @@ Describe 'Get-BMEnvironment.when ignoring when a environment doesn''t exist' {
         GivenEnvironment 'One'
         WhenGettingEnvironments -Named ('Blah{0}' -f [IO.Path]::GetRandomFileName()) -ErrorAction Ignore
         ThenNoEnvironmentsReturned
+        ThenNoErrorWritten
+    }
+}
+
+Describe 'Get-BMEnvironment.when WhatIfPreference is true' {
+    It 'should return environments' {
+        Init
+        GivenEnvironment 'One'
+        WhenGettingEnvironments 'One' -WhatIf
+        ThenEnvironmentsReturned 'One'
         ThenNoErrorWritten
     }
 }

@@ -33,13 +33,28 @@ function GivenApplicationGroup
 function WhenGettingApplicationGroup
 {
     param(
-        [String]
-        $Name
+        [String]$Name,
+        
+        [Switch]$WhatIf
     )
 
     $Global:Error.Clear()
 
-    $script:getAppGroups = Get-BMApplicationGroup -Session $conn $Name
+    $optionalParams = @{ }
+
+    $originalWhatIf = $Global:WhatIfPreference
+    if( $WhatIf )
+    {
+        $Global:WhatIfPreference = $true
+    }
+    try
+    {
+        $script:getAppGroups = Get-BMApplicationGroup -Session $conn $Name
+    }
+    finally
+    {
+        $Global:WhatIfPreference = $originalWhatIf
+    }
 }
 
 function ThenShouldNotThrowErrors
@@ -118,5 +133,15 @@ Describe 'Get-BMApplicationGroup.when no application groups exist' {
         WhenGettingApplicationGroup
         ThenShouldNotThrowErrors
         ThenShouldNotReturnApplicationGroup
+    }
+}
+
+Describe 'Get-BMApplicationGroup.when WhatIfPreference is true' {
+    It 'should return application group' {
+        Init
+        GivenApplicationGroup 'One'
+        WhenGettingApplicationGroup 'One' -WhatIf
+        ThenShouldNotThrowErrors
+        ThenShouldReturnApplicationGroup 'One'
     }
 }
