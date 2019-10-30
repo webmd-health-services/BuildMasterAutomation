@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.7.0'
+    ModuleVersion = '0.8.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -144,10 +144,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created Get-BMServerRole, New-BMServerRole, and Remove-BMServerRole functions for managing server roles.
-* Created Get-BMServer, New-BMServer, and Remove-BMServer functions for managing servers.
-* Created Get-BMEnvironment, New-BMEnvironment, Disable-BMEnvironment, and Enable-BMEnvironment functions for managing environments.
-* Created Get-BMVariable, Remove-BMVariable, and Set-BMVariable functions for managing variables.
+* Added support for BuildMaster 6.1.17. Fixed an issue where environments created with `New-BMEnvironment` are disabled/inactive in that version.
+* Added `Inactive` switch to `New-BMEnvironment` to create inactive/disabled environments. The default is to create active/enabled environments.
 '@
         } # End of PSData hashtable
 

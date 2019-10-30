@@ -44,9 +44,9 @@ function ThenEnvironmentExists
 {
     param(
         [Parameter(Mandatory)]
-        [string]$Named,
+        [String]$Named,
 
-        [Switch]$Disabled
+        [switch]$Disabled
     )
 
     $environment = Get-BMEnvironment -Session $session -Name $Named
@@ -78,9 +78,11 @@ function WhenCreatingEnvironment
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$Named,
+        [String]$Named,
 
-        [Switch]$WhatIf
+        [switch]$WhatIf,
+
+        [switch]$Inactive
     )
 
     $optionalParams = @{
@@ -88,6 +90,11 @@ function WhenCreatingEnvironment
     if( $WhatIf )
     {
         $optionalParams['WhatIf'] = $true
+    }
+
+    if( $PSBoundParameters['Inactive'] )
+    {
+        $optionalParams['Inactive'] = $Inactive
     }
 
     $result = New-BMEnvironment -Session $session -Name $Named @optionalParams
@@ -101,6 +108,16 @@ Describe 'New-BMEnvironment.when creating a new environment' {
         WhenCreatingEnvironment -Named $name
         ThenNoErrorWritten
         ThenEnvironmentExists -Named $name
+    }
+}
+
+Describe 'New-BMEnvironment.when creating a new inactive environment' {
+    It ('should create environment') {
+        $name = New-EnvironmentName
+        Init
+        WhenCreatingEnvironment -Named $name -Inactive
+        ThenNoErrorWritten
+        ThenEnvironmentExists -Named $name -Disabled
     }
 }
 
@@ -119,7 +136,7 @@ Describe 'New-BMEnvironment.when environment already exists and is disabled' {
         Init
         GivenEnvironment -Named 'Fubar' -Disabled
         WhenCreatingEnvironment -Named 'Fubar' -ErrorAction SilentlyContinue
-        ThenError 'duplicate\ key'
+        ThenError 'already\ exists'
         ThenEnvironmentExists -Named 'Fubar' -Disabled
     }
 }
