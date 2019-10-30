@@ -45,6 +45,8 @@ function Get-BMApplication
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    # Invoke-BMNativeApiMethod uses POST, but we're reading data, so always make the request.
+    $WhatIfPreference = $false
 
     $parameters = @{
                         Application_Count = 0;

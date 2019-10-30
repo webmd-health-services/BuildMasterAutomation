@@ -65,6 +65,7 @@ function Get-BMPipeline
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    $WhatIfPreference = $false
 
     $parameter = @{ }
     $methodName = 'Pipelines_GetPipelines'
