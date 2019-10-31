@@ -45,7 +45,7 @@ function New-BMEnvironment
 
     $parameter = @{
                     name = $Name;
-                    parent = $ParentName;
+                    parentName = $ParentName;
                     active = (-not $Inactive);
                  }
     $encodedName = [Uri]::EscapeDataString($Name)
