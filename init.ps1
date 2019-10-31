@@ -27,7 +27,8 @@ Set-StrictMode -Version 'Latest'
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '6.1.8'
+$version = '6.1.17'
+Write-Verbose -Message ('Testing BuildMaster {0}' -f $version)
 $sqlServer = $null
 $installerPath = 'SQL'
 $installerUri = 'sql'
@@ -70,7 +71,7 @@ foreach( $item in $sqlServers )
 }
 
 $installerPath = Join-Path -Path $PSScriptRoot -ChildPath ('.output\BuildMasterInstaller{0}-{1}.exe' -f $installerPath,$version)
-$installerUri = 'http://inedo.com/files/buildmaster/{0}/{1}.exe' -f $installerUri,$version
+$installerUri = 'https://my.inedo.com/services/legacy/downloads/buildmaster/{0}/{1}.exe' -f $installerUri,$version
 
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 {

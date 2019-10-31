@@ -25,16 +25,19 @@ function New-BMEnvironment
     param(
         [Parameter(Mandatory)]
         # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object]$Session,
 
         [Parameter(Mandatory)]
         [ValidatePattern('^[A-Za-z][A-Za-z0-9_-]*(?<![_-])$')]
         [ValidateLength(1,50)]
         # The name of the environment to create. Must contain only letters, numbers, underscores, or dashes. Must begin with a letter. Must not end with an underscore or dash. Must be between 1 and 50 characters long.
-        [string]$Name,
+        [String]$Name,
 
         # The name of this environment's parent environemnt.
-        [string]$ParentName
+        [String]$ParentName,
+
+        # By default, new environments are active. If you want the environment to be inactive, use this switch.
+        [switch]$Inactive
     )
 
     Set-StrictMode -Version 'Latest'
@@ -43,7 +46,8 @@ function New-BMEnvironment
     $parameter = @{
                     name = $Name;
                     parentName = $ParentName;
+                    active = (-not $Inactive);
                  }
-    $encodedName = [uri]::EscapeDataString($Name)
+    $encodedName = [Uri]::EscapeDataString($Name)
     Invoke-BMRestMethod -Session $Session -Name ('infrastructure/environments/create/{0}' -f $encodedName) -Method Post -Parameter $parameter -AsJson
 }
