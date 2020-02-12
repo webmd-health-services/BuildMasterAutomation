@@ -1,5 +1,11 @@
 
 Add-Type -AssemblyName 'System.Web'
 
-Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Functions') -Filter '*.ps1' |
-    ForEach-Object { . $_.FullName }
+$functionsDir = Join-Path -Path $PSScriptRoot -ChildPath 'Functions'
+if( (Test-Path -Path $functionsDir -PathType Container) )
+{
+    foreach( $item in (Get-ChildItem -Path $functionsDir -Filter '*.ps1') )
+    {
+        . $item.FullName
+    }
+}
