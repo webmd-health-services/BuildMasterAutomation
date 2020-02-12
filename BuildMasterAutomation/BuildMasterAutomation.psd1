@@ -145,6 +145,8 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Improved import speed by merging all functions into the module's .psm1 file.
+* Updating to support BuildMaster 6.1.25.
+* Fixed: New-BMServerRole requires a request body in BuildMaster 6.1.25.
 '@
         } # End of PSData hashtable
 

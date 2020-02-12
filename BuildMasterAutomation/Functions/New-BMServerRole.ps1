@@ -35,5 +35,5 @@ function New-BMServerRole
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $encodedName = [uri]::EscapeDataString($Name)
-    Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/create/{0}' -f $encodedName) -Method Post
+    Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/create/{0}' -f $encodedName) -Method Post -Body '{}'
 }
