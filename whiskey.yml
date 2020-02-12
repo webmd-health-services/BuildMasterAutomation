@@ -23,6 +23,7 @@ Build:
     Path: init.ps1
 
 - MergeFile:
+    OnlyBy: BuildServer
     Path: BuildMasterAutomation\Functions\*.ps1
     DestinationPath: BuildMasterAutomation\BuildMasterAutomation.psm1
     DeleteSourceFiles: true
