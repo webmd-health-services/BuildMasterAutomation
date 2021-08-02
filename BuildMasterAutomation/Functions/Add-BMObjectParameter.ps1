@@ -65,7 +65,19 @@ function Add-BMObjectParameter
             $nameParamName = $namePropertyName
         }
 
-        if( $Value -is [int] )
+        # In Windows PowerShell, ids come here as [Int32]. In PowerShell Core, [Int64].
+        $intTypes = @(
+            [TypeCode]::Byte,
+            [TypeCode]::Int16,
+            [TypeCode]::Int32,
+            [TypeCode]::Int64,
+            [TypeCode]::SByte,
+            [TypeCode]::UInt16,
+            [TypeCode]::UInt32,
+            [TypeCode]::UInt64
+        )
+        
+        if( [Type]::GetTypeCode($Value.GetType()) -in $intTypes )
         {
             $Parameter[$idParamName] = $Value
         }

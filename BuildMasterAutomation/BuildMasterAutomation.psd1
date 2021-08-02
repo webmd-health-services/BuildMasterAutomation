@@ -145,6 +145,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Updated to support BuildMaster 6.1.28.
+* Added support for PowerShell Core.
 '@
         } # End of PSData hashtable
 
