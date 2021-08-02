@@ -1,4 +1,5 @@
-/PSModules/**
-/.output/**
+/PSModules/
+/.output/
 *.log
 .psgallerykey
+/.vscode/

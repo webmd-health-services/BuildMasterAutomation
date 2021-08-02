@@ -18,6 +18,7 @@ param(
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
+$ProgressPreference = [Management.Automation.ActionPreference]::SilentlyContinue
 
 & {
     $VerbosePreference = 'SilentlyContinue'
@@ -27,7 +28,7 @@ Set-StrictMode -Version 'Latest'
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '6.1.25'
+$version = '6.1.28'
 Write-Verbose -Message ('Testing BuildMaster {0}' -f $version)
 $sqlServer = $null
 $installerPath = 'SQL'
