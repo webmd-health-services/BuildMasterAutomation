@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.0.1'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -144,6 +144,10 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+# 1.0.1
+* Publishing version 1.0.0 to GitHub failed. This version is identical to 1.0.0.
+
+# 1.0.0
 * Updated to support BuildMaster 6.1.28.
 * Added support for PowerShell Core.
 '@
