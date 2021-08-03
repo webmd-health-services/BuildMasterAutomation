@@ -39,6 +39,7 @@ param(
 
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
+$ProgressPreference = [Management.Automation.ActionPreference]::SilentlyContinue
 
 # Set to a specific version to use a specific version of Whiskey. 
 $whiskeyVersion = '0.*'
@@ -73,7 +74,7 @@ if( -not (Test-Path -Path $whiskeyModuleRoot -PathType Container) )
     $zipUri = 
         $release.assets |
         ForEach-Object { $_ } |
-        Where-Object { $_.name -eq 'Whiskey.zip' } |
+        Where-Object { $_.name -like 'Whiskey-*.zip' } |
         Select-Object -ExpandProperty 'browser_download_url'
     
     if( -not $zipUri )

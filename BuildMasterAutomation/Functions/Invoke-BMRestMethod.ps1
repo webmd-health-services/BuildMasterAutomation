@@ -140,8 +140,14 @@ function Invoke-BMRestMethod
                 ForEach-Object { $_ } 
         }
     }
-    catch [Net.WebException]
+    catch
     {
+        $webExceptions = @( 'Microsoft.PowerShell.Commands.HttpResponseException', 'System.Net.WebException' )
+        if( $_.Exception.GetType().FullName -notin $webExceptions )
+        {
+            throw
+        }
+
         if( $ErrorActionPreference -eq 'Ignore' )
         {
             for( $idx = $numErrors; $idx -lt $Global:Error.Count; ++$idx )
