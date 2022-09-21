@@ -38,6 +38,8 @@ param(
 )
 
 #Requires -Version 5.1
+$ErrorActionPreference = 'Stop'
+
 Set-StrictMode -Version Latest
 $ProgressPreference = [Management.Automation.ActionPreference]::SilentlyContinue
 
@@ -74,7 +76,7 @@ if( -not (Test-Path -Path $whiskeyModuleRoot -PathType Container) )
     $zipUri = 
         $release.assets |
         ForEach-Object { $_ } |
-        Where-Object { $_.name -like 'Whiskey-*.zip' } |
+        Where-Object { $_.name -like 'Whiskey*.zip' } |
         Select-Object -ExpandProperty 'browser_download_url'
     
     if( -not $zipUri )
@@ -154,22 +156,4 @@ if( $Initialize )
 }
 
 $context = New-WhiskeyContext -Environment 'Dev' -ConfigurationPath $configPath
-
-$apiKeys = @{
-    'powershellgallery.com' = 'WHS_POWERSHELL_GALLERY_API_KEY';
-    'github.com' = 'WHS_GITHUB_ACCESS_TOKEN'
-}
-foreach( $apiKeyID in $apiKeys.Keys )
-{
-    $envVarName = $apiKeys[$apiKeyID]
-    $envVarPath = 'env:{0}' -f $envVarName
-    if( -not (Test-Path -Path $envVarPath) )
-    {
-        continue
-    }
-
-    Write-Verbose ('Adding API key "{0}" from environment variable "{1}".' -f $apiKeyID,$envVarName)
-    Add-WhiskeyApiKey -Context $context -ID $apiKeyID -Value (Get-Item -Path $envVarPath).Value
-}
-
 Invoke-WhiskeyBuild -Context $context @optionalArgs

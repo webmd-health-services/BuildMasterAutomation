@@ -1,0 +1,12 @@
+{
+    "PSModules": [
+        {
+            "Name": "Carbon",
+            "Version": "2.*"
+        },
+        {
+            "Name": "SqlServer",
+            "Version": "21.*"
+        }
+    ]
+}
