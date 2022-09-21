@@ -1,0 +1,14 @@
+{
+  "PSModules": [
+    {
+      "name": "Carbon",
+      "version": "2.12.0",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    },
+    {
+      "name": "SqlServer",
+      "version": "21.1.18256",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    }
+  ]
+}
