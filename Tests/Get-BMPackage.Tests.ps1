@@ -1,173 +1,169 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-[object[]]$result = $null
+    [object[]]$script:result = $null
 
-function ThenDidNotReturn
-{
-    param(
-        [Parameter(Mandatory=$true,Position=0)]
-        [string]
-        $Description,
+    function ThenDidNotReturn
+    {
+        param(
+            [Parameter(Mandatory=$true,Position=0)]
+            [string]
+            $Description,
 
-        [Parameter(mandatory=$true,Position=1)]
-        [object[]]
-        $Package
-    )
+            [Parameter(mandatory=$true,Position=1)]
+            [object[]]
+            $Package
+        )
 
-    It ('should not return {0} packages' -f $Description) {
         foreach( $item in $Package )
         {
-            $foundPackage = $result | Where-Object { $_.id -eq $item.id } 
+            $foundPackage = $script:result | Where-Object { $_.id -eq $item.id }
             $foundPackage | Should -BeNullOrEmpty
         }
     }
-}
 
-function ThenReturnedPackages
-{
-    param(
-        [Parameter(Mandatory=$true,Position=0)]
-        [string]
-        $Description,
+    function ThenReturnedPackages
+    {
+        param(
+            [Parameter(Mandatory=$true,Position=0)]
+            [string]
+            $Description,
 
-        [Parameter(Mandatory=$true,Position=1)]
-        [object[]]
-        $Package
-    )
+            [Parameter(Mandatory=$true,Position=1)]
+            [object[]]
+            $Package
+        )
 
-    It ('should return {0} packages' -f $Description) {
         foreach( $item in $Package )
         {
-            $result | Where-Object { $_.id -eq $item.id } | Should -Not -BeNullOrEmpty
+            $script:result | Where-Object { $_.id -eq $item.id } | Should -Not -BeNullOrEmpty
         }
     }
-}
 
-function ThenReturnedPackage
-{
-    param(
-        $Package
-    )
+    function ThenReturnedPackage
+    {
+        param(
+            $Package
+        )
 
-    It ('should return just that package') {
-        $Script:result.Count | Should -Be 1
+        $script:result.Count | Should -Be 1
         $script:result[0].id | Should -Be $Package.id
+    }
+
+    function WhenGettingAllPackages
+    {
+        $script:result = Get-BMPackage -Session $BMTestSession
+    }
+
+    function WhenGettingPackage
+    {
+        param(
+            [Parameter(Mandatory=$true)]
+            [object]
+            $Package
+        )
+
+        $script:result = Get-BMPackage -Session $BMTestSession -Package $Package
+    }
+
+    function WhenGettingPackagesByRelease
+    {
+        param(
+            [Parameter(Mandatory=$true)]
+            [object]
+            $Release
+        )
+
+        $script:result = Get-BMPackage -Session $BMTestSession -Release $Release
     }
 }
 
-function WhenGettingAllPackages
-{
-    $script:result = Get-BMPackage -Session $BMTestSession
-}
+Describe 'Get-BMPackage' {
+    It 'should return all packages' {
+        $pipeline = GivenAPipeline -Named $PSCommandPath
 
-function WhenGettingPackage
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Package
-    )
+        $app1 = GivenAnApplication -Name $PSCommandPath
+        $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
+        $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
 
-    $script:result = Get-BMPackage -Session $BMTestSession -Package $Package
-}
+        $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
 
-function WhenGettingPackagesByRelease
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Release
-    )
+        $app2 = GivenAnApplication -Name $PSCommandPath
+        $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
+        $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
 
-    $script:result = Get-BMPackage -Session $BMTestSession -Release $Release
-}
+        $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
 
+        WhenGettingAllPackages
 
-Describe 'Get-BMPackage.when given no parameters' {
-    $pipeline = GivenAPipeline -Named $PSCommandPath
+        ThenReturnedPackages 'all' $app1Release1Package1,$app1Release1Package2,$app1Release2Package1,$app2Release1Package1,$app2Release1Package2,$app2Release2Package1
+    }
 
-    $app1 = GivenAnApplication -Name $PSCommandPath
-    $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
-    $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
+    It 'should return specific package using package object' {
+        $package = GivenAPackage -ForAnAppNamed $PSCommandPath -ForReleaseNumber '1.0.0'
+        WhenGettingPackage $package
+        ThenReturnedPackage $package
+    }
 
-    $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
+    It 'should return specific package using package id' {
+        $package = GivenAPackage -ForAnAppNamed $PSCommandPath -ForReleaseNumber '1.0.0'
+        WhenGettingPackage $package.id
+        ThenReturnedPackage $package
+    }
 
-    $app2 = GivenAnApplication -Name $PSCommandPath
-    $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
-    $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
-        
-    $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
+    It 'should return package when passed release object' {
+        $pipeline = GivenAPipeline -Named $PSCommandPath
 
-    WhenGettingAllPackages
+        $app1 = GivenAnApplication -Name $PSCommandPath
+        $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
+        $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
 
-    ThenReturnedPackages 'all' $app1Release1Package1,$app1Release1Package2,$app1Release2Package1,$app2Release1Package1,$app2Release1Package2,$app2Release2Package1
-}
+        $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
 
-Describe 'Get-BMPackage.when passed a package object' {
-    $package = GivenAPackage -ForAnAppNamed $PSCommandPath -ForReleaseNumber '1.0.0'
-    WhenGettingPackage $package
-    ThenReturnedPackage $package
-}
+        $app2 = GivenAnApplication -Name $PSCommandPath
+        $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
+        $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
 
-Describe 'Get-BMPackage.when passed a package ID' {
-    $package = GivenAPackage -ForAnAppNamed $PSCommandPath -ForReleaseNumber '1.0.0'
-    WhenGettingPackage $package.id
-    ThenReturnedPackage $package
-}
+        $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
 
+        WhenGettingPackagesByRelease $app1Release1
+        ThenReturnedPackages 'that release''s' $app1Release1Package1,$app1Release1Package2
+        ThenDidNotReturn 'other releases''' $app1Release2Package1,$app2Release1Package1, $app2Release1Package2, $app2Release2Package1
+    }
 
-Describe 'Get-BMPackage.when passed a release object' {
-    $pipeline = GivenAPipeline -Named $PSCommandPath
+    It 'should return package when passed release id' {
+        $pipeline = GivenAPipeline -Named $PSCommandPath
 
-    $app1 = GivenAnApplication -Name $PSCommandPath
-    $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
-    $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
+        $app1 = GivenAnApplication -Name $PSCommandPath
+        $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
+        $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
 
-    $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
+        $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
 
-    $app2 = GivenAnApplication -Name $PSCommandPath
-    $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
-    $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
-        
-    $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
+        $app2 = GivenAnApplication -Name $PSCommandPath
+        $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
+        $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
 
-    WhenGettingPackagesByRelease $app1Release1
-    ThenReturnedPackages 'that release''s' $app1Release1Package1,$app1Release1Package2
-    ThenDidNotReturn 'other releases''' $app1Release2Package1,$app2Release1Package1, $app2Release1Package2, $app2Release2Package1
-}
+        $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
+        $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
 
-Describe 'Get-BMPackage.when passed a release id' {
-    $pipeline = GivenAPipeline -Named $PSCommandPath
-
-    $app1 = GivenAnApplication -Name $PSCommandPath
-    $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app1Release1Package1 = GivenAPackage -ForRelease $app1Release1
-    $app1Release1Package2 = GivenAPackage -ForRelease $app1Release1
-
-    $app1Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app1Release2Package1 = GivenAPackage -ForRelease $app1Release2
-
-    $app2 = GivenAnApplication -Name $PSCommandPath
-    $app2Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '1.0.0' -UsingPipeline $pipeline
-    $app2Release1Package1 = GivenAPackage -ForRelease $app2Release1
-    $app2Release1Package2 = GivenAPackage -ForRelease $app2Release1
-        
-    $app2Release2 = GivenARelease -Named $PSCommandPath -ForApplication $app2 -WithNumber '2.0.0' -UsingPipeline $pipeline
-    $app2Release2Package1 = GivenAPackage -ForRelease $app2Release2
-
-    WhenGettingPackagesByRelease $app1Release1.id
-    ThenReturnedPackages 'that release''s' $app1Release1Package1,$app1Release1Package2
-    ThenDidNotReturn 'other releases''' $app1Release2Package1,$app2Release1Package1, $app2Release1Package2, $app2Release2Package1
+        WhenGettingPackagesByRelease $app1Release1.id
+        ThenReturnedPackages 'that release''s' $app1Release1Package1,$app1Release1Package2
+        ThenDidNotReturn 'other releases''' $app1Release2Package1,$app2Release1Package1, $app2Release1Package2, $app2Release2Package1
+    }
 }

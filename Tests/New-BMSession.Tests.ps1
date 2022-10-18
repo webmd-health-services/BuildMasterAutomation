@@ -1,21 +1,19 @@
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
 
-Describe 'New-BMSession.when passed parameters' {
-    $uri = 'https://fubar.snafu'
-    $key = 'fubarsnafu'
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+}
 
-    $session = New-BMSession -Uri $uri -ApiKey $key
+Describe 'New-BMSession' {
+    It 'should return a session object' {
+        $uri = 'https://fubar.snafu'
+        $key = 'fubarsnafu'
 
-    It 'should return session object' {
-        $session | Should Not BeNullOrEmpty
-    }
-
-    It 'should set URI' {
-        $session.Uri | Should Be ([uri]$uri)
-    }
-
-    It 'should set API key' {
-        $session.ApiKey | Should Be $key
+        $session = New-BMSession -Uri $uri -ApiKey $key
+        $session | Should -Not -BeNullOrEmpty
+        $session.Uri | Should -Be ([uri]$uri)
+        $session.ApiKey | Should -Be $key
     }
 }
