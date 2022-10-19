@@ -62,7 +62,7 @@ try
             Write-Verbose ('{0} = {1}' -f $name,$value)
             [void] $cmd.Parameters.AddWithValue( $name, $value )
         }
-        $result = $cmd.ExecuteNonQuery();
+        $cmd.ExecuteNonQuery();
     }
 }
 finally
@@ -104,7 +104,7 @@ function GivenAnApplication
     $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
 
     $app = New-BMApplication -Session $session -Name $Name
-    
+
     if( $ThatIsDisabled )
     {
         Disable-BMApplication -Session $session -ID $app.Application_Id |
@@ -186,10 +186,10 @@ function ThenError
 {
     param(
         [Parameter(Mandatory)]
-        [string]$Matches
+        [string] $MatchesPattern
     )
 
-    $Global:Error | Should -Match $Matches
+    $Global:Error | Should -Match $MatchesPattern
 }
 
 function ThenNoErrorWritten
@@ -197,6 +197,7 @@ function ThenNoErrorWritten
     $Global:Error | Should -BeNullOrEmpty
 }
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
 $BMTestSession = $session
 
 Get-BMApplication -Session $session | 
