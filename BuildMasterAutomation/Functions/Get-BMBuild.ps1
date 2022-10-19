@@ -1,73 +1,67 @@
 
-function Get-BMPackage
+function Get-BMBuild
 {
     <#
     .SYNOPSIS
-    Gets a package from BuildMaster.
+    Gets a build from BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMPackage` function gets a package from BuildMaster. With no parameters, it returns all packages. To get all the packages that are part of a release, pass a release object or ID to the `Release` property (a release object must have an `id` or `Release_Id` property). To get a specific package, pass a package object or ID to the `Package` property (a package object must have an `id` or `Package_Id` property).
+    The `Get-BMBuild` function gets a build from BuildMaster. With no parameters, it returns all builds. To get all the
+    builds that are part of a release, pass a release id or object to the `Release` parameter. To get a specific build,
+    pass a build id or object to the `Build` parameter.
 
-    This function uses BuildMaster's "Release & Package Deployment" API. When creating a BuildMaster session (using the `New-BMSession` function), the API key you use must have access to that API.
-
-    .EXAMPLE
-    Get-BMPackage -Session $session
-
-    Demonstrates how to get all packages.
+    This function uses BuildMaster's
+    [Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build).
 
     .EXAMPLE
-    Get-BMPackage -Session $session -Package $package
+    Get-BMBuild -Session $session
 
-    Demonstrates how to get a specific package using a package object. The package object must have an `id` or `Package_Id` property.
-
-    .EXAMPLE
-    Get-BMPackage -Session $session -Package 500
-
-    Demonstrates how to get a specific package using its ID.
+    Demonstrates how to get all builds.
 
     .EXAMPLE
-    Get-BMPackage -Session $session -Release $release
+    Get-BMBuild -Session $session -Build $build
 
-    Demonstrates how to get all the packages that are part of a release using a release object. The release object must have an `id` or `Release_Id` property.
+    Demonstrates how to get a specific build using a build object.
 
     .EXAMPLE
-    Get-BMPackage -Session $session -Release 438
+    Get-BMBuild -Session $session -Build 500
 
-    Demonstrates how to get all the packages that are part of a release using the release's ID.
+    Demonstrates how to get a specific build using its id.
+
+    .EXAMPLE
+    Get-BMBuild -Session $session -Release $release
+
+    Demonstrates how to get all the builds that are part of a release using a release object.
+
+    .EXAMPLE
+    Get-BMBuild -Session $session -Release 438
+
+    Demonstrates how to get all the builds that are part of a release using the release's id.
     #>
-    [CmdletBinding(DefaultParameterSetName='AllPackages')]
+    [CmdletBinding(DefaultParameterSetName='AllBuilds')]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # A object that represents what instance of BuildMaster to connect to. Use the `New-BMSession` function to create session objects.
-        $Session,
+        # A session object to BuildMaster. Use the `New-BMSession` function to create a session.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true,ParameterSetName='SpecificPackage')]
-        [object]
-        # The package to get. Can be:
-        #
-        # * A package object with a `Package_Id` or `id` property.
-        # * A package ID (as an integer)
-        $Package,
+        # The build to get. Can be a build id or object.
+        [Parameter(Mandatory, ParameterSetName='SpecificBuild')]
+        [Object] $Build,
 
-        [Parameter(Mandatory=$true,ParameterSetName='ReleasePackages')]
-        [object]
-        # The release whose packages to get. Gets all the packages that are part of this release.
-        #
-        # * A release object with a `Release_Id` or `id` property.
-        # * A release ID (as an integer)
-        $Release
+        # The release whose builds to get. Can be a release id or object.
+        [Parameter(Mandatory, ParameterSetName='ReleaseBuilds')]
+        [Object] $Release
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $parameter = $null
-    if( $PSCmdlet.ParameterSetName -eq 'SpecificPackage' )
+    if( $PSCmdlet.ParameterSetName -eq 'SpecificBuild' )
     {
-        $parameter = @{ } | Add-BMObjectParameter -Name 'package' -Value $Package -PassThru
+        $parameter = @{ } | Add-BMObjectParameter -Name 'build' -Value $Build -PassThru
     }
-    elseif( $PSCmdlet.ParameterSetName -eq 'ReleasePackages' )
+    elseif( $PSCmdlet.ParameterSetName -eq 'ReleaseBuilds' )
     {
         $parameter = @{ } | Add-BMObjectParameter -Name 'release' -Value $Release -PassThru
     }
@@ -78,10 +72,10 @@ function Get-BMPackage
         $parameterParam['Parameter'] = $parameter
     }
 
-    Invoke-BMRestMethod -Session $Session -Name 'releases/packages' @parameterParam -Method Post |
+    Invoke-BMRestMethod -Session $Session -Name 'releases/builds' @parameterParam -Method Post |
         Where-Object {
-            # There's a bug in BuildMaster's API that returns packages for multiple releases. We don't want this. 
-            if( $PSCmdlet.ParameterSetName -eq 'ReleasePackages' )
+            # There's a bug in BuildMaster's API that returns builds for multiple releases. We don't want this.
+            if( $PSCmdlet.ParameterSetName -eq 'ReleaseBuilds' )
             {
                 return $_.releaseId -eq $parameter.releaseId
             }

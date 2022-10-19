@@ -72,10 +72,16 @@ Describe 'Remove-BMServerRole' {
         ThenRoleDoesNotExist -Named 'Fubar'
     }
 
-    It 'should ignore missing role' {
-        WhenRemovingRole -Named 'IDoNotExist'
-        ThenNoErrorWritten
+    It 'should reject missing role' {
+        WhenRemovingRole -Named 'IDoNotExist' -ErrorAction SilentlyContinue
+        ThenError 'server role .* does not exist'
         ThenRoleDoesNotExist -Named 'IDoNotExist'
+    }
+
+    It 'should ignore errors' {
+        WhenRemovingRole -Named 'IDoNotExist2' -ErrorAction Ignore
+        ThenNoErrorWritten
+        ThenRoleDoesNotExist -Named 'IDoNotExist2'
     }
 
     It 'should support WhatIf' {

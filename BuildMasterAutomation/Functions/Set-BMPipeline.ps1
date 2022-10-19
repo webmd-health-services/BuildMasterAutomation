@@ -1,98 +1,105 @@
 
-function New-BMPipeline
+function Set-BMPipeline
 {
     <#
     .SYNOPSIS
     Creates a new pipeline in BuildMaster.
 
     .DESCRIPTION
-    The `New-BMPipeline` function creates a new pipeline in BuildMaster and retuns an object representing the new pipeline. In order to deploy an application, you must create a release for that application. Each release gets assigned a pipeline, which are the set of steps to do when releasing and deploying. Pipelines can belong to a specific application or shared between applications.
+    The `Set-BMPipeline` function creates or updates a pipeline in BuildMaster. Pass the name of the pipeline to the
+    `Name` parameter. Pass the raft id or a raft object where the pipeline should be saved to the `Raft` parameter. A
+    global pipeline will be created with no stages.
 
-    The pipeline is created with no stages. The following settings are enabled:
+    To assign the pipeline to an application, pass the application's id, name or an application object to the
+    `Application` parameter.
 
-    * Enforce pipeline stage order for deployments
+    To set the stages of the pipeline, use the `New-BMPipelineStageObject` and `New-BMPipelineStageTargetObject`
+    functions to create the stages, then pass them to the `Stage` parameter. If the pipeline exists, you can use
+    `Get-BMPipeline` to get the pipeline, modify its stage objects, then pass them to the `Stage` parameter.
 
-    The following settings are disabled:
+    To set the post-deployment options of the pipeline, use `New-BMPipelinePostDeploymentOptionsObject` to create a
+    post-deployment options object and pass that object to the `PostDeploymentOption` parameter.
 
-    * Cancel earlier (lower-sequenced) releases that are still active and have not yet been deployed.
-    * Create a new release by incrementing the final part after a release has been deployed.
-    * Mark the release and package as deployed once it reaches the final stage.
+    To set the color of the pipeline, pass the color in CSS RGB color format (e.g. `#aabbcc`) to the `Color` parameter.
+
+    If you want stage order to be enforced by the pipeline, use the `EnforceStageSequence` switch.
+
+    Any parameters *not* provided are not sent to BuildMaster in the create/update request. Those values won't be
+    updated by BuildMaster. Any parameter you pass will cause the respective pipeline property to get updated to that
+    value.
 
     This function uses [BuildMaster's native API](http://inedo.com/support/documentation/buildmaster/reference/api/native).
 
     .EXAMPLE
-    New-BMPipeline -Session $session -Name 'Powershell Module'
+    Set-BMPipeline -Session $session -Name 'Powershell Module'
 
-    Demonstrates how to create a new pipeline that is not used by any applications. In this example a pipeline named `PowerShell Module` will be created.
+    Demonstrates how to create or update a global pipeline. In this example a pipeline named `PowerShell Module` will be
+    created/updated that has no stages and uses BuildMaster's default values.
 
     .EXAMPLE
-    New-BMPipeline -Session $session -Name 'PowerShell Module' -Application $app
+    Set-BMPipeline -Session $session -Name 'PowerShell Module' -Application $app
 
-    Demonstrates how to create a new pipeline and assign it to a specific application. In this example, the pipeline will be called `PowerShell Module` and it will be assigned to the `$app` application.
+    Demonstrates how to create or update a pipeline for a specific application. In this example, the pipeline will be
+    called `PowerShell Module` and it will be assigned to the `$app` application.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that represents the instance of BuildMaster to connect to. Use the `New-BMSession` function to creates a session object.
-        $Session,
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the pipeline.
-        $Name,
+        [Parameter(Mandatory)]
+        [String] $Name,
 
-        [object]
-        # The application to assign the pipeline to. Can be:
-        #
-        # * An application object with `Application_Id`, `id`, `Application_Name`, or `name` properties.
-        # * An application ID (must be an integer)
-        # * An applicatoin name (must be a string)
-        $Application,
+        # The raft where the pipeline should be saved. Use `Get-BMRaft` to see a list of rafts. By default, uses
+        # BuildMaster's default raft. Can be the ID of a raft or a raft object.
+        [Object] $Raft,
 
-        [string]
-        # The background color BuildMaster should use when displaying the pipeline's name in the UI. Should be a CSS hexadecimal color, e.g. `#ffffff`
-        $Color,
+        # The application to assign the pipeline to. Pass an application's id, name or an application object.
+        [Object] $Application,
 
-        [string[]]
-        # Stage configuration for the pipeline. Should be an array of `<Inedo.BuildMaster.Pipelines.PipelineStage>` XML elements. 
-        $Stage
+        # The background color BuildMaster should use when displaying the pipeline's name in the UI. Should be a CSS
+        # hexadecimal color, e.g. `#ffffff`
+        [String] $Color,
+
+        # Stage configuration for the pipeline. Should be a list of objects returned by `New-BMPipelineStageObject` or
+        # returned from `Get-BMPipeline`.
+        [Object[]] $Stage,
+
+        # If set, stage sequences will be enforced, i.e. builds can't be deployed to any stage. The default value in the
+        # BuildMaster UI for this property is `true`.
+        [switch] $EnforceStageSequence,
+
+        # The post deploy options to use when creating the pipeline. Use the `New-BMPipelinePostDeploymentOptionsObject`
+        # function to create a post-deployment option object.
+        [Object] $PostDeploymentOption,
+
+        # If set, a pipeline object will be returned.
+        [switch] $PassThru
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $pipelineParams = @{
-                        'Pipeline_Name' = $Name;
-                        'Pipeline_Configuration' = @"
-<Inedo.BuildMaster.Pipelines.Pipeline Assembly="BuildMaster">
-  <Properties Name="Standard" Description="" EnforceStageSequence="True">
-     <Stages>
-        $( $Stage -join [Environment]::NewLine )
-     </Stages>
-     <PostDeploymentOptions>
-        <Inedo.BuildMaster.Pipelines.PipelinePostDeploymentOptions Assembly="BuildMaster">
-           <Properties CreateRelease="False" CancelReleases="False" DeployRelease="False" />
-        </Inedo.BuildMaster.Pipelines.PipelinePostDeploymentOptions>
-     </PostDeploymentOptions>
-  </Properties>
-</Inedo.BuildMaster.Pipelines.Pipeline>
-"@;
-                        'Active_Indicator' = $true;
-                   }
-    if( $Application )
-    {
-        $pipelineParams | Add-BMObjectParameter -Name 'application' -Value $Application -ForNativeApi
+    $pipeline = [pscustomobject]@{
+        Name = $Name;
+        Color = $Color;
+        EnforceStageSequence = $EnforceStageSequence.IsPresent;
+        Stages = $Stage;
     }
 
-    if( $Color )
+    if ($PostDeploymentOption)
     {
-        $pipelineParams['Pipeline_Color'] = $Color
+        $pipeline | Add-Member -Name 'PostDeploymentOptions' -MemberType NoteProperty -Value $PostDeploymentOption
     }
 
-    $pipelineId = Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_CreatePipeline' -Parameter $pipelineParams -Method Post
-    if( $pipelineId )
-    {
-        Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipeline' -Parameter @{ 'Pipeline_Id' = $pipelineId } -Method Post
-    }
+    Set-BMRaftItem -Session $Session `
+                   -Raft $script:defaultRaftId `
+                   -TypeCode ([BMRaftItemTypeCode]::Pipeline) `
+                   -Name $Name `
+                   -Application $Application `
+                   -Content ($pipeline | ConvertTo-Json -Depth 100) `
+                   -PassThru:$PassThru |
+        Add-BMPipelineMember -PassThru
 }
