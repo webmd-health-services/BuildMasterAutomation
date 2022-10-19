@@ -143,14 +143,7 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
             Prerelease = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = @'
-# 1.0.1
-* Publishing version 1.0.0 to GitHub failed. This version is identical to 1.0.0.
-
-# 1.0.0
-* Updated to support BuildMaster 6.1.28.
-* Added support for PowerShell Core.
-'@
+            ReleaseNotes = 'https://github.com/webmd-health-services/BuildMasterAutomation/blob/master/CHANGELOG.md'
         } # End of PSData hashtable
 
     } # End of PrivateData hashtable
