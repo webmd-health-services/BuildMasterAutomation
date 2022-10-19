@@ -28,7 +28,11 @@
 
     # Description of the functionality provided by this module
     Description = @'
-The BuildMasterAutomation module is a PowerShell module for working with BuildMaster web APIs. BuildMaster is an application deployment automation tool by Inedo software. This module wraps its web APIs in a PowerShell interface. It allows you to read and create applications, releases, packages, etc. If this module doesn't have a function for a specific API endpoint, it has generic `Invoke-BMRestMethod` and `Invoke-BMNativeApimethod` functions that take the pain out of creating the proper web requests.
+BuildMasterAutomation is a PowerShell module for working with BuildMaster web APIs. BuildMaster is an application
+build and deployment automation tool by Inedo software. This module wraps its web APIs in a PowerShell interface. The
+module's functions allow you to read and create applications, releases, builds, etc. If this module doesn't have a
+function for a specific API endpoint, it has generic `Invoke-BMRestMethod` and `Invoke-BMNativeApimethod` functions that
+take the pain out of creating the proper web requests.
 '@
 
     # Minimum version of the Windows PowerShell engine required by this module
@@ -63,46 +67,60 @@ The BuildMasterAutomation module is a PowerShell module for working with BuildMa
 
     # Format files (.ps1xml) to be loaded when importing this module
     FormatsToProcess = @(
-                            'Formats\Inedo.BuildMaster.Server.ps1xml'
-                        )
+        'Formats\Inedo.BuildMaster.Server.ps1xml'
+        'Formats\Inedo.BuildMaster.RaftItem.ps1xml'
+    )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
     FunctionsToExport = @(
-                            'Add-BMObjectParameter',
-                            'Disable-BMApplication',
-                            'Disable-BMEnvironment',
-                            'Enable-BMEnvironment',
-                            'Get-BMApplication',
-                            'Get-BMApplicationGroup',
-                            'Get-BMDeployment',
-                            'Get-BMEnvironment',
-                            'Get-BMRelease',
-                            'Get-BMPackage',
-                            'Get-BMPipeline',
-                            'Get-BMServer',
-                            'Get-BMServerRole',
-                            'Get-BMVariable',
-                            'Invoke-BMNativeApiMethod',
-                            'Invoke-BMRestMethod',
-                            'New-BMApplication',
-                            'New-BMEnvironment',
-                            'New-BMPipeline',
-                            'New-BMRelease',
-                            'New-BMPackage',
-                            'New-BMSession',
-                            'New-BMServer',
-                            'New-BMServerRole',
-                            'Publish-BMReleasePackage',
-                            'Remove-BMServer',
-                            'Remove-BMServerRole',
-                            'Remove-BMVariable',
-                            'Set-BMRelease',
-                            'Set-BMVariable',
-                            'Stop-BMRelease'
-                         )
+        'Add-BMObjectParameter',
+        'Add-BMParameter',
+        'ConvertFrom-BMNativeApiByteValue',
+        'ConvertTo-BMNativeApiByteValue',
+        'Disable-BMApplication',
+        'Disable-BMEnvironment',
+        'Enable-BMEnvironment',
+        'Get-BMApplication',
+        'Get-BMApplicationGroup',
+        'Get-BMBuild',
+        'Get-BMDeployment',
+        'Get-BMEnvironment',
+        'Get-BMRelease',
+        'Get-BMObjectName',
+        'Get-BMPipeline',
+        'Get-BMRaft',
+        'Get-BMRaftItem',
+        'Get-BMServer',
+        'Get-BMServerRole',
+        'Get-BMVariable',
+        'Invoke-BMNativeApiMethod',
+        'Invoke-BMRestMethod',
+        'New-BMApplication',
+        'New-BMBuild',
+        'New-BMEnvironment',
+        'New-BMRelease',
+        'New-BMPipelinePostDeploymentOptionsObject',
+        'New-BMPipelineStageObject',
+        'New-BMPipelineStageTargetObject',
+        'New-BMSession',
+        'New-BMServer',
+        'New-BMServerRole',
+        'Publish-BMReleaseBuild',
+        'Remove-BMApplication',
+        'Remove-BMRaftItem',
+        'Remove-BMPipeline',
+        'Remove-BMServer',
+        'Remove-BMServerRole',
+        'Remove-BMVariable',
+        'Set-BMPipeline',
+        'Set-BMRaftItem',
+        'Set-BMRelease',
+        'Set-BMVariable',
+        'Stop-BMRelease'
+    )
 
     # Cmdlets to export from this module
     CmdletsToExport = @()

@@ -3,43 +3,36 @@ function Set-BMRelease
 {
     <#
     .SYNOPSIS
-    Updates a release's pipeline or name.
+    Updates a release in BuildMaster.
 
     .DESCRIPTION
-    The `Set-BMRelease` function updates a release's pipeline or name. To change a release's pipeline, pass the pipeline's ID to the `PipelineID` parameter. To change the pipeline's name, pass the new name to the `Name` parameter. 
-    
+    The `Set-BMRelease` function creates a BuildMaster release or updates an existing release. Pass the release's
+    pipeline name or a pipeline object to the `Pipeline` object. Pass the release's name to the `Name` parameter.
+
     This function uses the BuildMaster native API endpoint "Releases_CreateOrUpdateRelease".
 
-    Pass the release you want to update to the `Release` parameter. You may pass the release's ID (as an integer), the release's number, or a release object as returned by the `Get-BMRelease` function.
+    If any parameter isn't passed, and the release exists, the respective properties on the release won't be updated.
 
     .EXAMPLE
-    Set-BMRelease -Session $session -Release $release -PipelineID 45 -Name 'My New Name'
+    Set-BMRelease -Session $session -Release $release -Pipeline 'My Pipeline' -Name 'My New Name'
 
     Demonstrates how to update the pipeline and name of a release.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that represents what BuildMaster instance to connect to and what API key to use. Use `New-BMSession` to create a session object.
-        $Session,
+        # The session to BuildMaster. Use the `New-BMSession` object to create the session.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true,ParameterSetName='Update')]
-        [object]
-        # The release to update. Can be:
-        #
-        # * The release's number.
-        # * The release's ID.
-        # * An release object with either a `Release_Id` or `Release_Name` property that represent the application's ID and name, respectively.
-        $Release,
+        # The release to update. Pass the release's id, name, or a release object.
+        [Parameter(Mandatory, ParameterSetName='Update')]
+        [Object] $Release,
 
-        [int]
-        # The ID of the release's new pipeline.
-        $PipelineID,
+        # The release's pipeline.
+        [Object] $Pipeline,
 
-        [string]
-        # The new name of the release.
-        $Name
+        # The release's name. If the release exists, its name will be changed to this value.
+        [String] $Name
     )
 
     process
@@ -54,9 +47,10 @@ function Set-BMRelease
             return
         }
 
-        if( -not $PipelineID )
+        $pipelineName = $bmRelease.pipelineName
+        if ($Pipeline)
         {
-            $PipelineID = $bmRelease.PipelineId
+            $pipelineName = $Pipeline.RaftItem_Name
         }
 
         if( -not $Name )
@@ -64,10 +58,10 @@ function Set-BMRelease
             $Name = $bmRelease.name
         }
 
-        $parameter = @{ 
+        $parameter = @{
                         Application_Id = $bmRelease.ApplicationId;
                         Release_Number = $bmRelease.number;
-                        Pipeline_Id = $PipelineID;
+                        Pipeline_Name = $pipelineName;
                         Release_Name = $Name;
                      }
         Invoke-BMNativeApiMethod -Session $Session -Name 'Releases_CreateOrUpdateRelease' -Method Post -Parameter $parameter | Out-Null

@@ -4,12 +4,12 @@ function Get-BMApplication
     <#
     .SYNOPSIS
     Gets BuildMaster applications.
-    
+
     .DESCRIPTION
     The `Get-BMApplication` function gets all active applications from an instance of BuildMaster. Use the `Force` switch to include inactive applications. To get a specific application, pass the name to the `Name` parameter. Active and inactive applications are returned. If an application with the name doesn't exist, you'll get nothing back.
-    
-    Uses the BuildMaster native API, which can change without notice between releases. By default, this function returns *all* applications. 
-    
+
+    Uses the BuildMaster native API, which can change without notice between releases. By default, this function returns *all* applications.
+
     .EXAMPLE
     Get-BMApplication -Session $session
 
@@ -51,10 +51,10 @@ function Get-BMApplication
     $parameters = @{
                         Application_Count = 0;
                         IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
-                   } 
+                   }
 
     Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplications' -Parameter $parameters -Method Post |
-        Where-Object { 
+        Where-Object {
             if( $Name )
             {
                 return $_.Application_Name -eq $Name

@@ -9,69 +9,37 @@ BeforeAll {
     $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
     $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
 
-    # In order to deploy, a pipeline must have at least one stage that executes one plan.
-    $script:pipeline = New-BMPipeline -Session $script:session `
+    $stages = & {
+        New-BMPipelineStageTargetObject -PlanName 'Integration' -EnvironmentName 'Integration' -AllServers |
+            New-BMPipelineStageObject -Name 'Publish-BMReleaseBuild.Fubar' |
+            Write-Output
+
+        New-BMPipelineStageTargetObject -PlanName 'Testing' -EnvironmentName 'Testing' -AllServers |
+            New-BMPipelineStageObject -Name 'Publish-BMReleaseBuild.Fubar2' |
+            Write-Output
+    }
+
+    $postDeployOptions = New-BMPipelinePostDeploymentOptionsObject -MarkDeployed $false
+
+    $script:pipeline = Set-BMPipeline -Session $script:session `
                                       -Name $script:pipelineName `
                                       -Application $script:app `
                                       -Color '#ffffff' `
-                                      -Stage @'
-<Inedo.BuildMaster.Pipelines.PipelineStage Assembly="BuildMaster">
-    <Properties Name="Fubar" TargetExecutionMode="Parallel" AutoPromote="False">
-        <Targets>
-            <Inedo.BuildMaster.Pipelines.PipelineStageTarget Assembly="BuildMaster">
-                <Properties PlanName="Fubar" EnvironmentName="Integration" DefaultServerContext="None">
-                    <ServerNames />
-                    <ServerRoleNames />
-                </Properties>
-            </Inedo.BuildMaster.Pipelines.PipelineStageTarget>
-        </Targets>
-        <Gate>
-            <Inedo.BuildMaster.Pipelines.PipelineStageGate Assembly="BuildMaster">
-                <Properties>
-                    <UserApprovals />
-                    <GroupApprovals />
-                    <AutomaticApprovals />
-                </Properties>
-            </Inedo.BuildMaster.Pipelines.PipelineStageGate>
-        </Gate>
-        <PostDeploymentEventListeners />
-        <Variables>{}</Variables>
-    </Properties>
-</Inedo.BuildMaster.Pipelines.PipelineStage>
-'@, @'
-<Inedo.BuildMaster.Pipelines.PipelineStage Assembly="BuildMaster">
-    <Properties Name="Fubar2" TargetExecutionMode="Parallel" AutoPromote="False">
-        <Targets>
-            <Inedo.BuildMaster.Pipelines.PipelineStageTarget Assembly="BuildMaster">
-                <Properties PlanName="Fubar" EnvironmentName="Integration" DefaultServerContext="None">
-                    <ServerNames />
-                    <ServerRoleNames />
-                </Properties>
-            </Inedo.BuildMaster.Pipelines.PipelineStageTarget>
-        </Targets>
-        <Gate>
-            <Inedo.BuildMaster.Pipelines.PipelineStageGate Assembly="BuildMaster">
-                <Properties>
-                    <UserApprovals />
-                    <GroupApprovals />
-                    <AutomaticApprovals />
-                </Properties>
-            </Inedo.BuildMaster.Pipelines.PipelineStageGate>
-        </Gate>
-        <PostDeploymentEventListeners />
-        <Variables>{}</Variables>
-    </Properties>
-</Inedo.BuildMaster.Pipelines.PipelineStage>
-'@
-    $release = New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
+                                      -Stage $stages `
+                                      -PostDeploymentOption $postDeployOptions `
+                                      -PassThru `
+                                      -ErrorAction Stop
+
+    $script:release =
+        New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
     Enable-BMEnvironment -Session $script:session -Name 'Integration'
 
-    function GivenBMReleasePackage
+    function GivenBMReleaseBuild
     {
-        $Script:package = New-BMPackage -Session $script:session -Release $release
+        $script:build = New-BMBuild -Session $script:session -Release $script:release
     }
 
-    function WhenDeployingPackage
+    function WhenDeployingBuild
     {
         param(
             [string]
@@ -88,7 +56,8 @@ BeforeAll {
             $optionalParam['Force'] = $true
         }
 
-        $Script:deployment = Publish-BMReleasePackage -Session $script:session -Package $package $ToStage @optionalParam
+        $Script:deployment =
+            Publish-BMReleaseBuild -Session $script:session -Build $script:build $ToStage @optionalParam
     }
 
     function ThenShouldNotThrowErrors
@@ -96,50 +65,72 @@ BeforeAll {
         $Global:Error | Should -BeNullOrEmpty
     }
 
-    function ThenPackageShouldBeDeployed
+    function ThenBuildShouldBeDeployed
     {
         param(
             [string]
             $ToStage
         )
 
-        $deployment | Should -Not -BeNullOrEmpty
-        $deployment = Invoke-BMRestMethod -Session $script:session -Name 'releases/packages/deployments' -Parameter @{ packageId = $package.id } -Method Post
-        $deployment | Should -Not -BeNullOrEmpty
-        $deployment.pipelineId | Should -Be $script:pipeline.pipeline_id
-        $deployment.pipelineStageName | Should -Be $ToStage
-        $deployment.releaseId | Should -Be $release.id
-        $deployment.status | Should -Be 'pending'
+        $timer = [Diagnostics.Stopwatch]::StartNew()
+        $script:deployment | Should -Not -BeNullOrEmpty
+        $deploymentId = $script:deployment.id
+        $expectedStatuses = @('executing', 'pending', 'succeeded')
+        do
+        {
+            $script:deployment = Invoke-BMRestMethod -Session $script:session `
+                                                     -Name 'releases/builds/deployments' `
+                                                     -Parameter @{ deploymentId = $deploymentId } `
+                                                     -Method Post
+
+            if (-not $script:deployment -or $script:deployment.status -notin $expectedStatuses)
+            {
+                Start-Sleep -Milliseconds 100
+                continue
+            }
+
+            if ($timer.Elapsed.TotalSeconds -gt 10)
+            {
+                break
+            }
+        }
+        while ($true)
+
+        $script:deployment | Should -Not -BeNullOrEmpty
+        $script:deployment.pipelineName | Should -Be $script:pipeline.Pipeline_Name
+        $script:deployment.pipelineStageName | Should -Be $ToStage
+        $script:deployment.releaseId | Should -Be $script:release.id
+        $script:deployment.status | Should -BeIn $expectedStatuses
     }
 }
 
-Describe 'Publish-BMReleasePackage' {
-    It 'should publish using package object' {
-        GivenBMReleasePackage
-        WhenDeployingPackage
+Describe 'Publish-BMReleaseBuild' {
+    It 'should publish using build object' {
+        GivenBMReleaseBuild
+        WhenDeployingBuild
         ThenShouldNotThrowErrors
-        ThenPackageShouldBeDeployed -ToStage 'Fubar'
+        ThenBuildShouldBeDeployed -ToStage 'Publish-BMReleaseBuild.Fubar'
     }
 
     It 'should deploy to specific stage' {
-        GivenBMReleasePackage
-        WhenDeployingPackage -ToStage 'Fubar2'
+        GivenBMReleaseBuild
+        WhenDeployingBuild -ToStage 'Publish-BMReleaseBuild.Fubar2'
         ThenShouldNotThrowErrors
-        ThenPackageShouldBeDeployed -ToStage 'Fubar2'
+        ThenBuildShouldBeDeployed -ToStage 'Publish-BMReleaseBuild.Fubar2'
     }
 
-    It 'should fail if package does not exist' {
+    It 'should fail if build does not exist' {
         $Global:Error.Clear()
 
-        $deployment = Publish-BMReleasePackage -Session $script:session -Package ([int32]::MaxValue) -ErrorAction SilentlyContinue
+        $deployment = Publish-BMReleaseBuild -Session $script:session -Build ([int32]::MaxValue) -ErrorAction SilentlyContinue
         $deployment | Should -BeNullOrEmpty
         $Global:Error.Count | Should -Be 1
     }
 
     It 'should force a deploy' {
-        GivenBMReleasePackage
+        GivenBMReleaseBuild
         Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
-        WhenDeployingPackage -ToStage 'Fubar2' -Force
+        WhenDeployingBuild -ToStage 'Integration' -Force
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
                           -ParameterFilter { $Parameter['force'] -eq 'true' }

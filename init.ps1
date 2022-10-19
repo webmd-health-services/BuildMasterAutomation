@@ -29,7 +29,7 @@ $InformationPreference = 'Continue'
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '6.1.28'
+$version = '6.2.33'
 Write-Verbose -Message ('Testing BuildMaster {0}' -f $version)
 $sqlServer = $null
 $installerPath = 'SQL'

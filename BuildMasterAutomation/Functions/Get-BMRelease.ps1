@@ -6,7 +6,8 @@ function Get-BMRelease
     Gets the release for an application in BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMRelease` function gets releases in BuildMaster. It uses the [Release and Package Deployment API](http://inedo.com/support/documentation/buildmaster/reference/api/release-and-package). 
+    The `Get-BMRelease` function gets releases in BuildMaster. It uses the
+    [Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build).
 
     To get a specific release, pass a release object, release ID, or release name to the `Release` parameter.
 
@@ -25,12 +26,12 @@ function Get-BMRelease
     .EXAMPLE
     Get-BMRelease -Session $session -Application 34
 
-    Demonstrates how to get all the releases for an application by passing its ID to the `Application` parameter. 
+    Demonstrates how to get all the releases for an application by passing its ID to the `Application` parameter.
 
     .EXAMPLE
     Get-BMRelease -Session $session -Application 'BuildMasterAutomation'
 
-    Demonstrates how to get all the releases for an application by passing its name to the `Application` parameter. 
+    Demonstrates how to get all the releases for an application by passing its name to the `Application` parameter.
 
     .EXAMPLE
     Get-BMRelease -Session $session -Application 'BuildMasterAutomation' -Name '4.1'
@@ -63,7 +64,7 @@ function Get-BMRelease
         $Application,
 
         [string]
-        # The name of the release to get. 
+        # The name of the release to get.
         $Name
     )
 
@@ -72,8 +73,8 @@ function Get-BMRelease
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $parameter = @{ } 
-        
+        $parameter = @{ }
+
         if( $PSCmdlet.ParameterSetName -eq 'ByRelease' )
         {
             $parameter | Add-BMObjectParameter -Name 'release' -Value $Release

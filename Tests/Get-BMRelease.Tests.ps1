@@ -8,13 +8,15 @@ BeforeAll {
     $script:session = New-BMTestSession
     $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
     $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline =
-        New-BMPipeline -Session $script:session -Name $script:pipelineName -Application $script:app -Color '#ffffff'
+    $script:pipeline = Set-BMPipeline -Session $script:session `
+                                      -Name $script:pipelineName `
+                                      -Application $script:app `
+                                      -Color '#ffffff' -PassThru
     $script:develop = New-BMRelease -Session $script:session `
                                     -Application $script:app `
                                     -Number '1.0' `
                                     -Pipeline $script:pipeline `
-                                    -Name 'develop'
+                                    -Name 'script:develop'
     $script:release = New-BMRelease -Session $script:session `
                                     -Application $script:app `
                                     -Number '2.0' `
@@ -24,7 +26,7 @@ BeforeAll {
                                    -Application $script:app `
                                    -Number '3.0' `
                                    -Pipeline $script:pipeline `
-                                   -Name 'master'
+                                   -Name 'script:master'
 }
 
 Describe 'Get-BMRelease' {
@@ -38,9 +40,9 @@ Describe 'Get-BMRelease' {
     }
 
     It 'should return release by name' {
-        $release = Get-BMRelease -Session $script:session -Application $script:app -Name 'develop'
+        $release = Get-BMRelease -Session $script:session -Application $script:app -Name 'script:develop'
         $release | Should -Not -BeNullOrEmpty
-        $release.name | Should -Be 'develop'
+        $release.name | Should -Be 'script:develop'
     }
 
     It 'should return all releases' {

@@ -3,50 +3,93 @@ function Add-BMObjectParameter
 {
     <#
     .SYNOPSIS
-    Adds an object to a parameter hashtable based on the object's type.
+    Adds id or name values to a parameter hashtable (i.e. a hashtable used as the body of a request to a BuildMaster API
+    endpoint).
 
     .DESCRIPTION
-    The `Add-BMObjectParameter` adds a parameter to a parameter hashtable based on the parameter's type. Many of BuildMaster's APIs take an ID or a name. For example, many of the Release and Package Deployment methods accept either an `applicationId` parameter *or* an `applicationName` parameter. This function takes either application object, an application ID, or an application name, figures out what was passed, and adds the correct `applicationId`, or `applicationName` parameter.
+    Many of BuildMaster's APIs take an ID or a name. For example, many of the Release and Build Deployment methods
+    accept either an `applicationId` parameter *or* an `applicationName` parameter. This function exists to allow
+    BuildMasterAutomation functions to accept an object, an object's id or an object's name as a parameter. Pipe the
+    hashtable that will be used as the body of a request to the BuildMaster APIs to `Add-BMObjectParameter`. Pass the
+    name of the object type to the `Name` parameter and the object/id/name/value to the `Value` parameter.
 
-    The hashtable is passed to the `Parameter` parameter (or you can pipe it to `Add-BMObjectParameter` function). Use the `PassThru` switch to return the hashtable to the pipeline.
+    If the value passed is `$null`, nothing happens. If the value passed is a byte or an integer, the function adds a
+    `$($Name)Id` parameter to the hashtable. If the value passed is a string, the function adds a `$($Name)Name`
+    parameter. Otherwise, `Add-BMObjectParameter` the first property on the property named `id`, `$($Name)Id`, `name`,
+    or `$($Name)Name` is added as `$($Name)Id` or `$($Name)Name` respectively.
 
-    Pass the name of the parameter, without the `Id` or `Name` suffix via the `Name` parameter, e.g. `pipeline`, `application`, `release`, etc.
+    If the hashtable will be used as the body to a native API endpoint, use the `-ForNativeApi` switch. The native API
+    uses `$($Name)_Id` and `$($Name)_Name` patterns for its id and name parameters.
 
-    Pass the value of the parameter to the `Value` parameter. This can be an object, an integer, or a string. If you pass an integer, a parameter with the name `$($Name)Id` is added to the hashtable. If you pass a string, a parameter with the name `$($Name)Name` is added. If you pass an object, `Add-BMObjectParameter` looks for `id`, `$($Name)_Id`, `name`, or `$($Name)_Name` properties on it (in that order) and adds an `$($Name)Id` parameter if it finds an ID property or a `$($Name)Name` parameter if it finds an Name property.
+    If you want to return the original hasthable so you can add more than one parameter to the hashtable, use the
+    `-PassThru` switch.
 
     .EXAMPLE
-    $parameters | Add-BMObjectParameter -Name 'application' -Value $app
+    $parameters | Add-BMObjectParameter -Name 'release' -Value $release
 
-    Demonstrates how to add an ID or Name parameter `$parameters` hashtable. In this case, `Add-BMObjectParameter` will check if `$app` is an integer. If it is, it will add an `applicationId` parameter to the `$parameters` hashtable. If `$app` is a string, it will add an `applicationName` parameter. If `$app` is an object, `Add-BMObjectParameter` will look for an `Application_Id` or `id` property. If it finds one, it adds an `applicationId` parameter to `$parameters`. If it doesn't, it looks for an `Application_Name` or `name` property. If it finds one, it adds an `applicationName` parameter to `$parameters`. Otherwise, it will write an error and not add anything.
+    Demonstrates how to add the id property from an object to a hashtable used as the body to a BuildMaster API
+    endpoint.  In this case, `$release` is a release object returned by the BuildMaster APi, so has a `releaseId`
+    property. `Add-BMObjectParameter` will add a `releaseId` key to the hashtable with a value of `$release.releaseId`.
 
     .EXAMPLE
-    $parameter | Add-BMObjectParmaeter -Name 'application -Value $app -PassThru | Add-BMObjectParameter -Name 'pipeline' -Value $pipeline
+    $parameters | Add-BMObjectParameter -Name 'release' -Value $releaseId
 
-    Demonstrates how you can use the `PassThru` switch to add multiple parameters to a parameters hashtable.
+    Demonstrates how to add an id to a hashtable used as the body to a BuildMaster API. In this case, `$releaseId` is
+    the id of a release. `Add-BMObjectParameter` will add a `releaseId` key to the hashtable with a value of
+    `$releaseId`.
+
+    .EXAMPLE
+    $parameters | Add-BMObjectParameter -Name 'release' -Value $releaseName
+
+    Demonstrates how to add a name to a hashtable used as the body to a BuildMaster API. In this case, `$releaseName` is
+    the name of a release. `Add-BMObjectParameter` will add a `releaseName` key to the hashtable with a value of
+    `$releaseName`.
+
+    .EXAMPLE
+    $parameters | Add-BMObjectParameter -Name 'pipeline' -Value $pipeline -AsName
+
+    Demonstrates how to force `Add-BMObjectParameter` to ignore any id properties and only use name properties, if they
+    exist, by using the `AsName` switch.
+
+    .EXAMPLE
+    $parameters | Add-BMObjectParameter -Name 'application' -Value $app -ForNativeApi
+
+    Demonstrates how to add an id parameter to a parameter hashtable used as the body of a request to the BuildMaster
+    *Native* API. In this case, `$app` is an application object returned by the BuildMaster API. `Add-BMObjectParameter`
+    will add an `application_Id` key to the hasthable with a value of `$app.application_Id`.
+
+    .EXAMPLE
+    $parameter | Add-BMObjectParameter -Name 'application' -Value $app -PassThru | Add-BMObjectParameter -Name 'pipeline' -Value $pipeline
+
+    Demonstrates how you can use the `PassThru` switch to add multiple parameters to a parameters hashtable using a
+    pipeline.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [hashtable]
         # The hashtable to add the parameter to.
-        $Parameter,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [hashtable] $Parameter,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        # The name of the parameter, *without* the `Id` or `Name` suffix. The suffix is added automatically based on the type of the parameter value.
-        $Name,
+        # The name of the parameter, *without* the `Id` or `Name` suffix. The suffix is added automatically based on the
+        # type of the parameter value.
+        [Parameter(Mandatory)]
+        [String] $Name,
 
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The object 
-        $Value,
+        # The object, id, or name.
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [Object] $Value,
 
-        [Switch]
-        $PassThru,
+        # If true, will return the hashtable.
+        [switch] $PassThru,
 
-        [Switch]
-        # The parameters are being used in the native API, which has a different naming convention.
-        $ForNativeApi
+        # The parameters are being used in the native API, which has a different naming convention. If true, parameter
+        # names will use an underscore in the parameter name added to the hashtable, e.g. `_Id` or `_Name`.
+        [switch] $ForNativeApi,
+
+        # If set, id properties on the incoming object will be ignored.
+        [switch] $AsName
     )
 
     process
@@ -54,60 +97,86 @@ function Add-BMObjectParameter
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
+        if ($null -eq $Value)
+        {
+            if ($PassThru)
+            {
+                return $Parameter
+            }
+
+            return
+        }
+
+
+        $isId = $false
+        $idValue = $Value
+        $isName = $false
+        $nameValue = $Value
+
+        $nativeApiIdParamName = '{0}_Id' -f $Name
+        if ($Value | Test-BMID)
+        {
+            $isId = $true
+            $idValue = $Value
+        }
+        elseif ($Value | Get-Member -Name 'id')
+        {
+            $isId = $true
+            $idValue = $Value.id
+        }
+        elseif ($Value | Get-Member -Name $nativeApiIdParamName)
+        {
+            $isId = $true
+            $idValue = $Value.$nativeApiIdParamName
+        }
+
+        $nativeApiNameParamName = '{0}_Name' -f $Name
+        if ($Value | Test-BMName)
+        {
+            $isName = $true
+            $nameValue = $Value
+        }
+        elseif ($Value | Get-Member -Name 'name')
+        {
+            $isName = $true
+            $nameValue = $Value.name
+        }
+        elseif ($Value | Get-Member -Name $nativeApiNameParamName)
+        {
+            $isName = $true
+            $nameValue = $value.$nativeApiNameParamName
+        }
+
         $idParamName = '{0}Id' -f $Name
         $nameParamName = '{0}Name' -f $Name
-        $idPropertyName = '{0}_Id' -f $Name
-        $namePropertyName = '{0}_Name' -f $Name
-
-        if( $ForNativeApi )
+        if ( $ForNativeApi )
         {
-            $idParamName = $idPropertyName
-            $nameParamName = $namePropertyName
+            $idParamName = $nativeApiIdParamName
+            $nameParamName = $nativeApiNameParamName
         }
 
-        # In Windows PowerShell, ids come here as [Int32]. In PowerShell Core, [Int64].
-        $intTypes = @(
-            [TypeCode]::Byte,
-            [TypeCode]::Int16,
-            [TypeCode]::Int32,
-            [TypeCode]::Int64,
-            [TypeCode]::SByte,
-            [TypeCode]::UInt16,
-            [TypeCode]::UInt32,
-            [TypeCode]::UInt64
-        )
-        
-        if( [Type]::GetTypeCode($Value.GetType()) -in $intTypes )
+        if ($isId -and -not $AsName)
         {
-            $Parameter[$idParamName] = $Value
+            $paramName = $idParamName
+            $paramValue = $idValue
         }
-        elseif( $Value -is [string] )
+        elseif ($isName)
         {
-            $Parameter[$nameParamName] = $Value
+            $paramName = $nameParamName
+            $paramValue = $nameValue
         }
-        elseif( $Value | Get-Member -Name 'id' )
+        else
         {
-            $Parameter[$idParamName] = $Value.id
-        }
-        elseif( $Value | Get-Member -Name $idPropertyName )
-        {
-            $Parameter[$idParamName] = $Value.$idPropertyName
-        }
-        elseif( $Value | Get-Member -Name 'name' )
-        {
-            $Parameter[$nameParamName] = $Value.name
-        }
-        elseif( $Value | Get-Member -Name $namePropertyName )
-        {
-            $Parameter[$nameParamName] = $value.$namePropertyName
+            $msg = "Unable to find id or name properties on ""$($Value)""."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            if ($PassThru)
+            {
+                reeturn $Parameter
+            }
+            return
         }
 
-        if( $PassThru )
-        {
-            return $Parameter
-        }
+        $Parameter | Add-BMParameter -Name $paramName -Value $paramValue -PassThru:$PassThru
     }
-
-
 }
 

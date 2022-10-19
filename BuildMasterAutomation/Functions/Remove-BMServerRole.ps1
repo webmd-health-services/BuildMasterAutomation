@@ -22,21 +22,30 @@ function Remove-BMServerRole
 
     Demonstrates that you can pipe the objects returned by `Get-BMServerRole` into `Remove-BMServerRole` to remove those roles.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)]
         # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
         # The name of the role to remove.
-        [string]$Name
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [String] $Name
     )
 
     process
     {
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+        $role = Get-BMServerRole -Session $Session -Name $Name -ErrorAction Ignore
+        if (-not $role)
+        {
+            $msg = "Cannot delete server role ""$($Name)"" because it does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
 
         $encodedName = [uri]::EscapeDataString($Name)
         Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/delete/{0}' -f $encodedName) -Method Delete

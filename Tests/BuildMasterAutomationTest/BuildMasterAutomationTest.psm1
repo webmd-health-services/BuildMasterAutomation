@@ -15,8 +15,8 @@ if( -not $svcConfig )
     throw $bmNotInstalledMsg
 }
 
-$uri = $svcConfig.SelectSingleNode('/InedoAppConfig/WebServer').Attributes['Urls'].Value
-$uri = $uri -replace '\*',$env:COMPUTERNAME
+$url = $svcConfig.SelectSingleNode('/InedoAppConfig/WebServer').Attributes['Urls'].Value
+$url = $url -replace '\*',$env:COMPUTERNAME
 $connString = $svcConfig.SelectSingleNode('/InedoAppConfig/ConnectionString').InnerText
 
 $conn = New-Object 'Data.SqlClient.SqlConnection'
@@ -83,7 +83,7 @@ function New-BMTestApplication
     return New-BMApplication -Session $Session -Name $Name
 }
 
-$session = New-BMSession -Uri $uri -ApiKey $apiKey
+$session = New-BMSession -Url $url -ApiKey $apiKey
 
 function New-BMTestSession
 {
@@ -152,10 +152,10 @@ function GivenAPipeline
         $appParam['Application'] = $ForApplication
     }
 
-    return New-BMPipeline -Session $session -Name $Named @appParam
+    return Set-BMPipeline -Session $session -Name $Named @appParam -PassThru
 }
 
-function GivenAPackage
+function GivenABuild
 {
     [CmdletBinding(DefaultParameterSetName='WithAllTheTrimmings')]
     param(
@@ -173,13 +173,13 @@ function GivenAPackage
 
     if( $PSCmdlet.ParameterSetName -eq 'ForARelease' )
     {
-        return New-BMPackage -Session $session -Release $ForRelease
+        return New-BMBuild -Session $session -Release $ForRelease
     }
 
     $app = GivenAnApplication -Name $ForAnAppNamed
     $pipeline = GivenAPipeline -Named ('{0}.pipeline' -f $ForAnAppNamed)  -ForApplication $app
     $release = GivenARelease -Named ('{0}.release' -f $ForAnAppNamed) -ForApplication $app -WithNumber $ForReleaseNumber -UsingPipeline $pipeline
-    return New-BMPackage -Session $session -Release $release
+    return New-BMBuild -Session $session -Release $release
 }
 
 function ThenError
@@ -200,18 +200,7 @@ function ThenNoErrorWritten
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
 $BMTestSession = $session
 
-Get-BMApplication -Session $session | 
-    ForEach-Object {
-        Write-Debug -Message ('Deactivating and purging application {0,5} {1}.' -f $_.Application_Id,$_.Application_Name)
-        Disable-BMApplication -Session $session -ID $_.Application_Id
-        Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Method Post -Parameter @{ Application_Id  = $_.Application_Id }
-    }
-
-Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' -Method Post -Parameter @{ } | 
-    ForEach-Object {
-        Write-Debug -Message ('Deleting pipeline {0,5} {1}.' -f $_.Pipeline_Id,$_.Pipeline_Name)
-        Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_DeletePipeline' -Method Post -Parameter @{ Pipeline_Id = $_.Pipeline_Id }
-    }
-    
+Get-BMApplication -Session $session | Remove-BMApplication -Session $session -Force
+Get-BMPipeline -Session $session | Remove-BMPipeline -Session $session
 
 Export-ModuleMember -Function '*' -Variable 'BMTestSession'
