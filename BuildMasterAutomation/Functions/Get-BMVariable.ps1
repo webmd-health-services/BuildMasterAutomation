@@ -6,10 +6,12 @@ function Get-BMVariable
     Gets BuildMaster variables.
 
     .DESCRIPTION
-    The `Get-BMVariable` function gets BuildMaster variables. By default, it gets all global variables. It can also get all variables for a specific environment, server, server role, application group, and application variables.
+    The `Get-BMVariable` function gets BuildMaster variables. By default, it gets all global variables. It can also get
+    all variables for a specific environment, server, server role, application group, and application variables.
 
-    To get a specific variable, pass the variable's name to the `Name` parameter. The default is to return all variables for the specific entity you've chosen (the default is global variables).
-    
+    To get a specific variable, pass the variable's name to the `Name` parameter. The default is to return all variables
+    for the specific entity you've chosen (the default is global variables).
+
     To get an environment's variables, pass the environment's name to the `EnvironmentName` parameter.
 
     To get a server role's variables, pass the server role's name to the `ServerRoleName` parameter.
@@ -20,9 +22,11 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `ApplicationName` parameter.
 
-    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use `New-BMSession` to create a session object.
+    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
+    `New-BMSession` to create a session object.
 
-    This function uses BuildMaster's variables API. Due to a bug in BuildMaster, it uses the native API when reading application group and application variables.
+    This function uses BuildMaster's variables API. Due to a bug in BuildMaster, it uses the native API when reading
+    application group and application variables.
 
     .EXAMPLE
     Get-BMVariable
@@ -30,7 +34,7 @@ function Get-BMVariable
     Demonstrates how to get all global variables.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Name 'Var' 
+    Get-BMVariable -Session $session -Name 'Var'
 
     Demonstrates how to get a specific global variable.
 
@@ -86,39 +90,44 @@ function Get-BMVariable
     #>
     [CmdletBinding(DefaultParameterSetName='global')]
     param(
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [object] $Session,
 
         # The name of the variable to get. The default is to get all global variables.
-        [string]$Name,
+        [String] $Name,
 
-        [Parameter(Mandatory,ParameterSetName='application')]
-        # The name of the application where the variable or variables should be read. The default is to get global variables.
-        [string]$ApplicationName,
+        # The name of the application where the variable or variables should be read. The default is to get global
+        # variables.
+        [Parameter(Mandatory, ParameterSetName='application')]
+        [String] $ApplicationName,
 
-        [Parameter(Mandatory,ParameterSetName='application-group')]
-        # The name of the application group where the variable or variables should be read. The default is to get global variables.
-        [string]$ApplicationGroupName,
+        # The name of the application group where the variable or variables should be read. The default is to get global
+        # variables.
+        [Parameter(Mandatory, ParameterSetName='application-group')]
+        [String] $ApplicationGroupName,
 
-        [Parameter(Mandatory,ParameterSetName='environment')]
-        # The name of the environment where the variable or variables should be read. The default is to get global variables.
-        [string]$EnvironmentName,
+        # The name of the environment where the variable or variables should be read. The default is to get global
+        # variables.
+        [Parameter(Mandatory, ParameterSetName='environment')]
+        [String] $EnvironmentName,
 
-        [Parameter(Mandatory,ParameterSetName='server')]
         # The name of the server where the variable or variables should be read. The default is to get global variables.
-        [string]$ServerName,
+        [Parameter(Mandatory, ParameterSetName='server')]
+        [String] $ServerName,
 
-        [Parameter(Mandatory,ParameterSetName='role')]
-        # The name of the server role where the variable or variables should be read. The default is to get global variables.
-        [string]$ServerRoleName,
+        # The name of the server role where the variable or variables should be read. The default is to get global
+        # variables.
+        [Parameter(Mandatory, ParameterSetName='role')]
+        [String] $ServerRoleName,
 
         # Return the variable's value, not an object representing the variable.
-        [Switch]$ValueOnly
+        [switch] $ValueOnly
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    $WhatIfPreference = $false  # This function does not modify any data, but uses POST requests.
 
     $entityParamNames = @{
                             'application' = 'ApplicationName';
@@ -141,40 +150,39 @@ function Get-BMVariable
     if( $PSCmdlet.ParameterSetName -in @( 'application', 'application-group' ) )
     {
         $nativeVariables = @()
-        $originalWhatIf = $WhatIfPreference
-        $WhatIfPreference = $false
-        try
+        if( $PSCmdlet.ParameterSetName -eq 'application' )
         {
-            if( $PSCmdlet.ParameterSetName -eq 'application' )
+            $app = Get-BMApplication -Session $Session -Name $ApplicationName
+            if( -not $app )
             {
-                $app = Get-BMApplication -Session $Session -Name $ApplicationName
-                if( -not $app )
-                {
-                    Write-Error -Message ('Application "{0}" does not exist.' -f $ApplicationName) -ErrorAction $ErrorActionPreference
-                    return
-                }
-                $nativeVariables = Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id } 
+                $msg = 'Application "{0}" does not exist.' -f $ApplicationName
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
             }
-            elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
-            {
-                $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
-                if( -not $appGroup )
-                {
-                    Write-Error -Message ('Application group "{0}" does not exist.' -f $ApplicationGroupName) -ErrorAction $ErrorActionPreference
-                    return
-                }
-                $nativeVariables = Invoke-BMNativeApiMethod -Session $Session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id } 
-            }
+            $nativeVariables = Invoke-BMNativeApiMethod -Session $Session `
+                                                        -Name 'Variables_GetVariablesForScope' `
+                                                        -Method Post `
+                                                        -Parameter @{ 'Application_Id' = $app.Application_Id }
         }
-        finally
+        elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
         {
-            $WhatIfPreference = $originalWhatIf
+            $appGroup = Get-BMApplicationGroup -Session $Session -Name $ApplicationGroupName
+            if( -not $appGroup )
+            {
+                $msg = 'Application group "{0}" does not exist.' -f $ApplicationGroupName
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
+            $nativeVariables =
+                Invoke-BMNativeApiMethod -Session $Session `
+                                         -Name 'Variables_GetVariablesForScope' `
+                                         -Method Post `
+                                         -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id }
         }
         $appValues = @{ }
         $nativeVariables |
             ForEach-Object {
-                $bytes = [Convert]::FromBase64String($_.Variable_Value)
-                $appValues[$_.Variable_Name] = [Text.Encoding]::UTF8.GetString($bytes)
+                $appValues[$_.Variable_Name] = $_.Variable_Value | ConvertFrom-BMNativeApiByteValue
             }
         $values = [pscustomobject]$appValues
     }
@@ -190,40 +198,30 @@ function Get-BMVariable
 
     $foundVars = $null
 
-    # Tee-Object supports WhatIfPreference.
-    $originalWhatIf = $WhatIfPreference
-    $WhatIfPreference = $false
-    try
-    {
-        $values | 
-            Get-Member -MemberType NoteProperty |
-            ForEach-Object {
-                $variableName = $_.Name
-                [pscustomobject]@{ 
-                                    Name = $variableName;
-                                    Value = $values.$variableName
-                                }
-            } |
-            Where-Object {
-                if( $Name )
-                {
-                    return $_.Name -like $Name
-                }
-                return $true
-            } |
-            ForEach-Object {
-                if( $ValueOnly )
-                {
-                    return $_.Value
-                }
-                return $_
-            } | 
-            Tee-Object -Variable 'foundVars'
-    }
-    finally
-    {
-        $WhatIfPreference = $originalWhatIf
-    }
+    $values |
+        Get-Member -MemberType NoteProperty |
+        ForEach-Object {
+            $variableName = $_.Name
+            [pscustomobject]@{
+                                Name = $variableName;
+                                Value = $values.$variableName
+                            }
+        } |
+        Where-Object {
+            if( $Name )
+            {
+                return $_.Name -like $Name
+            }
+            return $true
+        } |
+        ForEach-Object {
+            if( $ValueOnly )
+            {
+                return $_.Value
+            }
+            return $_
+        } |
+        Tee-Object -Variable 'foundVars'
 
     if( $Name -and -not [wildcardpattern]::ContainsWildcardCharacters($Name) -and -not $foundVars )
     {
@@ -246,6 +244,7 @@ function Get-BMVariable
         {
             $entityNameDesc = ' "{0}"' -f $entityName
         }
-        Write-Error -Message ('Variable "{0}"{1}{2} does not exist.' -f $Name,$typeName,$entityNameDesc) -ErrorAction $ErrorActionPreference
+        $msg = 'Variable "{0}"{1}{2} does not exist.' -f $Name,$typeName,$entityNameDesc
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
     }
 }

@@ -6,95 +6,96 @@ function New-BMApplication
     Creates an application in BuildMaster.
 
     .DESCRIPTION
-    The `New-BMApplication` function creates an application in BuildMaster. This function uses the native BuildMaster API, which can change without notice between releases. Only a name is required to create an application. The name must be unique and not in use.
+    The `New-BMApplication` function creates an application in BuildMaster. This function uses the native BuildMaster
+    API. Only a name is required to create an application. The name must be unique and not in use.
 
     These parameters are also available:
 
-    * `ReleaseNumberScheme`: sets the release number scheme to use when you create a new release for the application. Options are `MajorMinorRevision`, `MajorMinor`, or `DateBased`.
-    * `BuildNumberScheme`: sets the build number scheme to use when creating new packages/builds for an application. Options are `Unique`, `Sequential`, `DateBased`.
-    * `AllowMultipleActiveBuilds`: a flag that indicates if the application is allowed to have multiple active builds.
+    * `ReleaseNumberScheme`: sets the release number scheme to use when you create a new release for the application
+    Options are `MajorMinorRevision`, `MajorMinor`, or `DateBased`.
+    * `BuildNumberScheme`: sets the build number scheme to use when creating new builds for an application.
+    Options are `Unique`, `Sequential`, `DateBased`.
 
     .EXAMPLE
     New-BMApplication -Session $session -Name 'MyNewApplication'
 
-    Demonstrates the simplest way to create an application. In this example, a `MyNewApplication` application will be created and all its fields set to BuildMaster's default values.
+    Demonstrates the simplest way to create an application. In this example, a `MyNewApplication` application will be
+    created and all its fields set to BuildMaster's default values.
 
     .EXAMPLE
-    New-BMApplication -Session $session -Name 'MyNewApplication' -ReleaseNumberSchemeName MajorMinor -BuildNumberSchemeName Sequential -AllowMultipleActiveBuilds
+    New-BMApplication -Session $session -Name 'MyNewApplication' -ReleaseNumberSchemeName MajorMinor -BuildNumberSchemeName Sequential
 
-    This example demonstrates all the fields you can set when creating a new application. In this example, the new application will be called `MyNewApplication`, its release number scheme will be `MajorMinor`, its build number schema will be `Sequential`, it will allow multiple active releases, and it will allow multiple active builds.
+    This example demonstrates all the fields you can set when creating a new application. In this example, the new
+    application will be called `MyNewApplication`, its release number scheme will be `MajorMinor`, and its build number
+    schema will be `Sequential`.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # A session object that represents the BuildMaster instance to use. Use the `New-BMSession` function to create session objects.
-        $Session,
+        # A session object that represents the BuildMaster instance to use. Use the `New-BMSession` function to create
+        # session objects.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the application.
-        $Name,
+        [Parameter(Mandatory)]
+        [String] $Name,
 
-        [string]
-        [ValidateSet('MajorMinorRevision','MajorMinor','DateBased')]
         # The name of the release number scheme. Should be one of:
         #
         # * `MajorMinorRevision`
         # * `MajorMinor`
         # * `DateBased`
-        $ReleaseNumberSchemeName,
+        [ValidateSet('MajorMinorRevision', 'MajorMinor', 'DateBased')]
+        [String] $ReleaseNumberSchemeName,
 
-        [string]
-        [ValidateSet('Unique','Sequential','DateTimeBased')]
         # The name of the build number scheme. Should be one of:
         #
         # * `Unique`
         # * `Sequential`
         # * `DateTimeBased`
-        $BuildNumberSchemeName,
+        [ValidateSet('Unique', 'Sequential', 'DateTimeBased')]
+        [String] $BuildNumberSchemeName,
 
-        [Switch]
-        # Allow multiple active builds.
-        $AllowMultipleActiveBuilds,
-
-        [string]
-        # The application group to assign. By default, the application will be ungrouped.
-        $ApplicationGroupId
+        # The application group to assign. By default, the application will be ungrouped. Pass an application group id
+        # or object.
+        [Alias('ApplicationGroupID')]
+        [Object] $ApplicationGroup
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $parameters = @{
-                        'Application_Name' = $Name;
-                    }
-    if( $ReleaseNumberSchemeName )
+    $application = Get-BMApplication -Session $Session -Name $Name
+    if ($application)
     {
-        $parameters['ReleaseNumber_Scheme_Name'] = $ReleaseNumberSchemeName;
+        Write-Error -Message "Application ""$($Name)"" already exists." -ErrorAction $ErrorActionPreference
+        return
     }
 
-    if( $BuildNumberSchemeName )
-    {
-        $parameters['BuildNumber_Scheme_Name'] = $BuildNumberSchemeName;
-    }
+    # We use the value in $PSBoundParameters because it is $null if not provided by the user. PowerShell sets a
+    # not-provided [String] argument value to empty string. We need $null so `Add-BMParameter` knows the parameter was
+    # not provided and won't add it to the parameter hashtable.
+    $parameters =
+        @{} |
+        Add-BMObjectParameter -Name 'Application' -Value $Name -ForNativeApi -PassThru |
+        Add-BMObjectParameter -Name 'ApplicationGroup' -Value $ApplicationGroup -ForNativeApi -PassThru |
+        Add-BMParameter -Name 'ReleaseNumber_Scheme_Name' `
+                        -Value $PSBoundParameters['ReleaseNumberSchemeName'] `
+                        -PassThru |
+        Add-BMParameter -Name 'BuildNumber_Scheme_Name' -Value $PSBoundParameters['BuildNumberSchemeName'] -PassThru
 
-    if( $AllowMultipleActiveBuilds )
-    {
-        $parameters['AllowMultipleActiveBuilds_Indicator'] = $true;
-    }
-
-    if( $ApplicationGroupId )
-    {
-        $parameters['ApplicationGroup_Id'] = $ApplicationGroupId
-    }
-    
-    $appID = Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_CreateApplication' -Parameter $parameters -Method Post
+    $appID = Invoke-BMNativeApiMethod -Session $Session `
+                                      -Name 'Applications_CreateApplication' `
+                                      -Parameter $parameters `
+                                      -Method Post
     if( -not $appID )
     {
         return
     }
 
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplication' -Parameter @{ 'Application_Id' = $appID } -Method Post |
+    Invoke-BMNativeApiMethod -Session $Session `
+                             -Name 'Applications_GetApplication' `
+                             -Parameter @{ 'Application_Id' = $appID } `
+                             -Method Post |
         Select-Object -ExpandProperty 'Applications_Extended'
 }

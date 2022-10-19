@@ -37,6 +37,7 @@ function Get-BMServer
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    $WhatIfPreference = $false
 
     $servers = $null
 
@@ -56,7 +57,7 @@ function Get-BMServer
             $server = $_
             foreach( $memberName in @( 'name', 'roles', 'environments', 'serverType', 'hostName', 'port', 'encryptionType', 'encryptionKey', 'requireSsl', 'credentialsName', 'tempPath', 'wsManUrl', 'active', 'variables' ) )
             {
-                if( -not ($server | Get-Member -Name $memberName) ) 
+                if( -not ($server | Get-Member -Name $memberName) )
                 {
                     $server | Add-Member -MemberType NoteProperty -Name $memberName -Value $null
                 }
@@ -68,13 +69,13 @@ function Get-BMServer
             }
             $server
         } |
-        Tee-Object -Variable 'servers' 
+        Tee-Object -Variable 'servers'
 
     if( $PSCmdlet.ParameterSetName -eq 'All' -or $servers )
     {
         return
     }
-    
+
     if( -not [wildcardpattern]::ContainsWildcardCharacters($Name) )
     {
         Write-Error -Message ('Server "{0}" does not exist.' -f $Name) -ErrorAction $ErrorActionPreference

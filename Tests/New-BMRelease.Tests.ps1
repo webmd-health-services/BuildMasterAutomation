@@ -8,7 +8,7 @@ BeforeAll {
     $script:session = New-BMTestSession
     $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
     $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline = New-BMPipeline -Session $script:session -Name $script:pipelineName -Application $script:app -Color '#ffffff'
+    $script:pipeline = Set-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff' -PassThru
 
     function Assert-Release
     {
@@ -29,7 +29,7 @@ BeforeAll {
             $newRelease.id | Should -Be $Release.id
             $Release.applicationId | Should -Be $script:app.Application_Id
             $Release.number | Should -Be $HasNumber
-            $Release.pipelineId | Should -Be $script:pipeline.Pipeline_Id
+            $Release.pipelineName | Should -Be $pipeline.Pipeline_Name
 
             if( -not $HasName )
             {
@@ -50,21 +50,14 @@ Describe 'New-BMRelease' {
         $releaseNumber = New-TestReleaseNumber
         $script:app |
             New-BMRelease -Session $script:session -Number $releaseNumber -Pipeline $script:pipeline |
-            Assert-Release -HasNumber $releaseNumber
-    }
-
-    It 'should create release when piping application ID' {
-        $releaseNumber = New-TestReleaseNumber
-        $script:app.Application_Id |
-            New-BMRelease -Session $script:session -Number $releaseNumber -Pipeline $script:pipeline.Pipeline_Id |
-            Assert-Release -HasNumber $releaseNumber
+            Assert-Release -HasNumber $releaseNumber 
     }
 
     It 'should create release when piping application name' {
         $releaseNumber = New-TestReleaseNumber
         $script:app.Application_Name |
             New-BMRelease -Session $script:session -Number $releaseNumber -Pipeline $script:pipeline.Pipeline_Name |
-            Assert-Release -HasNumber $releaseNumber
+            Assert-Release -HasNumber $releaseNumber 
     }
 
     It 'should set release name' {

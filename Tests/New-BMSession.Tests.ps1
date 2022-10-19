@@ -8,12 +8,12 @@ BeforeAll {
 
 Describe 'New-BMSession' {
     It 'should return a session object' {
-        $uri = 'https://fubar.snafu'
+        $url = 'https://fubar.snafu'
         $key = 'fubarsnafu'
 
-        $session = New-BMSession -Uri $uri -ApiKey $key
+        $session = New-BMSession -Url $url -ApiKey $key
         $session | Should -Not -BeNullOrEmpty
-        $session.Uri | Should -Be ([uri]$uri)
+        $session.Url | Should -Be ([uri]$url)
         $session.ApiKey | Should -Be $key
     }
 }

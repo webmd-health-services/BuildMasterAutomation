@@ -3,12 +3,14 @@ function Get-BMPipeline
 {
     <#
     .SYNOPSIS
-    Gets pipelines.
+    Gets pipelines from BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMPipeline` function gets pipelines. By default, it returns all pipelines. To get a specific pipeline, pass its name to the `Name` parameter or its ID to the `ID` parameter. The `Name` parameter supports wildcards. To get a specific application's pipelines, pass the application's ID to the `ApplicationID` parameter.
+    The `Get-BMPipeline` function gets pipelines. By default, it returns all pipelines. To get a specific pipeline, pass
+    its name to the `Name` parameter. The `Name` parameter supports wildcards. To get a specific application's
+    pipelines, pass the application's id or object to the `Application` parameter.
 
-    This function uses the `Pipelines_GetPipelines` and `Pipelines_GetPipeline` native API methods.
+    This function uses the `Rafts_GetRaftItems` native API method.
 
     .EXAMPLE
     Get-BMPipeline -Session $session
@@ -18,84 +20,46 @@ function Get-BMPipeline
     .EXAMPLE
     Get-BMPipeline -Session $session -Name 'BuildMaster Automation'
 
-    Demonstrates how to get pipelines by name. If there are multiple pipelines with the same name, they will all be returned.
+    Demonstrates how to get pipelines by name. If there are multiple pipelines with the same name, they will all be
+    returned.
 
     .EXAMPLE
     Get-BMPipeline -Session $session -Name '*Automation'
 
     Demonstrates that you can use wildcards in the `Name` parameter's value to search for pipelines.
-    
-    .EXAMPLE
-    Get-BMPipeline -Session $session -ID 34
 
-    Demonstrates how to get a specific pipeline by its ID.
-    
     .EXAMPLE
-    Get-BMPipeline -Session $session -ApplicationID 39
+    Get-BMPipeline -Session $session -Application 39
 
     Demonstrates how to get a specific application's pipelines.
-    
+
     .EXAMPLE
-    Get-BMPipeline -Session $session -ApplicationID 39 -Name 'Pipeline 2'
+    Get-BMPipeline -Session $session -Application $app -Name 'Pipeline 2'
 
-    Demonstrates how to get an application's pipeline by its name.
+    Demonstrates how to get an application's pipeline using an application object and the pipeline's name.
     #>
-    [CmdletBinding(DefaultParameterSetName='Searching')]
+    [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that represents the instance of BuildMaster to connect to. Use the `New-BMSession` function to creates a session object.
-        $Session,
+        # A session object to BuildMaster. Use the `New-BMSession` function to creates a session.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(ParameterSetName='Searching')]
-        [string]
         # The name of the pipeline to get. Supports wildcards.
-        $Name,
+        [Parameter(ParameterSetName)]
+        [String] $Name,
 
-        [Parameter(ParameterSetName='Searching')]
-        [int]
-        # The ID of the application whose pipelines to get. The default is to return all pipelines.
-        $ApplicationID,
-
-        [Parameter(Mandatory=$true,ParameterSetName='SpecificPipeline')]
-        [int]
-        # The ID of the pipeline to get.
-        $ID
+        # The application whose pipelines to get. Passing application ids or objects are supported.
+        [Parameter(ParameterSetName)]
+        [Object] $Application
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-    $WhatIfPreference = $false
 
-    $parameter = @{ }
-    $methodName = 'Pipelines_GetPipelines'
-    if( $PSCmdlet.ParameterSetName -eq 'SpecificPipeline' )
-    {
-        $methodName = 'Pipelines_GetPipeline'
-        $parameter['Pipeline_Id'] = $ID
-    }
-    else
-    {
-        if( $ApplicationID )
-        {
-            $parameter['Application_Id'] = $ApplicationID
-        }
-    }
-
-    $optionalParams = @{ }
-    if( $parameter.Count )
-    {
-        $optionalParams['Parameter'] = $parameter
-        $optionalParams['Method'] = 'Post'
-    }
-
-    Invoke-BMNativeApiMethod -Session $session -Name $methodName @optionalParams |
-        Where-Object {
-            if( $Name )
-            {
-                return ($_.Pipeline_Name -like $Name)
-            }
-            
-            return $true
-        }
+    Get-BMRaftItem -Session $session `
+                   -Raft $script:defaultRaftId `
+                   -Name $Name `
+                   -Application $Application `
+                   -TypeCode ([BMRaftItemTypeCode]::Pipeline) |
+        Add-BMPipelineMember -PassThru
 }

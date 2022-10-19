@@ -25,7 +25,7 @@ Describe 'New-BMApplication' {
         $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
         New-BMApplication -Session $script:session -Name $appName
         $app2 = New-BMApplication -Session $script:session -Name $appName -ErrorAction SilentlyContinue
-        $Global:Error | Should -Match 'duplicate key'
+        $Global:Error | Should -Match 'already exists'
         $app2 | Should -BeNullOrEmpty
     }
 
@@ -34,12 +34,10 @@ Describe 'New-BMApplication' {
         $app = New-BMApplication -Session $script:session `
                                  -Name $appName `
                                  -ReleaseNumberSchemeName DateBased `
-                                 -BuildNumberSchemeName DateTimeBased `
-                                 -AllowMultipleActiveBuilds
+                                 -BuildNumberSchemeName DateTimeBased
         $app | Should -Not -BeNullOrEmpty
         $app.ReleaseNumber_Scheme_Name | Should -Be 'DateBased'
         $app.BuildNumber_Scheme_Name | Should -Be 'DateTimeBased'
-        $app.AllowMultipleActiveBuilds_Indicator | Should -Be $true
     }
 
     It 'should create application in an application group' {
@@ -48,7 +46,7 @@ Describe 'New-BMApplication' {
                                                -Parameter @{ ApplicationGroup_Name = 'TestBMAppGroup' } `
                                                -Method Post
         $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-        $app = New-BMApplication -Session $script:session -Name $appName -ApplicationGroupId $appGroupID
+        $app = New-BMApplication -Session $script:session -Name $appName -ApplicationGroup $appGroupID
         $app | Should -Not -BeNullOrEmpty
         $app.ApplicationGroup_Name | Should -Be 'TestBMAppGroup'
     }
