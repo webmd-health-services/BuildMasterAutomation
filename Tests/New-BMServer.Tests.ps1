@@ -18,7 +18,7 @@ BeforeAll {
         foreach( $name in $Named )
         {
             New-BMEnvironment -Session $script:session -Name $name -ErrorAction Ignore
-            Enable-BMEnvironment -Session $script:session -Name $name
+            $name | Enable-BMEnvironment -Session $script:session
         }
     }
 
@@ -132,7 +132,7 @@ BeforeAll {
             }
         }
 
-        $server = Get-BMServer -Session $script:session -Name $Named
+        $server = $Named | Get-BMServer -Session $script:session
 
         $server | Should -Not -BeNullOrEmpty
         $server.serverType | Should -Be $OfType
@@ -217,7 +217,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServer -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Named | Get-BMServer -Session $script:session -ErrorAction Ignore | Should -BeNullOrEmpty
     }
 
     function WhenCreatingServer

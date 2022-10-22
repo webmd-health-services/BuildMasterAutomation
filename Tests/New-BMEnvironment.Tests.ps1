@@ -21,11 +21,11 @@ BeforeAll {
             New-BMEnvironment -Session $script:session -Name $name -ErrorAction Ignore
             if( $Disabled )
             {
-                Disable-BMEnvironment -Session $script:session -Name $Name
+                $Name | Disable-BMEnvironment -Session $script:session
             }
             else
             {
-                Enable-BMEnvironment -Session $script:session -Name $name
+                $Name | Enable-BMEnvironment -Session $script:session
             }
         }
     }
@@ -46,7 +46,7 @@ BeforeAll {
             [string]$WithParent
         )
 
-        $environment = Get-BMEnvironment -Session $script:session -Name $Named
+        $environment = $Named | Get-BMEnvironment -Session $script:session
 
         $environment | Should -Not -BeNullOrEmpty
 
@@ -76,7 +76,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Named | Get-BMEnvironment -Session $script:session -ErrorAction Ignore | Should -BeNullOrEmpty
     }
 
     function WhenCreatingEnvironment

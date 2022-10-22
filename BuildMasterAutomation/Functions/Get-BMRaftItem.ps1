@@ -48,8 +48,9 @@ function Get-BMRaftItem
         [Parameter(Mandatory)]
         [Object] $Raft,
 
-        # The name of the item to get. Supports wildcards.
-        [String] $Name,
+        # The raft item to get. Pass the raft item id, name (wildcards supported), or raft item object.
+        [Parameter(ValueFromPipeline)]
+        [Object] $RaftItem,
 
         # The application id, name or object whose items to get.
         [Object] $Application,
@@ -58,52 +59,60 @@ function Get-BMRaftItem
         [BMRaftItemTypeCode] $TypeCode
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-    $WhatIfPreference = $false # Gets items, but the API requires a POST.
-
-    $getArgs = @{}
-
-    $getArgs |
-        Add-BMObjectParameter -Name 'Raft' -Value $Raft -ForNativeApi -PassThru |
-        Add-BMObjectParameter -Name 'Application' -Value $Application -ForNativeApi -PassThru |
-        Add-BMParameter -Name 'RaftItemType_Code' -Value ([int]$TypeCode)
-
-    $searching = [wildcardpattern]::ContainsWildcardCharacters($Name)
-    if ($Name -and -not $searching)
+    process
     {
-        $getArgs | Add-BMParameter -Name 'RaftItem_Name' -Value $Name
-    }
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+        $WhatIfPreference = $false # Gets items, but the API requires a POST.
 
-    $raftItems = $null
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Rafts_GetRaftItems' -Parameter $getArgs -Method Post |
-        Where-Object {
-            if (-not $Name -or -not $searching)
-            {
-                return $true
-            }
+        $getArgs =
+            @{} |
+            Add-BMObjectParameter -Name 'Raft' -Value $Raft -ForNativeApi -PassThru |
+            Add-BMObjectParameter -Name 'Application' -Value $Application -ForNativeApi -PassThru |
+            Add-BMParameter -Name 'RaftItemType_Code' -Value $PSBoundParameters['TypeCode'] -PassThru
 
-            return $_.RaftItem_Name -like $Name
-        } |
-        Tee-Object -Variable 'raftItems' |
-        Add-PSTypeName -RaftItem |
-        Add-Member -Name 'Type' -MemberType ScriptProperty -Value {
-                switch ($this.RaftItemType_Code)
+        $raftItemName = $RaftItem | Get-BMObjectName -ObjectTypeName 'RaftItem' -Strict -ErrorAction Ignore
+        $searching = $raftItemName -and [wildcardpattern]::ContainsWildcardCharacters($raftItemName)
+        if (-not $searching)
+        {
+            $getArgs | Add-BMObjectParameter -Name 'RaftItem' -Value $RaftItem -ForNativeApi
+        }
+
+        $raftItems = $null
+        Invoke-BMNativeApiMethod -Session $Session -Name 'Rafts_GetRaftItems' -Parameter $getArgs -Method Post |
+            Where-Object {
+                if ($raftItemName)
                 {
-                    3 { return 'Module' }
-                    4 { return 'Script' }
-                    6 { return 'DeploymentPlan' }
-                    8 { return 'Pipeline' }
-                    default { return $this.RaftItemType_Code }
+                    return $_.RaftItem_Name -like $raftItemName
                 }
-            } -PassThru |
-        Add-Member -Name 'Content' -MemberType ScriptProperty -Value {
-                $this.Content_Bytes | ConvertFrom-BMNativeApiByteValue
-            } -PassThru
+                return $true
+            } |
+            Tee-Object -Variable 'raftItems' |
+            Add-PSTypeName -RaftItem |
+            Add-Member -Name 'Type' -MemberType ScriptProperty -Value {
+                    switch ($this.RaftItemType_Code)
+                    {
+                        3 { return 'Module' }
+                        4 { return 'Script' }
+                        6 { return 'DeploymentPlan' }
+                        8 { return 'Pipeline' }
+                        default { return $this.RaftItemType_Code }
+                    }
+                } -PassThru |
+            Add-Member -Name 'Content' -MemberType ScriptProperty -Value {
+                    $this.Content_Bytes | ConvertFrom-BMNativeApiByteValue
+                } -PassThru
 
-    if ($Name -and -not $searching -and -not $raftItems)
-    {
-        $msg = "$($TypeCode | Get-BMRaftTypeDisplayName) ""$($Name)"" doesn't exist."
-        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        if ($RaftItem -and -not $searching -and -not $raftItems)
+        {
+            $appMsg = ''
+            if ($Application)
+            {
+                $appMsg = " in application ""$($Application | Get-BMObjectName)"""
+            }
+            $msg = "$($TypeCode | Get-BMRaftTypeDisplayName) " +
+                   """$($RaftItem | Get-BMObjectName -ObjectTypeName 'RaftItem')""$($appMsg) doesn't exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
     }
 }

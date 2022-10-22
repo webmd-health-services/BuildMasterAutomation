@@ -9,7 +9,7 @@ function Remove-BMVariable
     The `Remove-BMVariable` function deletes BuildMaster variables. By default, it deletes global variables. It can also delete variables for a specific environment, server, server role, application group, and application variables.
 
     Pass the name of the variable to delete to the `Name` parameter. If no variable exists to delete, you'll get an error.
-    
+
     To delete an environment's variables, pass the environment's name to the `EnvironmentName` parameter.
 
     To delete a server role's variables, pass the server role's name to the `ServerRoleName` parameter.
@@ -25,7 +25,7 @@ function Remove-BMVariable
     This function uses BuildMaster's variables API. When deleting application and application group variables, it uses BuildMaster's native API.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' 
+    Remove-BMVariable -Session $session -Name 'Var'
 
     Demonstrates how to delete a global variable.
 
@@ -54,35 +54,36 @@ function Remove-BMVariable
 
     Demonstrates how to delete a variable from an application.
     #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='global')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='global')]
     param(
+        # The session to BuildMaster. Use `New-PSSession` to create a new session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object]$Session,
 
-        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
-        # The name of the variable to delete.
-        [string]$Name,
+        # The variable to delete. Pass a variable name or variable object.
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $Variable,
 
-        [Parameter(Mandatory,ParameterSetName='application')]
-        # The name of the application where the variable should be deleted. The default is to delete global variables.
-        [string]$ApplicationName,
+        # The application of the variable to delete. Pass an application id, name, or object.
+        [Parameter(Mandatory, ParameterSetName='application')]
+        [Object] $Application,
 
-        [Parameter(Mandatory,ParameterSetName='application-group')]
-        # The name of the application group where the variable should be deleted. The default is to delete global variables.
-        [string]$ApplicationGroupName,
+        # The application group of the variable to delete. Pass an application group id, name, or object.
+        [Parameter(Mandatory, ParameterSetName='application-group')]
+        [Object] $ApplicationGroup,
 
-        [Parameter(Mandatory,ParameterSetName='environment')]
-        # The name of the environment where the variable should be deleted. The default is to delete global variables.
-        [string]$EnvironmentName,
+        # The environment of the variable to delete. Pass an environment id, name, or object.
+        [Parameter(Mandatory, ParameterSetName='environment')]
+        [Object] $Environment,
 
-        [Parameter(Mandatory,ParameterSetName='server')]
-        # The name of the server where the variable should be deleted. The default is to delete global variables.
-        [string]$ServerName,
+        # The server of the variable to delete. Pass a server id, name, or object.
+        [Parameter(Mandatory, ParameterSetName='server')]
+        [Object] $Server,
 
-        [Parameter(Mandatory,ParameterSetName='role')]
-        # The name of the server role where the variable should be deleted. The default is to delete global variables.
-        [string]$ServerRoleName
+        # The server role of the variable to delete. Pass a server role id, name, or object.
+        [Parameter(Mandatory, ParameterSetName='role')]
+        [Object] $ServerRole
     )
 
     process
@@ -90,59 +91,11 @@ function Remove-BMVariable
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $entityParamNames = @{
-                                'application' = 'ApplicationName';
-                                'application-group' = 'ApplicationGroupName';
-                                'environment' = 'EnvironmentName';
-                                'server' = 'ServerName';
-                                'role' = 'ServerRoleName';
-                            }
-
-        $endpointName = 'variables/{0}' -f $PSCmdlet.ParameterSetName
-        if( $PSCmdlet.ParameterSetName -ne 'global' )
-        {
-            $entityParamName = $entityParamNames[$PSCmdlet.ParameterSetName]
-            $entityName = $PSBoundParameters[$entityParamName]
-            $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($entityName)
-        }
-
-        # Variables API doesn't delete application variables.
-        if( $PSCmdlet.ParameterSetName -eq 'application' )
-        {
-            $app = Get-BMApplication -Session $session -Name $ApplicationName
-            if( -not $app )
-            {
-                Write-Error -Message ('Application "{0}" does not exist.' -f $ApplicationName) -ErrorAction $ErrorActionPreference
-                return
-            }
-
-            $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'Application_Id' = $app.Application_Id }
-            if( $variable )
-            {
-                Invoke-BMNativeApiMethod -Session $session -Name 'Variables_DeleteVariable' -Method Post -Parameter @{ 'Variable_Id' = $variable.Variable_Id }
-            }
-        }
-        # Variables API doesn't delete application group variables.
-        elseif( $PSCmdlet.ParameterSetName -eq 'application-group' )
-        {
-            $appGroup = Get-BMApplicationGroup -Session $session -Name $ApplicationGroupName
-            if( -not $appGroup )
-            {
-                Write-Error -Message ('Application group "{0}" does not exist.' -f $ApplicationGroupName) -ErrorAction $ErrorActionPreference
-                return
-            }
-
-            $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetVariablesForScope' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id }
-            if( $variable )
-            {
-                Invoke-BMNativeApiMethod -Session $session -Name 'Variables_DeleteVariable' -Method Post -Parameter @{ 'Variable_Id' = $variable.Variable_Id }
-            }
-        }
-        else
-        {
-            $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($Name)
-            Invoke-BMRestMethod -Session $Session -Name $endpointName -Method Delete
-        }
+        Invoke-BMVariableEndpoint -Session $session `
+                                  -Variable $Variable `
+                                  -EntityTypeName $PSCmdlet.ParameterSetName `
+                                  -BoundParameter $PSBoundParameters `
+                                  -ForDelete
     }
 
 }

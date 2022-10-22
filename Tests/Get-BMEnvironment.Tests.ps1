@@ -20,11 +20,11 @@ BeforeAll {
         New-BMEnvironment -Session $script:session -Name $Name -ErrorAction Ignore
         if( $Disabled )
         {
-            Disable-BMEnvironment -Session $script:session -Name $Name
+            $Name | Disable-BMEnvironment -Session $script:session
         }
         else
         {
-            Enable-BMEnvironment -Session $script:session -Name $Name
+            $Name | Enable-BMEnvironment -Session $script:session
         }
     }
 
@@ -70,7 +70,7 @@ BeforeAll {
         $optionalParams = @{ }
         if( $Named )
         {
-            $optionalParams['Name'] = $Named
+            $optionalParams['Environment'] = $Named
         }
         if( $Force )
         {
