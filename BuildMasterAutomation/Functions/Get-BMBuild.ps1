@@ -56,22 +56,31 @@ function Get-BMBuild
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $parameter = $null
+    $parameter = @{}
     if( $PSCmdlet.ParameterSetName -eq 'SpecificBuild' )
     {
-        $parameter = @{ } | Add-BMObjectParameter -Name 'build' -Value $Build -PassThru
+        $parameter | Add-BMObjectParameter -Name 'build' -Value $Build
     }
     elseif( $PSCmdlet.ParameterSetName -eq 'ReleaseBuilds' )
     {
-        $parameter = @{ } | Add-BMObjectParameter -Name 'release' -Value $Release -PassThru
+        $release = $Release | Get-BMRelease -Session $session
+        if (-not $release)
+        {
+            $msg = "Failed to get builds for release ""$($Release | Get-BMObjectName)"" because the release does not " +
+                   'exist.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+        $parameter | Add-BMObjectParameter -Name 'release' -Value $Release
     }
 
     $parameterParam = @{ }
-    if( $parameter )
+    if ($parameter.Count)
     {
         $parameterParam['Parameter'] = $parameter
     }
 
+    $builds = @()
     Invoke-BMRestMethod -Session $Session -Name 'releases/builds' @parameterParam -Method Post |
         Where-Object {
             # There's a bug in BuildMaster's API that returns builds for multiple releases. We don't want this.
@@ -80,5 +89,13 @@ function Get-BMBuild
                 return $_.releaseId -eq $parameter.releaseId
             }
             return $true
-        }
+        } |
+        Tee-Object -Variable 'builds' |
+        Write-Output
+
+    if ($PSCmdlet.ParameterSetName -eq 'SpecificBuild' -and -not $builds)
+    {
+        $msg = "Build ""$($Build | Get-BMObjectName -PropertyName 'buildNumber')"" does not exist."
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+    }
 }

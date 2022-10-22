@@ -36,7 +36,7 @@ BeforeAll {
         }
         try
         {
-            $script:getAppGroups = Get-BMApplicationGroup -Session $script:session $Name
+            $script:getAppGroups = $Name | Get-BMApplicationGroup -Session $script:session
         }
         finally
         {
@@ -107,7 +107,7 @@ Describe 'Get-BMApplicationGroup' {
 
     It 'should ignore no search results' {
         GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'
-        WhenGettingApplicationGroup 'NonExistentApplicationGroup2'
+        WhenGettingApplicationGroup 'NonExistentApplicationGroup2*'
         ThenShouldNotThrowErrors
         ThenShouldNotReturnApplicationGroup
     }

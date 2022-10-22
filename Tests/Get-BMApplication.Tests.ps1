@@ -89,7 +89,7 @@ BeforeAll {
             $Name
         )
 
-        $script:result = Get-BMApplication -Session $BMTestSession -Name $Name
+        $script:result = $Name | Get-BMApplication -Session $BMTestSession
     }
 }
 

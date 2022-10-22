@@ -2,26 +2,44 @@
 
 ## 2.0.0
 
+### Known Issues
+
+The `Get-BMVariable` function fails to get variables from applications or application groups, due to a bug in the
+BuildMaster [Variables Mangement API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
+
 ### Upgrade Instructions
 
 ***This release contains breaking changes. Please read these upgrade instructions carefully before upgrading.***
 
 This release adds support for BuildMaster 6.2.33, which contains breaking changes from version 6.1.
 
-* Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster [Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
+* These functions now write an error if an item doesn't exist (for `Get`, `Remove`, and `Set` functions) or if an item
+already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usages to preserve previous behavior:
+  * `Disable-BMEnvironment`
+  * `Enable-BMEnvironment`
+  * `Get-BMApplication`
+  * `Get-BMApplicationGroup`
+  * `Get-BMDeployment`
+  * `Get-BMEnvironment`
+  * `Get-BMRelease`
+  * `Get-BMServer`
+  * `Get-BMServerRole`
+  * `New-BMApplication`
+  * `Remove-BMServer`
+  * `Remove-BMServerRole`
+  * `Remove-BMVariable`
+  * `Set-BMRelease`
+* Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
+[Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
-* Rename usages of the `Get-BMDeployment` function's `ID` parameter to `Deployment`.
 * Remove usages of the `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. This functionality was
 removed from BuildMaster.
 * Rename usages of `New-BMPipeline` to `Set-BMPipeline`.
-* Update values passed to the `Set-BMPipeline` (née `New-BMPipeline`) function's `Stage` parameter. This parameter now
-requires an array of stage objects, which can be created with the new `New-BMPipelineStageObject` function.
 * Remove usages of the `Get-BMPipeline` function's `ID` parameter. BuildMaster pipelines no longer have ids, just
 names.
 * Update usages of the `Get-BMPipeline` function to pass a pipeline name to the `Name` parameter instead of an id.
 * Objects returned by `Get-BMPipeline` are now raft item objects. Check usages to ensure you're using correct
 properties.
-* Rename usages of the `New-BMPipeline` function to `Set-BMPipeline`.
 * `Set-BMPipeline` (née `New-BMPipeline`) now creates *or* updates a pipeline. Inspect usages to see the impact of this
 new behavior.
 * Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function's `Stage` parameter to pass stage objects
@@ -29,7 +47,6 @@ instead of strings of XML. Use the new `New-BMPipelineStageObject` and `New-BMPi
 create the objects you should pass.
 * Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function that use the return value. `Set-BMPipeline` no
 longer returns the pipeline object by default. Use the new `PassThru` switch and the pipeline object will be returned.
-* Add `-ErrorAction Ignore` to usages of `Remove-BMServer` and `Remove-BMServerRole` if you don't care if the item doesn't exist. `Remove-BMServer` and `Remove-BMServerRole` now write errors when the item to remove doesn't exist.
 * Update usages of `Set-BMRelease` to pass a pipeline name or pipeline object to the new `Pipeline` paramter and remove
 usages of the `PipelineID` parameter.
 
@@ -39,13 +56,44 @@ usages of the `PipelineID` parameter.
 of a request to a BuildMaster API endpoint). If the value is `$null`, however, it won't be added.
 * Function `ConvertFrom-BMNativeApiByteValue` for converting `byte[]` values returned by the BuildMaster native API
 into their original strings.
+* The `Disable-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
+* The `Enable-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
+* The `Get-BMApplication` function now accepts application ids, names, or application objects as pipeline input.
+* Parameter `Application` to the`Get-BMApplication` function, which accepts an application id, name, or application
+object. Wildcards supported when passing a name.
+* The `Get-BMApplicationGroup` function now accepts application group ids, names, or application group objects as
+pipeline input.
+* Parameter `ApplicationGroup` to the`Get-BMApplication` function, which accepts an application group id, name, or
+application group object. Wildcards supported when passing a name.
+* Parameter `Deployment` to the `Get-BMDeployment`, which accepts a deployment id or deployment object.
+* The `Get-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
+* Parameter `Environment` to the `Get-BMEnvironment`, which accepts environment ids, names, or environment objects.
+Wildcards supported when passing a name.
 * Function `Get-BMObjectName` for getting the name of an object that was returned by the BuildMaster API.
+* The `Get-BMServer` function now accepts server names, ids, and server objects as pipeline input.
+* Parameter `Server` to function `Get-BMServer`, which accepts server ids, names, or server objects. Wildcards supported
+when passing a name.
+* The `Get-BMServerRole` function now accepts server role names, ids, and server objects as pipeline input.
+* Parameter `ServerRole` to function `Get-BMServerServer`, which accepts server ids, names, or server objects. Wildcards
+supported when passing a name.
+* The following parameters on `Get-BMVariable` and `Remove-BMVariable` (wildcards supported when passing a name to any
+of these parameters):
+  * `Application`, which accepts application ids, names, or application objects.
+  * `ApplicationGroup`, which accepts application group ids, names, or application group objects.
+  * `Environment`, which accepts environment ids, names, or environment objects.
+  * `Server`, which accpets server ids, names, or server objects.
+  * `ServerRole`, which accepts server role ids, names, or server names.
+* Parameter `Server` to function `Remove-BMServer`, which accepts server ids, names, or server objects. Wildcards
+supported when passed a name.
+* Parameter `ServerRole` to function `Remove-BMServerRole`, which accepts server role ids, names, or server objects.
+Wildcards supported when passed a name.
 * Function `Get-BMBuild` for getting builds. It replaces the now obsolete `Get-BMPackage` function.
-* Parameter `Application` to the `Get-BMPipeline` function. It replaces the now obsolete parameter `ApplicationID`.
+* Parameter `Application` to the `Get-BMPipeline` function which accepts an application id, name, or application object.
+Wildcards supported when passing a name.
 * Function `Get-BMRaft` for getting all rafts.
 * Function `Get-BMRaftItem` for getting all raft items.
-* Parameter `Application` on the `New-BMApplication` function. It replaces the now obsolete parameter
-`ApplicationGroupID`.
+* Parameter `ApplicationGroup` on the `New-BMApplication` function, which accepts application group ids, names, or
+application group objects. Wildcards supported when passing a name.
 * Function `New-BMBuild` for creating builds. It replaces the now obsolete `New-BMPackage` function.
 * Function `New-BMPipelinePostDeploymentOptionsObject` for creating a post-deployment options object to use when
 creating a pipeline.
@@ -68,11 +116,29 @@ pipeline's stage sequence enforcement.
 
 ### Changed
 
+* These functions now write an error if an item doesn't exist (for `Get` and `Remove` functions) or if an item already
+exists (for `New` functions). Add `-ErrorAction Ignore` to existing usages to preserve previous behavior:
+  * `Disable-BMEnvironment`
+  * `Enable-BMEnvironment`
+  * `Get-BMApplication`
+  * `Get-BMApplicationGroup`
+  * `Get-BMDeployment`
+  * `Get-BMEnvironment`
+  * `Get-BMRelease`
+  * `Get-BMServer`
+  * `Get-BMServerRole`
+  * `New-BMApplication`
+  * `Remove-BMServer`
+  * `Remove-BMServerRole`
+  * `Remove-BMVariable`
+  * `Set-BMRelease`
 * The `Add-BMObjectParameter` function now accepts `$null` values. When passed a null value, it does nothing.
+* The `Disable-BMEnvironment` function's `Environment` parameter now accepts an environment id, name, and environment
+object for a value.
+* The `Enable-BMEnvironment` function's `Environment` parameter now accepts an environment id, name, and environment
+object for a value.
 * Renamed the `New-BMPipeline` function to `Set-BMPipeline` since the underlying API no longer has separate create and
 update endpoints, but a single create or update endpoint.
-* Renamed `Get-BMDeployment` function's `ID` parameter to `Deployment` and updated it to also accept deployment
-objects.
 * `Get-BMPipeline` function returns raft item objects instead of pipeline objects.
 * Renamed the `New-BMPackage` function's `PackageNumber` parameter to `BuildNumber`.
 * Renamed the `New-BMPipeline` function to `Set-BMPipeline` and updated it to create and/or update the pipeline.
@@ -81,8 +147,6 @@ strings. Use the new `New-BMPipelineStageObject` and `New-BMPipelineStageTargetO
 you should pass.
 * `Set-BMPipeline` (née `New-BMPipeline`) no longer returns the pipeline. Use the `PassThru` switch to have the pipeline
 object returned.
-* `Remove-BMServer` and `Remove-BMServerRole` now write an error when the item to delete doesn't exist. Use
-`-ErrorAction Ignore` to ignore if the item exists or not.
 
 ### Deprecated
 
@@ -94,9 +158,23 @@ object returned.
 
 #### Function Parameters
 
+* The `Get-BMApplication` function's `Name` parameter. Use the new `Application` parameter instead.
+* The `Get-BMApplicationGroup` function's `Name` parameter. Use the new `ApplicationGroup` parameter instead.
+* The `Get-BMDeployment` function's `ID` parameter. Use the new `Deployment` parameter instead.
+* The `Get-BMEnvironment` function's `Name` parameter. Use the new `Environment` parameter instead.
 * The `Get-BMPipeline` function's `ApplicationID` parameter. Use the new `Application` parameter instead.
+* The `Get-BMPipeline` function's `Name` parameter. Use the new `Pipeline` parameter instead.
+* The `Get-BMServer` function's `Name` parameter. Use the new `Server` parameter instead.
+* The `Get-BMServerRole` function's `Name` parameter. Use the new `ServerRole` parameter instead.
+* The following parameters on `Get-BMVariable` and `Remove-BMVariable`:
+  * `ApplicationName`; use `Application` instead.
+  * `ApplicationGroupName`; use `ApplicationGroup` instead.
+  * `EnvironmentName`; use `Environment` instead.
+  * `ServerName`; use `Server` instead.
+  * `ServerRoleName`; use `ServerRole` instead.
 * The `New-BMApplication` function's `ApplicationGroupID` parameter. Use the new `ApplicationGroup` parameter instead.
 * The `New-BMSession` function's `Uri` parameter. Use the new `Url` parameter instead.
+* The `Remove-BMServer` function's `Name` parameter. Use the new `Server` parameter instead.
 
 #### Object Properties
 
@@ -118,7 +196,6 @@ ids, just names.
 * Removed the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
-* Parameter `PipelineID` on the `Get-BMRelease` function. Use the new `Pipeline` parameter instead.
 
 ## 1.0.1
 

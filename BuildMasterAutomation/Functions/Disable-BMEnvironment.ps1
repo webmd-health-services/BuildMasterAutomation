@@ -22,15 +22,16 @@ function Disable-BMEnvironment
 
     Demonstrates that you can pipe the objects returned by `Get-BMEnvironment` into `Disable-BMEnvironment` to disable those environments.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param(
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object] $Session,
 
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
-        # The name of the environment to disable.
-        [string]$Name
+        # The environment to disable. Pass an environment id, name or an environment object.
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $Environment
     )
 
     process
@@ -38,10 +39,16 @@ function Disable-BMEnvironment
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $environment = Get-BMEnvironment -Session $Session -Name $Name -Force
-        if( $environment -and $environment.active )
+        $Environment = $Environment | Get-BMEnvironment -Session $Session -Force
+        if (-not $Environment -or -not $Environment.active)
         {
-            Invoke-BMNativeApiMethod -Session $session -Name 'Environments_DeleteEnvironment' -Parameter @{ 'Environment_Id' = $environment.id } -Method Post
+            return
         }
+
+        $environmentArg = @{} | Add-BMObjectParameter -Name 'Environment' -Value $Environment -ForNativeApi -PassThru
+        Invoke-BMNativeApiMethod -Session $session `
+                                 -Name 'Environments_DeleteEnvironment' `
+                                 -Parameter $environmentArg `
+                                 -Method Post
     }
 }

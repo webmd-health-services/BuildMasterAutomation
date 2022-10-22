@@ -39,10 +39,21 @@ function Get-BMDeployment
     {
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+        $WhatIfPreference = $false
 
         $parameter =
             @{ } |
             Add-BMObjectParameter -Name 'deployment' -Value $Deployment -PassThru
-        Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post
+
+        $deployments = @()
+        Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post |
+            Tee-Object -Variable 'deployments' |
+            Write-Output
+
+        if (-not $deployments)
+        {
+            $msg = "Unable to get deployment ""$($deployment | Get-BMObjectName)"" because it does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
     }
 }

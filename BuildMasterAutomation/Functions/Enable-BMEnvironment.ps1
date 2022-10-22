@@ -22,15 +22,16 @@ function Enable-BMEnvironment
 
     Demonstrates that you can pipe the objects returned by `Get-BMEnvironment` into `Enable-BMEnvironment` to enable those environments.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     [CmdletBinding(SupportsShouldProcess)]
     param(
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object] $Session,
 
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
-        # The name of the environment to enable.
-        [string]$Name
+        [Parameter(Mandatory, ValueFromPipeline)]
+        # The environment to enable. Pass an id, name, or an environment object.
+        [Object] $Environment
     )
 
     process
@@ -38,10 +39,16 @@ function Enable-BMEnvironment
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $environment = Get-BMEnvironment -Session $Session -Name $Name -Force
-        if( $environment -and -not $environment.active )
+        $Environment = $Environment | Get-BMEnvironment -Session $Session -Force
+        if (-not $Environment -or $Environment.active)
         {
-            Invoke-BMNativeApiMethod -Session $session -Name 'Environments_UndeleteEnvironment' -Parameter @{ 'Environment_Id' = $environment.id } -Method Post
+            return
         }
+
+        $parameter = @{} | Add-BMObjectParameter -Name 'Environment' -Value $Environment -ForNativeApi -PassThru
+        Invoke-BMNativeApiMethod -Session $session `
+                                    -Name 'Environments_UndeleteEnvironment' `
+                                    -Parameter $parameter `
+                                    -Method Post
     }
 }
