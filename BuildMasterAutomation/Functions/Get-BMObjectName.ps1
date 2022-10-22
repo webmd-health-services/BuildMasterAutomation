@@ -22,12 +22,18 @@ function Get-BMObjectName
     Demonstrates how to get the name of an application object. In this case, the value of the application's
     `Application_Name` property will be returned.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Default')]
     param(
         [Parameter(Mandatory, ValueFromPipeline)]
         [Object] $InputObject,
 
-        [String] $PropertyName
+        [Parameter(Mandatory, ParameterSetName='ByPropertyName')]
+        [String] $PropertyName,
+
+        [Parameter(Mandatory, ParameterSetName='ByObjectTypeName')]
+        [String] $ObjectTypeName,
+
+        [switch] $Strict
     )
 
     process
@@ -35,7 +41,12 @@ function Get-BMObjectName
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        if (-not ($InputObject | Test-BMObject))
+        if ($null -eq $InputObject)
+        {
+            return $null
+        }
+
+        if ($InputObject | Test-BMName)
         {
             return $InputObject
         }
@@ -52,17 +63,34 @@ function Get-BMObjectName
 
         if ($PSBoundParameters.ContainsKey('PropertyName'))
         {
+            if (-not $Strict -and ($InputObject | Test-BMID))
+            {
+                return $InputObject
+            }
+
             Write-Error -Message "Object does not have a ""$($PropertyName)"" property."
             return
         }
 
-        $nameProperty = $InputObject | Get-Member -Name '*_Name'
+        if (-not $ObjectTypeName)
+        {
+            $ObjectTypeName = '*'
+        }
+
+        $nameProperty = $InputObject | Get-Member -Name "$($ObjectTypeName)_Name"
         if (-not $nameProperty)
         {
-            $nameProperty = $InputObject | Get-Member -Name '*Name'
+            $nameProperty = $InputObject | Get-Member -Name "$($ObjectTypeName)Name"
             if (-not $nameProperty)
             {
-                Write-Error "Object does not have a name property." -ErrorAction $ErrorActionPreference
+                if (-not $Strict -and ($InputObject | Test-BMID))
+                {
+                    return $InputObject
+                }
+
+                $msg = "Object ""$($InputObject)"" does not have ""Name"", ""$($ObjectTypeName)_Name"", or " +
+                       """$($ObjectTypeName)Name"" properties."
+                Write-Error $msg -ErrorAction $ErrorActionPreference
                 return
             }
         }

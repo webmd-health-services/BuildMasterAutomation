@@ -60,7 +60,9 @@ function Add-BMParameter
 
         # If set, returns the hashtable piped (or passed to parameter `$Parameter). This lets you create a pipeline of
         # calls to `Add-BMParameter`.
-        [switch] $PassThru
+        [switch] $PassThru,
+
+        [switch] $AsInt
     )
 
     process
@@ -74,7 +76,15 @@ function Add-BMParameter
             {
                 $Parameter[$Name] = $Value[$Name]
             }
-            $Parameter[$Name] = $Value
+            elseif ($Value -is [Enum])
+            {
+                $enumType = [Enum]::GetUnderlyingType($Value.GetType())
+                $Parameter[$Name] = [Convert]::ChangeType($Value, $enumType)
+            }
+            else
+            {
+                $Parameter[$Name] = $Value
+            }
         }
 
         if ($PassThru)

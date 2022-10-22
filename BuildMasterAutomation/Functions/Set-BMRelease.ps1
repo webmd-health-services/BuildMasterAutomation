@@ -43,7 +43,6 @@ function Set-BMRelease
         $bmRelease = Get-BMRelease -Session $Session -Release $Release
         if( -not $bmRelease )
         {
-            Write-Error -Message ('Release "{0}" does not exist.' -f $Release)
             return
         }
 

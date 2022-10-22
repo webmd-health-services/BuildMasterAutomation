@@ -52,7 +52,7 @@ BeforeAll {
         $optionalParams = @{ }
         if( $Name )
         {
-            $optionalParams['Name'] = $Name
+            $optionalParams['Pipeline'] = $Name
         }
 
         if( $ForApplication )

@@ -58,12 +58,13 @@ function Set-BMRaftItem
         [Parameter(Mandatory)]
         [BMRaftItemTypeCode] $TypeCode,
 
-        # The name of the raft item.
+        # The raft item. To create a raft item, must be a name. If updating an existing raft item, can be a raft item
+        # id, name, or raft item object.
         #
-        # If the raft item is a script, the name must end with the extension of the script type, e.g. `.ps1` for
+        # If the raft item is a script, its name must end with the extension of the script type, e.g. `.ps1` for
         # PowerShell scripts, `.sh` for shell scripts, etc.
-        [Parameter(Mandatory)]
-        [String] $Name,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $RaftItem,
 
         # The application the raft item belongs to. Pass the application's id, name, or an application object.
         [Object] $Application,
@@ -96,7 +97,7 @@ function Set-BMRaftItem
 
     $contentBytes = $Content | ConvertTo-BMNativeApiByteValue
     $raftParams = @{
-            RaftItem_Name = $Name;
+            RaftItem_Name = ($RaftItem | Get-BMObjectName);
             RaftItemType_Code = $TypeCode;
             ModifiedOn_Date = [DateTimeOffset]::Now;
             ModifiedBy_User_Name = $UserName;
@@ -114,6 +115,6 @@ function Set-BMRaftItem
 
     if ($PassThru)
     {
-        Get-BMRaftItem -Session $Session -Raft $Raft -Name $Name -Application $Application -TypeCode $TypeCode
+        $RaftItem | Get-BMRaftItem -Session $Session -Raft $Raft -Application $Application -TypeCode $TypeCode
     }
 }

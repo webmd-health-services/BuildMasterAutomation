@@ -44,22 +44,24 @@ function Get-BMPipeline
         [Parameter(Mandatory)]
         [Object] $Session,
 
-        # The name of the pipeline to get. Supports wildcards.
-        [Parameter(ParameterSetName)]
-        [String] $Name,
+        # The pipeline to get. Pass a pipeline id, name (wildcards supported), or a pipeline object.
+        [Parameter(ValueFromPipeline)]
+        [Object] $Pipeline,
 
         # The application whose pipelines to get. Passing application ids or objects are supported.
-        [Parameter(ParameterSetName)]
         [Object] $Application
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    process
+    {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    Get-BMRaftItem -Session $session `
-                   -Raft $script:defaultRaftId `
-                   -Name $Name `
-                   -Application $Application `
-                   -TypeCode ([BMRaftItemTypeCode]::Pipeline) |
-        Add-BMPipelineMember -PassThru
+        $Pipeline |
+            Get-BMRaftItem -Session $session `
+                        -Raft $script:defaultRaftId `
+                        -Application $Application `
+                        -TypeCode ([BMRaftItemTypeCode]::Pipeline) |
+            Add-BMPipelineMember -PassThru
+    }
 }

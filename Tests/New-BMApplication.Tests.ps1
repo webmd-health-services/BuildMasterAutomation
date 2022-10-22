@@ -16,7 +16,7 @@ Describe 'New-BMApplication' {
         $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
         $app = New-BMApplication -Session $script:session -Name $appName
         $app | Should -Not -BeNullOrEmpty
-        $freshApp = Get-BMApplication -Session $script:session -Name $appName
+        $freshApp = $appName | Get-BMApplication -Session $script:session
         $freshApp | Should -Not -BeNullOrEmpty
         $freshApp.Application_Id | Should -Be $app.Application_Id
     }

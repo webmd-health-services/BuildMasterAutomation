@@ -25,11 +25,11 @@ BeforeAll {
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
         if( $Disabled )
         {
-            Disable-BMEnvironment -Session $script:session -Name $Named
+            $Named | Disable-BMEnvironment -Session $script:session
         }
         else
         {
-            Enable-BMEnvironment -Session $script:session -Name $Named
+            $Named | Enable-BMEnvironment -Session $script:session
         }
     }
 
@@ -40,7 +40,7 @@ BeforeAll {
             [string]$Named
         )
 
-        $environment = Get-BMEnvironment -Session $script:session -Name $Named
+        $environment = $Named | Get-BMEnvironment -Session $script:session
         $environment | Should -Not -BeNullOrEmpty
         $environment.active | Should -BeTrue
     }
@@ -52,7 +52,7 @@ BeforeAll {
             [string]$Named
         )
 
-        $environment = Get-BMEnvironment -Session $script:session -Name $Named
+        $environment = $Named | Get-BMEnvironment -Session $script:session
         $environment | Should -Not -BeNullOrEmpty
         $environment.active | Should -BeFalse
     }
@@ -74,8 +74,7 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $result = Enable-BMEnvironment -Session $script:session -Name $Named @optionalParams
-        $result | Should -BeNullOrEmpty
+        $Named | Enable-BMEnvironment -Session $script:session @optionalParams | Should -BeNullOrEmpty
     }
 }
 

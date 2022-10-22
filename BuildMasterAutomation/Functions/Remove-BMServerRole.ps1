@@ -29,9 +29,9 @@ function Remove-BMServerRole
         [Parameter(Mandatory)]
         [Object] $Session,
 
-        # The name of the role to remove.
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [String] $Name
+        # The server role to delete. Pass a server role id, name, or a server role object.
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $ServerRole
     )
 
     process
@@ -39,15 +39,15 @@ function Remove-BMServerRole
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $role = Get-BMServerRole -Session $Session -Name $Name -ErrorAction Ignore
+        $role = $ServerRole | Get-BMServerRole -Session $Session -ErrorAction Ignore
         if (-not $role)
         {
-            $msg = "Cannot delete server role ""$($Name)"" because it does not exist."
+            $msg = "Cannot delete server role ""$($ServerRole | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
-        $encodedName = [uri]::EscapeDataString($Name)
+        $encodedName = [uri]::EscapeDataString(($ServerRole | Get-BMObjectName))
         Invoke-BMRestMethod -Session $Session -Name ('infrastructure/roles/delete/{0}' -f $encodedName) -Method Delete
     }
 }

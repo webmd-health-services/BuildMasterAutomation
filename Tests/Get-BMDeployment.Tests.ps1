@@ -41,9 +41,9 @@ BeforeAll {
     $script:releaseRelease2 =
         New-BMRelease -Session $script:session -Application $script:application -Pipeline $pipeline -Number '3.0' -Name 'releaseRelease'
 
-    Enable-BMEnvironment -Session $script:session -Name 'Integration'
-    Enable-BMEnvironment -Session $script:session -Name 'Testing'
-    Enable-BMEnvironment -Session $script:session -Name 'Production'
+    'Integration' | Enable-BMEnvironment -Session $script:session
+    'Testing' | Enable-BMEnvironment -Session $script:session
+    'Production' | Enable-BMEnvironment -Session $script:session
 
     function GivenReleaseBuild
     {

@@ -58,37 +58,26 @@ function Remove-BMApplication
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        if (-not $Application)
-        {
-            return
-        }
-
-        $getDeleteParams =
-            @{ } | Add-BMObjectParameter -Name 'Application' -Value $Application -ForNativeApi -PassThru
-
-        $app = Invoke-BMNativeApiMethod -Session $Session `
-                                        -Name 'Applications_GetApplication' `
-                                        -Parameter $getDeleteParams `
-                                        -Method Post
-
+        $app = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
         if (-not $app)
         {
-            $msg = "Cannot delete application ""$($Application | Get-BMObjectName)"" because it does not exist."
+            $msg = "Cannot delete application ""$($app | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
         if (-not $Force -and $app.Active_Indicator -eq 'Y')
         {
-            $msg = "Application ""$($app.Application_Name)"" is active. Only inactive applications can be deleted. " +
+            $msg = "Application ""$($app | Get-BmObjectName)"" is active. Only inactive applications can be deleted. " +
                    'Use the "Disable-BMApplication" function to disable the application, or use the -Force (switch) ' +
                    'on this function to delete an active application.'
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         }
 
+        $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $app -ForNativeApi -PassThru
         Invoke-BMNativeApiMethod -Session $Session `
                                  -Name 'Applications_PurgeApplicationData' `
-                                 -Parameter $getDeleteParams `
+                                 -Parameter $appArg `
                                  -Method Post |
             Out-Null
     }

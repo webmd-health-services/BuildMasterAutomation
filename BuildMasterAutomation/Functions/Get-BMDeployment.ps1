@@ -9,16 +9,16 @@ function Get-BMDeployment
     The `Get-BMDeployment` function gets deployments in BuildMaster. It uses the
     [Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build).
 
-    To get a specific deployment, pass a deployment ID.
+    To get a specific deployment, pass a deployment ID. If it doesn't exist, an error will be written.
 
-    To get all the deployments for a specific build, pass a build object to the `Build` parameter (a build
-    object must have a `buildId` or `buildNumber` property).
+    To get all the deployments for a specific build, pass a build id, name, or object to the `Build` parameter. If the
+    build doesn't exist, an error will be written.
 
-    To get all the deployments for a specific release, pass a release object to the `Release` parameter (a release
-    object must have a `releaseId` or `releaseName` property).
+    To get all the deployments for a specific release, pass a release id, name, or object to the `Release` parameter. If
+    the release doesn't exist, an error will be written.
 
-    To get all the deployments for a specific application, pass an application object to the `Application` parameter
-    (an application object must have an `applicationId` or `applicationName` property).
+    To get all the deployments for a specific application, pass an application id, name, or object to the `Application`
+    parameter. If the application does not exist, an error will be written.
 
     .EXAMPLE
     Get-BMDeployment -Session $session
@@ -56,8 +56,7 @@ function Get-BMDeployment
     #>
     [CmdletBinding()]
     param(
-        # A session object that contains the settings to use to connect to BuildMaster. Use `New-BMSession` to create
-        # session objects.
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
         [Object] $Session,
 
@@ -90,6 +89,14 @@ function Get-BMDeployment
         }
         elseif( $PSCmdlet.ParameterSetName -eq 'ByBuild' )
         {
+            if (-not ($Build | Get-BMBuild -Session $session -ErrorAction Ignore))
+            {
+                $msg = "Failed to get deployments for build ""$($Build | Get-BMObjectName) because that build does " +
+                       'not exist'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
+
             if (-not ($Build | Test-BMObject))
             {
                 $parameter['buildNumber'] = $Build
@@ -101,13 +108,35 @@ function Get-BMDeployment
         }
         elseif( $PSCmdlet.ParameterSetName -eq 'ByRelease' )
         {
+            if (-not ($Release | Get-BMRelease -ErrorAction Ignore))
+            {
+                $msg = "Failed to get deployments for release ""$($Release | Get-BMObjectName)"" because that " +
+                       'release does not exist.'
+                Write-Error -message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
             $parameter | Add-BMObjectParameter -Name 'release' -Value $Release
         }
         elseif( $PSCmdlet.ParameterSetName -eq 'ByApplication' )
         {
+            if (-not ($Application | Get-BMApplication -ErrorAction Ignore))
+            {
+                $msg = "Failed to get deployments for application ""$($Application | Get-BMObjectName)"" because " +
+                       'that application does not exist.'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            }
             $parameter | Add-BMObjectParameter -Name 'application' -Value $Application
         }
 
-        Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post
+        $deployments = @()
+        Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post |
+            Tee-Object -Variable 'deployments' |
+            Write-Output
+
+        if ($PSCmdlet.ParameterSetName -eq 'ByDeployment' -and -not $deployments)
+        {
+            $msg = "Unable to get deployment ""$($deployment | Get-BMObjectName)"" because it does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
     }
 }
