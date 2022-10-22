@@ -74,7 +74,15 @@ function Add-BMParameter
             {
                 $Parameter[$Name] = $Value[$Name]
             }
-            $Parameter[$Name] = $Value
+            elseif ($Value -is [Enum])
+            {
+                $enumType = [Enum]::GetUnderlyingType($Value.GetType())
+                $Parameter[$Name] = [Convert]::ChangeType($Value, $enumType)
+            }
+            else
+            {
+                $Parameter[$Name] = $Value
+            }
         }
 
         if ($PassThru)

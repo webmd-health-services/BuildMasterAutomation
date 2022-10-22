@@ -65,7 +65,7 @@ function New-BMApplication
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $application = Get-BMApplication -Session $Session -Name $Name
+    $application = $Name | Get-BMApplication -Session $Session -ErrorAction Ignore
     if ($application)
     {
         Write-Error -Message "Application ""$($Name)"" already exists." -ErrorAction $ErrorActionPreference

@@ -72,22 +72,31 @@ finally
 
 function New-BMTestApplication
 {
+    [CmdletBinding(DefaultParameterSetName='ByCommandPath')]
     param(
-        $Session,
-        $CommandPath
+        [Object] $Session,
+
+        [Parameter(Mandatory, ParameterSetName='ByCommandPath')]
+        [String]$CommandPath,
+
+        [Parameter(Mandatory, ParameterSetName='ByName')]
+        [String] $Name
     )
 
-    $Name = Split-Path -Path $CommandPath -Leaf
-    $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+    if (-not $Name)
+    {
+        $Name = Split-Path -Path $CommandPath -Leaf
+        $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+    }
 
     return New-BMApplication -Session $Session -Name $Name
 }
 
-$session = New-BMSession -Url $url -ApiKey $apiKey
+$script:session = New-BMSession -Url $url -ApiKey $apiKey
 
 function New-BMTestSession
 {
-    return $session
+    return $script:session
 }
 
 function GivenAnApplication
@@ -103,11 +112,11 @@ function GivenAnApplication
     $Name = Split-Path -Path $Name -Leaf
     $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
 
-    $app = New-BMApplication -Session $session -Name $Name
+    $app = New-BMApplication -Session $script:session -Name $Name
 
     if( $ThatIsDisabled )
     {
-        Disable-BMApplication -Session $session -ID $app.Application_Id |
+        Disable-BMApplication -Session $script:session -ID $app.Application_Id |
             Out-String |
             Write-Debug
     }
@@ -131,7 +140,7 @@ function GivenARelease
     $Named = Split-Path -Path $Named -Leaf
     $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
 
-    return New-BMRelease -Session $session -Application $ForApplication -Number $WithNumber -Name $Named -Pipeline $UsingPipeline
+    return New-BMRelease -Session $script:session -Application $ForApplication -Number $WithNumber -Name $Named -Pipeline $UsingPipeline
 }
 
 function GivenAPipeline
@@ -152,7 +161,7 @@ function GivenAPipeline
         $appParam['Application'] = $ForApplication
     }
 
-    return Set-BMPipeline -Session $session -Name $Named @appParam -PassThru
+    return Set-BMPipeline -Session $script:session -Name $Named @appParam -PassThru
 }
 
 function GivenABuild
@@ -173,23 +182,32 @@ function GivenABuild
 
     if( $PSCmdlet.ParameterSetName -eq 'ForARelease' )
     {
-        return New-BMBuild -Session $session -Release $ForRelease
+        return New-BMBuild -Session $script:session -Release $ForRelease
     }
 
     $app = GivenAnApplication -Name $ForAnAppNamed
     $pipeline = GivenAPipeline -Named ('{0}.pipeline' -f $ForAnAppNamed)  -ForApplication $app
     $release = GivenARelease -Named ('{0}.release' -f $ForAnAppNamed) -ForApplication $app -WithNumber $ForReleaseNumber -UsingPipeline $pipeline
-    return New-BMBuild -Session $session -Release $release
+    return New-BMBuild -Session $script:session -Release $release
 }
 
 function ThenError
 {
     param(
-        [Parameter(Mandatory)]
+        [int] $AtIndex,
+
+        [Parameter(Mandatory, Position=0)]
         [string] $MatchesPattern
     )
 
-    $Global:Error | Should -Match $MatchesPattern
+    if ($PSBoundParameters.ContainsKey('AtIndex'))
+    {
+        $Global:Error[$AtIndex] | Should -Match $MatchesPattern
+    }
+    else
+    {
+        $Global:Error | Should -Match $MatchesPattern
+    }
 }
 
 function ThenNoErrorWritten
@@ -198,9 +216,9 @@ function ThenNoErrorWritten
 }
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
-$BMTestSession = $session
+$BMTestSession = $script:session
 
-Get-BMApplication -Session $session | Remove-BMApplication -Session $session -Force
-Get-BMPipeline -Session $session | Remove-BMPipeline -Session $session
+Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
+Get-BMPipeline -Session $script:session | Remove-BMPipeline -Session $script:session
 
 Export-ModuleMember -Function '*' -Variable 'BMTestSession'

@@ -10,7 +10,21 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+        param(
+            [String] $Named
+        )
+
+        $optionalArgs = @{}
+        if ($Named)
+        {
+            $optionalArgs['Name'] = $Named
+        }
+        else
+        {
+            $optionalArgs['CommandPath'] = $PSCommandPath
+        }
+
+        New-BMTestApplication -Session $script:session @optionalArgs
     }
 
     function GivenApplicationGroup
@@ -31,8 +45,9 @@ BeforeAll {
         )
 
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
-        Enable-BMEnvironment -Session $script:session -Name $Named
-        Get-BMVariable -Session $script:session -EnvironmentName $Named | Remove-BMVariable -Session $script:session -EnvironmentName $Named
+        $Named | Enable-BMEnvironment -Session $script:session
+        Get-BMVariable -Session $script:session -Environment $Named |
+            Remove-BMVariable -Session $script:session -Environment $Named
     }
 
     function GivenServer
@@ -42,7 +57,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServer -Session $script:session -Name $Named -ErrorAction Ignore | Remove-BMServer -Session $script:session
+        $Named | Get-BMServer -Session $script:session -ErrorAction Ignore | Remove-BMServer -Session $script:session
         New-BMServer -Session $script:session -Name $Named -Local
     }
 
@@ -53,7 +68,9 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServerRole -Session $script:session -Name $Named -ErrorAction Ignore | Remove-BMServerRole -Session $script:session
+        $Named |
+            Get-BMServerRole -Session $script:session -ErrorAction Ignore |
+            Remove-BMServerRole -Session $script:session
         New-BMServerRole -Session $script:session -Name $Named
     }
 
@@ -127,30 +144,30 @@ BeforeAll {
 
         if( $ForApplication )
         {
-            $optionalParams['ApplicationName'] = $ForApplication
+            $optionalParams['Application'] = $ForApplication
         }
 
         if( $ForApplicationGroup )
         {
-            $optionalParams['ApplicationGroupName'] = $ForApplicationGroup
+            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
         if( $ForEnvironment )
         {
-            $optionalParams['EnvironmentName'] = $ForEnvironment
+            $optionalParams['Environment'] = $ForEnvironment
         }
 
         if( $ForServer )
         {
-            $optionalParams['ServerName'] = $ForServer
+            $optionalParams['Server'] = $ForServer
         }
 
         if( $ForServerRole )
         {
-            $optionalParams['ServerRoleName'] = $ForServerRole
+            $optionalParams['ServerRole'] = $ForServerRole
         }
 
-        $actualValue = Get-BMVariable -Session $script:session -Name $Named @optionalParams -ErrorAction Ignore
+        $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ErrorAction Ignore
         $actualValue | Should -BeNullOrEmpty
     }
 
@@ -159,40 +176,48 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
-            [string]$ForApplication,
-            [string]$ForApplicationGroup,
-            [string]$ForEnvironment,
-            [string]$ForServer,
-            [string]$ForServerRole,
-            [Switch]$WhatIf
+            [String] $Named,
+
+            [String] $ForApplication,
+
+            [String] $ForApplicationGroup,
+
+            [String] $ForEnvironment,
+
+            [String] $ForServer,
+
+            [String] $ForServerRole,
+
+            [switch] $WhatIf,
+
+            [switch] $SkipResultCheck
         )
 
         $optionalParams = @{ }
 
         if( $ForApplication )
         {
-            $optionalParams['ApplicationName'] = $ForApplication
+            $optionalParams['Application'] = $ForApplication
         }
 
         if( $ForApplicationGroup )
         {
-            $optionalParams['ApplicationGroupName'] = $ForApplicationGroup
+            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
         if( $ForEnvironment )
         {
-            $optionalParams['EnvironmentName'] = $ForEnvironment
+            $optionalParams['Environment'] = $ForEnvironment
         }
 
         if( $ForServer )
         {
-            $optionalParams['ServerName'] = $ForServer
+            $optionalParams['Server'] = $ForServer
         }
 
         if( $ForServerRole )
         {
-            $optionalParams['ServerRoleName'] = $ForServerRole
+            $optionalParams['ServerRole'] = $ForServerRole
         }
 
         if( $WhatIf )
@@ -200,8 +225,12 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $script:result = Remove-BMVariable -Session $script:session -Name $Named @optionalParams
-        $script:result | Should -BeNullOrEmpty
+        $script:result = $Named | Remove-BMVariable -Session $script:session @optionalParams
+
+        if (-not $SkipResultCheck)
+        {
+            $script:result | Should -BeNullOrEmpty
+        }
     }
 }
 
@@ -223,7 +252,7 @@ Describe 'Remove-BMVariable' {
     }
 
     It 'should ignore variable that does not exist' {
-        WhenRemovingVariable 'GlobalVar'
+        WhenRemovingVariable 'GlobalVar' -ErrorAction Ignore
         ThenNoErrorWritten
     }
 
@@ -232,16 +261,30 @@ Describe 'Remove-BMVariable' {
         ThenNoErrorWritten
     }
 
-    It 'should encode variable and scope names' {
-        Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
-        WhenRemovingVariable '?V a r&' -ForEnvironment '?E n v&'
+    It 'should encode variable names' {
+        $varName = '?V a r&!'
+        $entityName = '?E n t i t y&!'
+        Mock -CommandName 'Invoke-BMRestMethod' `
+             -ModuleName 'BuildMasterAutomation' `
+             -MockWith {
+                [pscustomobject]@{
+                    Name = $Name;
+                    Environment_Id = 1;
+                    Environment_Name = $entityName;
+                    Parent_Environment_Name = 'nope';
+                    Active_Indicator = $true;
+                    Value = 'ok';
+                }
+             }
+        WhenRemovingVariable $varName -ForEnvironment $entityName -SkipResultCheck
+        ThenNoErrorWritten
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
-                          -ParameterFilter { $Name -eq 'variables/environment/%3FE%20n%20v%26/%3FV%20a%20r%26' }
-        ThenNoErrorWritten
+                          -ParameterFilter { $Name -eq "variables/environment/$([Uri]::EscapeDataString($entityName))/$([Uri]::EscapeDataString($varName))" }
     }
 
-    It 'should remove application variable' {
+    # BuildMaster's API doesn't work with application variables.
+    It 'should remove application variable' -Skip {
         $app = GivenApplication
         GivenVariable -Named 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
         WhenRemovingVariable 'AppFubar' -ForApplication $app.Application_Name
@@ -259,7 +302,8 @@ Describe 'Remove-BMVariable' {
         ThenNoErrorWritten
     }
 
-    It 'should remove application group variable' {
+    # BuildMaster's API doesn't work with application group variables.
+    It 'should remove application group variable' -Skip {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable -Named 'AppGroupFubar' -WithValue 'AppGropuValue' -ForApplicationGroup 'fizzbuzz'
         WhenRemovingVariable 'AppGroupFubar' -ForApplicationGroup 'fizzbuzz'
@@ -287,7 +331,8 @@ Describe 'Remove-BMVariable' {
 
     It 'should reject removing variable from non-existent environment' {
         WhenRemovingVariable 'EnvironmentFubar' -ForEnvironment 'EnvThatDoesNotExist' -ErrorAction SilentlyContinue
-        ThenError 'specified environment was not found'
+        $msg = 'delete variable "EnvironmentFubar" because the environment "EnvThatDoesNotExist" does not exist'
+        ThenError ([regex]::Escape($msg))
     }
 
     It 'should ignore removing variable from non-existent environment' {
@@ -314,7 +359,7 @@ Describe 'Remove-BMVariable' {
     It 'should support WhatIf' {
         GivenVariable 'WhatIfVar' -WithValue 'WhatIfValue'
         WhenRemovingVariable 'WhatIfVar' -WhatIf
-        Get-BMVariable -Session $script:session -Name 'WhatIfVar' -ValueOnly | Should -Be 'WhatIfValue'
+        'WhatIfVar' | Get-BMVariable -Session $script:session -ValueOnly | Should -Be 'WhatIfValue'
         ThenNoErrorWritten
     }
 }

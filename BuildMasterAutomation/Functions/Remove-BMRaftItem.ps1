@@ -47,16 +47,34 @@ function Remove-BMRaftItem
         [switch] $PurgeHistory
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    process
+    {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $raftParams = @{} |
-        Add-BMObjectParameter -Name 'RaftItem' -Value $RaftItem -ForNativeApi -PassThru |
-        Add-BMParameter -Name 'PurgeHistory_Indicator' -Value $PurgeHistory.IsPresent -PassThru
+        $existingRaftItem = $RaftItem | Get-BMRaftItem -Session $Session -Raft $script:defaultRaftId -ErrorAction Ignore
+        if (-not $existingRaftItem)
+        {
+            $appMsg = $RaftItem | Get-BMObjectName -ObjectTypeName 'Application' -ErrorAction Ignore
+            if ($appMsg)
+            {
+                $appMsg = " in application $($appMsg)"
+            }
+            $msg = "Could not delete raft item ""$($RaftItem | Get-BMObjectName -ObjectTypeName 'RaftItem')""" +
+                "$($appMsg) because it does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
 
-    Invoke-BMNativeApiMethod -Session $Session `
-                             -Name 'Rafts_DeleteRaftItem' `
-                             -Parameter $raftParams `
-                             -Method Post |
-        Out-Null
+        $raftParams =
+            @{} |
+            Add-BMObjectParameter -Name 'RaftItem' -Value $RaftItem -ForNativeApi -PassThru |
+            Add-BMParameter -Name 'PurgeHistory_Indicator' -Value $PurgeHistory.IsPresent -PassThru
+
+        Invoke-BMNativeApiMethod -Session $Session `
+                                -Name 'Rafts_DeleteRaftItem' `
+                                -Parameter $raftParams `
+                                -Method Post |
+            Out-Null
+    }
 }

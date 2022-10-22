@@ -24,7 +24,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServer -Session $script:session -Name $Named | Should -Not -BeNullOrEmpty
+        $Named | Get-BMServer -Session $script:session | Should -Not -BeNullOrEmpty
     }
 
     function ThenServerDoesNotExist
@@ -34,7 +34,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServer -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Named | Get-BMServer -Session $script:session -ErrorAction Ignore | Should -BeNullOrEmpty
     }
 
     function WhenRemovingServer
@@ -53,7 +53,7 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $result = Remove-BMServer -Session $script:session -Name $Named @optionalParams
+        $result = $Named | Remove-BMServer -Session $script:session @optionalParams
         $result | Should -BeNullOrEmpty
     }
 }

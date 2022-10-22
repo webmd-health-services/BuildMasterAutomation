@@ -47,7 +47,7 @@ BeforeAll {
         $optionalParams = @{ }
         if( $Named )
         {
-            $optionalParams['Name'] = $Named
+            $optionalParams['ServerRole'] = $Named
         }
         $script:roles = Get-BMServerRole -Session $script:session @optionalParams
     }

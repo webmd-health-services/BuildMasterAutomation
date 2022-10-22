@@ -33,9 +33,10 @@ function Remove-BMServer
         [Parameter(Mandatory)]
         [Object] $Session,
 
-        # The name of the server to remove.
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [String] $Name
+        # The server to delete. Pass a server id, name, or a server object.
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Alias('Name')]
+        [Object] $Server
     )
 
     process
@@ -43,15 +44,15 @@ function Remove-BMServer
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $server = Get-BMServer -Session $session -Name $Name -ErrorAction Ignore
-        if (-not $server)
+        $foundServer = $Server | Get-BMServer -Session $session -ErrorAction Ignore
+        if (-not $foundServer)
         {
-            $msg = "Could not delete server ""$($Name)"" because it does not exist."
+            $msg = "Could not delete server ""$($Server | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
-        $encodedName = [Uri]::EscapeDataString($Name)
+        $encodedName = [Uri]::EscapeDataString(($Server | Get-BMObjectName))
         Invoke-BMRestMethod -Session $Session `
                             -Name ('infrastructure/servers/delete/{0}' -f $encodedName) `
                             -Method Delete

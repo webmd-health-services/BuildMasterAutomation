@@ -6,11 +6,11 @@ function Get-BMServerRole
     Returns the server roles.
 
     .DESCRIPTION
-    The `Get-BMServerRole` function gets all the server roles from an instance of BuildMaster. By default, this function returns all server roles. To return a specific role, pass its name to the `Name` parameter. The `Name` parameter supports wildcards. If a server role doesn't exist, you'll get an error.
+    The `Get-BMServerRole` function gets all the server roles from an instance of BuildMaster. To return a specific
+    role, pipe a server role id, name (wildcards supported), or a server role object to the function (or pass to the
+    `ServerRole` parameter). If the server isn't found, the function write an error.
 
     This function uses BuildMaster's infrastructure management API.
-
-    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use `New-BMSession` to create a session object.
 
     .EXAMPLE
     Get-BMServerRole
@@ -18,46 +18,45 @@ function Get-BMServerRole
     Demonstrates how to return a list of all BuildMaster server roles.
 
     .EXAMPLE
-    Get-BMServerRole -Name '*Service*'
+    '*Service*' | Get-BMServerRole
 
     Demonstrates how to use wildcards to search for a service role.
     #>
-    [CmdletBinding(DefaultParameterSetName='All')]
+    [CmdletBinding()]
     param(
+        # The session to BuildMaster. New `New-BMSession` to create a session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object] $Session,
 
-        [Parameter(Mandatory,ParameterSetName='Name')]
-        # The name of the role to return. Wildcards supported. By default, all roles are returned.
-        [string]$Name
+        # The server role to return. Pass a server role id, name (wildcards supported), or server role object.
+        [Parameter(ValueFromPipeline)]
+        [Object] $ServerRole
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    process
+    {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $roles = $null
+        $roles = $null
+        $serverRoleName = $ServerRole | Get-BMObjectName -Strict -ErrorAction Ignore
+        $searching = $serverRoleName -and [wildcardpattern]::ContainsWildcardCharacters($serverRoleName)
 
-    Invoke-BMRestMethod -Session $Session -Name 'infrastructure/roles/list' |
-        Where-Object {
-            if( $Name )
-            {
-                $_.name -like $Name
-            }
-            else
-            {
+        Invoke-BMRestMethod -Session $Session -Name 'infrastructure/roles/list' |
+            Where-Object {
+                if ($serverRoleName)
+                {
+                    return ($_.name -like $serverRoleName)
+                }
                 return $true
-            }
-        } |
-        Tee-Object -Variable 'roles'
+            } |
+            Tee-Object -Variable 'roles' |
+            Write-Output
 
-    if( $PSCmdlet.ParameterSetName -eq 'All' -or $roles )
-    {
-        return
-    }
-    
-    if( -not [wildcardpattern]::ContainsWildcardCharacters($Name) )
-    {
-        Write-Error -Message ('Server role "{0}" does not exist.' -f $Name) -ErrorAction $ErrorActionPreference
+        if (-not $searching -and $ServerRole -and -not $roles)
+        {
+            $msg = "Server role ""$($ServerRole | Get-BMObjectName)"" does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
     }
 }
