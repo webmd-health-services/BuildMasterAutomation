@@ -51,11 +51,6 @@ function Remove-BMPipeline
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        if (-not $Pipeline)
-        {
-            return
-        }
-
         $Pipeline | Remove-BMRaftItem -Session $session -PurgeHistory:$PurgeHistory
     }
 }

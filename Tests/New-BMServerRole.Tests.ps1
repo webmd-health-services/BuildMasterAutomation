@@ -25,7 +25,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServerRole -Session $script:session -Name $Named | Should -Not -BeNullOrEmpty
+        $Named | Get-BMServerRole -Session $script:session | Should -Not -BeNullOrEmpty
     }
 
     function ThenRoleDoesNotExist
@@ -35,7 +35,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServerRole -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Named | Get-BMServerRole -Session $script:session -ErrorAction Ignore | Should -BeNullOrEmpty
     }
 
     function WhenCreatingRole

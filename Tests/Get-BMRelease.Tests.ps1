@@ -16,7 +16,7 @@ BeforeAll {
                                     -Application $script:app `
                                     -Number '1.0' `
                                     -Pipeline $script:pipeline `
-                                    -Name 'script:develop'
+                                    -Name 'develop'
     $script:release = New-BMRelease -Session $script:session `
                                     -Application $script:app `
                                     -Number '2.0' `
@@ -40,9 +40,9 @@ Describe 'Get-BMRelease' {
     }
 
     It 'should return release by name' {
-        $release = Get-BMRelease -Session $script:session -Application $script:app -Name 'script:develop'
+        $release = 'develop' | Get-BMRelease -Session $script:session -Application $script:app
         $release | Should -Not -BeNullOrEmpty
-        $release.name | Should -Be 'script:develop'
+        $release.name | Should -Be 'develop'
     }
 
     It 'should return all releases' {

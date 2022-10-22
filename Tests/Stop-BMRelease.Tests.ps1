@@ -6,7 +6,7 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $session = New-BMTestSession
-    $app = New-BMTestApplication $session -CommandPath $PSCommandPath
+    $app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
     $pipeline = Set-BMPipeline -Session $session -Name $app.Application_Name -Application $app -PassThru
 
     function GivenARelease

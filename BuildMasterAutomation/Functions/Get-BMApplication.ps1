@@ -6,9 +6,11 @@ function Get-BMApplication
     Gets BuildMaster applications.
 
     .DESCRIPTION
-    The `Get-BMApplication` function gets all active applications from an instance of BuildMaster. Use the `Force` switch to include inactive applications. To get a specific application, pass the name to the `Name` parameter. Active and inactive applications are returned. If an application with the name doesn't exist, you'll get nothing back.
+    The `Get-BMApplication` function gets all active applications from an instance of BuildMaster. Use the `Force`
+    switch to include inactive applications.
 
-    Uses the BuildMaster native API, which can change without notice between releases. By default, this function returns *all* applications.
+    To get a specific application, pass its id, name (wildcards supported), or object to the `Application` parameter.
+    The function writes an error if the application does not exist.
 
     .EXAMPLE
     Get-BMApplication -Session $session
@@ -27,38 +29,53 @@ function Get-BMApplication
     #>
     [CmdletBinding(DefaultParameterSetName='AllApplications')]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The session to use when connecting to BuildMaster. Use `New-BMSession` to create session objects.
-        $Session,
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
+        [Parameter(Mandatory)]
+        [Object] $Session,
 
-        [Parameter(ParameterSetName='SpecificApplication',Mandatory=$true)]
-        [string]
-        # The name of the application to get. By default, all applications are returned.
-        $Name,
+        # The application to get. Pass an application id, name (wildcards supported), or object.
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='SpecificApplication')]
+        [Alias('Name')]
+        [Object] $Application,
 
-        [Parameter(ParameterSetName='AllApplications')]
-        [Switch]
         # Force `Get-BMApplication` to return inactive/disabled applications.
-        $Force
+        [Parameter(ParameterSetName='AllApplications')]
+        [switch] $Force
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-    # Invoke-BMNativeApiMethod uses POST, but we're reading data, so always make the request.
-    $WhatIfPreference = $false
+    process
+    {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+        # Invoke-BMNativeApiMethod uses POST, but we're reading data, so always make the request.
+        $WhatIfPreference = $false
 
-    $parameters = @{
-                        Application_Count = 0;
-                        IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
-                   }
-
-    Invoke-BMNativeApiMethod -Session $Session -Name 'Applications_GetApplications' -Parameter $parameters -Method Post |
-        Where-Object {
-            if( $Name )
-            {
-                return $_.Application_Name -eq $Name
-            }
-            return $true
+        $parameters = @{
+            Application_Count = 0;
+            IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
         }
+
+        $apps = @()
+        $appName = $Application | Get-BMObjectName -ObjectTypeName 'Application' -Strict -ErrorAction Ignore
+        Invoke-BMNativeApiMethod -Session $Session `
+                                -Name 'Applications_GetApplications' `
+                                -Parameter $parameters `
+                                -Method Post |
+            Where-Object {
+                if ($appName)
+                {
+                    return $_.Application_Name -like $appName
+                }
+                return $true
+            } |
+            Tee-Object -Variable 'apps' |
+            Write-Output
+
+        $searching = ($appName -and [wildcardpattern]::ContainsWildcardCharacters($appName))
+        if ($Application -and -not $apps -and -not $searching)
+        {
+            $msg = "Application ""$($Application)"" does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
+    }
 }

@@ -24,7 +24,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServerRole -Session $script:session -Name $Named | Should -Not -BeNullOrEmpty
+        $Named | Get-BMServerRole -Session $script:session | Should -Not -BeNullOrEmpty
     }
 
     function ThenRoleDoesNotExist
@@ -34,7 +34,7 @@ BeforeAll {
             [string]$Named
         )
 
-        Get-BMServerRole -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Named | Get-BMServerRole -Session $script:session -ErrorAction Ignore | Should -BeNullOrEmpty
     }
 
     function WhenRemovingRole
@@ -54,7 +54,7 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $result = Remove-BMServerRole -Session $script:session -Name $Named @optionalParams
+        $result = $Named | Remove-BMServerRole -Session $script:session  @optionalParams
         $result | Should -BeNullOrEmpty
     }
 }

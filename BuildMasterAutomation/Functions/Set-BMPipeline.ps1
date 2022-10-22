@@ -94,12 +94,12 @@ function Set-BMPipeline
         $pipeline | Add-Member -Name 'PostDeploymentOptions' -MemberType NoteProperty -Value $PostDeploymentOption
     }
 
-    Set-BMRaftItem -Session $Session `
-                   -Raft $script:defaultRaftId `
-                   -TypeCode ([BMRaftItemTypeCode]::Pipeline) `
-                   -Name $Name `
-                   -Application $Application `
-                   -Content ($pipeline | ConvertTo-Json -Depth 100) `
-                   -PassThru:$PassThru |
+    $Name |
+        Set-BMRaftItem -Session $Session `
+                       -Raft $script:defaultRaftId `
+                       -TypeCode ([BMRaftItemTypeCode]::Pipeline) `
+                       -Application $Application `
+                       -Content ($pipeline | ConvertTo-Json -Depth 100) `
+                       -PassThru:$PassThru |
         Add-BMPipelineMember -PassThru
 }

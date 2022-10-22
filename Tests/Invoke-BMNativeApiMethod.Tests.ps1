@@ -34,7 +34,7 @@ Describe 'Invoke-BMNativeApiMethod' {
         Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
         $variable['Variable_Value'] = 'FizzBuzz'
         Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable -WhatIf
-        $result = Get-BMVAriable -Session $script:session -Name 'Fubar' -ValueOnly
+        $result = 'Fubar' | Get-BMVariable -Session $script:session -ValueOnly
         $result | Should -Be 'Snafu'
     }
 }

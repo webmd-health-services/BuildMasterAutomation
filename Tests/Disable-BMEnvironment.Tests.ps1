@@ -25,11 +25,11 @@ BeforeAll {
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
         if( $Disabled )
         {
-            Disable-BMEnvironment -Session $script:session -Name $Named
+            $Named | Disable-BMEnvironment -Session $script:session
         }
         else
         {
-            Enable-BMEnvironment -Session $script:session -Name $Named
+            $Named | Enable-BMEnvironment -Session $script:session
         }
     }
 
@@ -40,7 +40,7 @@ BeforeAll {
             [string]$Named
         )
 
-        $environment = Get-BMEnvironment -Session $script:session -Name $Named
+        $environment = $Named | Get-BMEnvironment -Session $script:session
         $environment | Should -Not -BeNullOrEmpty
         $environment.active | Should -BeTrue
     }
@@ -52,7 +52,7 @@ BeforeAll {
             [string]$Named
         )
 
-        $environment = Get-BMEnvironment -Session $script:session -Name $Named
+        $environment = $Named | Get-BMEnvironment -Session $script:session
         $environment | Should -Not -BeNullOrEmpty
         $environment.active | Should -BeFalse
     }
@@ -74,13 +74,13 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $result = Disable-BMEnvironment -Session $script:session -Name $Named @optionalParams
+        $result = $Named | Disable-BMEnvironment -Session $script:session @optionalParams
         $result | Should -BeNullOrEmpty
     }
 }
 
 Describe 'Disable-BMEnvironment' {
-    It ('should enable the environment') {
+    It 'should disable the environment' {
         Init
         GivenEnvironment -Named 'Fubar'
         WhenDisablingEnvironment -Named 'Fubar'
@@ -88,7 +88,7 @@ Describe 'Disable-BMEnvironment' {
         ThenEnvironmentDisabled -Named 'Fubar'
     }
 
-    It ('should enable the environment') {
+    It 'should not disable a disabled environment' {
         Init
         GivenEnvironment -Named 'Fubar' -Disabled
         Mock -CommandName 'Invoke-BMNativeApiMethod' `
@@ -99,14 +99,14 @@ Describe 'Disable-BMEnvironment' {
         Assert-MockCalled -CommandName 'Invoke-BMNativeApiMethod' -ModuleName 'BuildMasterAutomation' -Times 0
     }
 
-    It ('should write errors') {
+    It 'should write errors' {
         Init
         $name = 'IDoNotExist{0}' -f [IO.Path]::GetRandomFileName()
         WhenDisablingEnvironment -Named $name -ErrorAction SilentlyContinue
         ThenError 'does\ not\ exist'
     }
 
-    It ('should not disable the environment') {
+    It 'should not disable the environment' {
         Init
         GivenEnvironment -Named 'One'
         WhenDisablingEnvironment -Named 'One' -WhatIf

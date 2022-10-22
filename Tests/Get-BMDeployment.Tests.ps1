@@ -16,7 +16,7 @@ BeforeAll {
     $plan = Set-BMRaftItem -Session $script:session `
                            -Application $script:app `
                            -Raft 1 `
-                           -Name 'Get-BMDeployment.Tests.Plan' `
+                           -RaftItem 'Get-BMDeployment.Tests.Plan' `
                            -TypeCode DeploymentPlan `
                            -Content "$([Environment]::NewLine)Log-Information `$ServerName;$([Environment]::NewLine)" `
                            -PassThru
@@ -50,9 +50,9 @@ BeforeAll {
     $script:releaseRelease2 =
         New-BMRelease -Session $script:session -Application $script:app -Pipeline $pipeline -Number '3.0' -Name 'releaseRelease'
 
-    Enable-BMEnvironment -Session $script:session -Name 'Integration'
-    Enable-BMEnvironment -Session $script:session -Name 'Testing'
-    Enable-BMEnvironment -Session $script:session -Name 'Production'
+    'Integration' | Enable-BMEnvironment -Session $script:session
+    'Testing' | Enable-BMEnvironment -Session $script:session
+    'Production' | Enable-BMEnvironment -Session $script:session
 
     function GivenReleaseBuild
     {
