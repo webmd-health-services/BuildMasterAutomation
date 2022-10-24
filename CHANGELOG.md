@@ -193,6 +193,7 @@ names, or pipeline objects.
 * `Invoke-BMRestMethod` (and by extension all the BuildMasterAutomation functions that call the API) no longer returns
 `$null`.
 * `Set-BMRelease` fails when using `-ErrorAction Ignore` to ignore when a release doesn't exist.
+* `Invoke-BMRestMethod` fails to log request body to the debug stream when using the `Body` parameter.
 
 ### Removed
 
