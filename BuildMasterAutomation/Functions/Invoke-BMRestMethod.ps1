@@ -66,9 +66,9 @@ function Invoke-BMRestMethod
 
     $debugBody = ''
     $webRequestParam = @{ }
-    if( $Body )
+    if ($Body)
     {
-        $webRequestParam['Body'] = $Body
+        $webRequestParam['Body'] = $debugBody = $Body
     }
     elseif( $Parameter )
     {
