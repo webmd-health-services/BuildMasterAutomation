@@ -7,33 +7,31 @@ skip_branch_with_pr: true
 build:
   verbosity: minimal
 
-services: mssql2017
-
 test: off
 
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: PowerShell 7.2 on Windows
-    job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2022
-
-# No SQL 2017.
-#   - job_name: Windows PowerShell 5.1/.NET 4.6.2
-#     job_group: ps
-#     appveyor_build_worker_image: Visual Studio 2013
+  - job_name: Windows PowerShell 5.1/.NET 4.6.2
+    job_group: ps_sql2014
+    appveyor_build_worker_image: Visual Studio 2013
 
   - job_name: Windows PowerShell 5.1/.NET 4.8
-    job_group: ps
+    job_group: ps_sql2019
     appveyor_build_worker_image: Visual Studio 2019
 
   - job_name: PowerShell 6.2 on Windows
-    job_group: pwsh
+    job_group: pwsh_sql2016
     appveyor_build_worker_image: Visual Studio 2015
 
   - job_name: PowerShell 7.1 on Windows
-    job_group: pwsh
+    job_group: pwsh_sql2017
     appveyor_build_worker_image: Visual Studio 2019
+
+  - job_name: PowerShell 7.2 on Windows
+    job_group: pwsh_sql2019
+    appveyor_build_worker_image: Visual Studio 2022
+
 
 
 artifacts:
@@ -41,22 +39,51 @@ artifacts:
 
 
 for:
-# Build in Windows PowerShell
 - matrix:
     only:
-    - job_group: ps
+    - job_group: ps_sql2014
+  services: mssql2014
+  environment:
+    SQL_INSTANCE_NAME: SQL2014
   build_script:
-  - ps: |
+  - ps: &ps |
         $ProgressPreference = 'SilentlyContinue'
         iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
         .\build.ps1
 
-# Build in PowerShell
 - matrix:
     only:
-    - job_group: pwsh
+    - job_group: ps_sql2019
+  services: mssql2019
+  environment:
+    SQL_INSTANCE_NAME: SQL2019
+  init: net start mssql$sql2019
   build_script:
-  - pwsh: |
-        $ProgressPreference = 'SilentlyContinue'
-        iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
-        ./build.ps1
+  - ps: *ps
+
+- matrix:
+    only:
+    - job_group: pwsh_sql2016
+  services: mssql2016
+  environment:
+    SQL_INSTANCE_NAME: SQL2016
+  build_script:
+  - pwsh: *ps
+
+- matrix:
+    only:
+    - job_group: pwsh_sql2017
+  services: mssql2017
+  environment:
+    SQL_INSTANCE_NAME: SQL2017
+  build_script:
+  - pwsh: *ps
+
+- matrix:
+    only:
+    - job_group: pwsh_sql2019
+  environment:
+    SQL_INSTANCE_NAME: SQL2019
+  init: net start mssql$sql2019
+  build_script:
+  - pwsh: *ps
