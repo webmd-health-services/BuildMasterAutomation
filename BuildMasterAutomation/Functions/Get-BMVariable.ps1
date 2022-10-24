@@ -143,6 +143,5 @@ function Get-BMVariable
                 return $_
             } |
             Write-Output
-
     }
 }

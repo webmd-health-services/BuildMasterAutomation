@@ -70,3 +70,5 @@ Build:
             Enabled: true
             OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester.xml
             TestSuiteName: BuildMasterAutomation
+        Output:
+            Verbosity: Detailed

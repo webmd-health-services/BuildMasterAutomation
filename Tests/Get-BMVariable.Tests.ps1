@@ -206,8 +206,17 @@ Describe 'Get-BMVariable' {
         $script:result = $null
         Get-BMVariable -Session $script:session | Remove-BMVariable -Session $script:session
         # Remove all application groups.
-        Invoke-BMNativeApiMethod -Session $script:session -Name 'ApplicationGroups_GetApplicationGroups' -Method Get |
-            ForEach-Object { Invoke-BMNativeApiMethod -Session $script:session -Name 'ApplicationGroups_DeleteApplicationGroup' -Method Post -Parameter @{ 'ApplicationGroup_Id' = $_.ApplicationGroup_Id } }
+        $appGroups = Invoke-BMNativeApiMethod -Session $script:session `
+                                              -Name 'ApplicationGroups_GetApplicationGroups' `
+                                              -Method Get
+
+        foreach ($appGroup in $appGroups)
+        {
+            Invoke-BMNativeApiMethod -Session $script:session `
+                                     -Name 'ApplicationGroups_DeleteApplicationGroup' `
+                                     -Method Post `
+                                     -Parameter @{ 'ApplicationGroup_Id' = $appGroup.ApplicationGroup_Id }
+        }
     }
 
     It 'should return nothing' {
@@ -224,18 +233,17 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
-    Context 'when getting variable that does not exist' {
-        It 'should fail' {
-            WhenGettingVariable 'IDONOTEXIST!!!!!!' -ErrorAction SilentlyContinue
-            ThenNothingReturned
-            ThenError -AtIndex 0 'does\ not\ exist'
-        }
+    It 'should fail for variable that does not exist' {
+        $Global:Error.Clear()
+        WhenGettingVariable 'IDONOTEXIST!!!!!!' -ErrorAction SilentlyContinue
+        ThenNothingReturned
+        ThenError -AtIndex 0 'does\ not\ exist'
+    }
 
-        It 'should ignore errors' {
-            WhenGettingVariable 'IDONOTEXIST!!!!!!' -ErrorAction Ignore
-            ThenNothingReturned
-            ThenNoErrorWritten
-        }
+    It 'should ignore errors for variable does not exist' {
+        WhenGettingVariable 'IDONOTEXIST!!!!!!' -ErrorAction Ignore
+        ThenNothingReturned
+        ThenNoErrorWritten
     }
 
     It 'should allow wildcards that do not match any variables' {
@@ -334,7 +342,10 @@ Describe 'Get-BMVariable' {
         WhenGettingVariable 'URL Encode Me!'
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
-                          -ParameterFilter { $Name -eq 'variables/global/URL%20Encode%20Me%21' }
+                          -ParameterFilter {
+                                $expectedName = [Uri]::EscapeDataString('URL Encode Me!')
+                                $Name -eq "variables/global/$($expectedName)"
+                            }
         ThenNoErrorWritten
     }
 
@@ -368,17 +379,15 @@ Describe 'Get-BMVariable' {
         ThenNothingReturned
     }
 
-    Context 'when ignoring errors' {
-        It 'should not write an error for missing application' {
-            WhenGettingVariable -Named 'Nope' -ForApplication 'Nope' -ErrorAction Ignore
-            ThenNoErrorWritten
-            ThenNothingReturned
-        }
+    It 'should ignore errors for missing application' {
+        WhenGettingVariable -Named 'Nope' -ForApplication 'Nope' -ErrorAction Ignore
+        ThenNoErrorWritten
+        ThenNothingReturned
+    }
 
-        It 'should not write an error for missing application group' {
-            WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction Ignore
-            ThenNoErrorWritten
-            ThenNothingReturned
-        }
+    It 'should ignore errors for missing application group' {
+        WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction Ignore
+        ThenNoErrorWritten
+        ThenNothingReturned
     }
 }

@@ -43,7 +43,7 @@ $installerPath = 'SQL'
 $installerUri = 'sql'
 $dbParam = '/InstallSqlExpress'
 
-Get-ChildItem -Path 'env:' | Format-Table
+Get-ChildItem -Path 'env:SQL_INSTANCE_NAME' -ErrorAction Ignore | Format-Table
 
 $machineSqlPath = Join-Path -Path 'SQLSERVER:\SQL' -ChildPath ([Environment]::MachineName)
 $sqlServer =
@@ -53,6 +53,7 @@ $sqlServer =
         {
             return ($_.DisplayName -eq $env:SQL_INSTANCE_NAME)
         }
+        return $true
     } |
     Where-Object { $_ | Get-Member -Name 'Status' } |
     Where-Object { $_.Status -eq [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online }

@@ -8,22 +8,20 @@ BeforeAll {
 }
 
 Describe 'Invoke-BMRestMethod' {
-    Context 'WhatIf is true' {
-        It 'should make GET requests' {
-            Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar' -Method Put -Body 'Snafu'
-            $result = Invoke-BMRestMethod -Session $script:session -Name 'variables/global' -WhatIf
-            $result | Should -Not -BeNullOrEmpty
-        }
+    It 'should always make GET requests' {
+        Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar' -Method Put -Body 'Snafu'
+        $result = Invoke-BMRestMethod -Session $script:session -Name 'variables/global' -WhatIf
+        $result | Should -Not -BeNullOrEmpty
+    }
 
-        It 'should not making Put requests' {
-            Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar' -Method Put -Body 'Snafu'
-            Invoke-BMRestMethod -Session $script:session `
-                                -Name 'variables/global/Fubar' `
-                                -Method Put `
-                                -Body 'FizzBuzz' `
-                                -WhatIf
-            $result = Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar'
-            $result | Should -Be 'Snafu'
-        }
+    It 'should not making Put requests in WhatIf mode' {
+        Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar' -Method Put -Body 'Snafu'
+        Invoke-BMRestMethod -Session $script:session `
+                            -Name 'variables/global/Fubar' `
+                            -Method Put `
+                            -Body 'FizzBuzz' `
+                            -WhatIf
+        $result = Invoke-BMRestMethod -Session $script:session -Name 'variables/global/Fubar'
+        $result | Should -Be 'Snafu'
     }
 }
