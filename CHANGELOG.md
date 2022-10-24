@@ -108,6 +108,7 @@ object returned.
 
 * `Invoke-BMRestMethod` (and by extension all the BuildMasterAutomation functions that call the API) no longer returns
 `$null`.
+* `Invoke-BMRestMethod` fails to log request body to the debug stream when using the `Body` parameter.
 
 ### Removed
 
