@@ -91,7 +91,8 @@ into their original strings.
 * Function `ConvertTo-BMNativeApiByteValue` for converting string values that need to be sent as `byte[]` parameters to
 the BuildMaster native APIs.
 * Function `Get-BMObjectName` for getting the name of an object that was returned by the BuildMaster API.
-* Function `Get-BMRaft` for getting all rafts.
+* Function `Get-BMRaft` for getting rafts.
+* Function `Set-BMRaft` for creating and updating rafts.
 * Function `Get-BMRaftItem` for getting raft items.
 * Function `New-BMPipelinePostDeploymentOptionsObject` for creating a post-deployment options object to use when
 creating a pipeline.
@@ -110,6 +111,7 @@ pipeline's stage sequence enforcement.
 * Parameter `PassThru` to the `Set-BMPipeline` (née `New-BMPipeline`) function for returning the created/updated
 pipeline object.
 * Parameter `AsName` to `Add-BMObjectParameter` to only set a parameter from an object's name, ignoring any ids.
+* Parameter `AsID` to `Add-BMObjectParameter` to only set a parameter from an object's id, ignoring any names.
 * Renamed `Disable-BMEnvironment` function's `Name` parameter to `Environment`, and changed it to accept an environment
 name, id, or environment object.
 * Renamed `Enable-BMEnvironment` function's `Name` parameter to `Environment`, and changed it to accept an environment
@@ -124,6 +126,10 @@ pipeline.
 * `Get-BMVariable` and `Remove-BMVariable` now accept variable ids, names or variable objects from the pipeline.
 * Function `New-BMPipelinePostDeploymentOptionsObject` for creating an object that can be passed to the `Set-BMPipeline`
 (née `New-BMPipeline`) function's new `PostDeploymentOption` parameter.
+* `Remove-BMEnvironment` for deleting an environment.
+* `Remove-BMRaft` for removing a raft.
+* `Set-BMRaft` for creating and updating rafts.
+* `PassThru` switch to the `New-Environment` function for returning the created or already existent environment.
 
 ### Changed
 
