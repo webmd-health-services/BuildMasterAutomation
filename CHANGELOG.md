@@ -90,8 +90,9 @@ Wildcards supported when passed a name.
 * Function `Get-BMBuild` for getting builds. It replaces the now obsolete `Get-BMPackage` function.
 * Parameter `Application` to the `Get-BMPipeline` function which accepts an application id, name, or application object.
 Wildcards supported when passing a name.
-* Function `Get-BMRaft` for getting all rafts.
-* Function `Get-BMRaftItem` for getting all raft items.
+* Function `Get-BMRaft` for getting rafts.
+* Function `Set-BMRaft` for creating and updating rafts.
+* Function `Get-BMRaftItem` for getting raft items.
 * Parameter `ApplicationGroup` on the `New-BMApplication` function, which accepts application group ids, names, or
 application group objects. Wildcards supported when passing a name.
 * Function `New-BMBuild` for creating builds. It replaces the now obsolete `New-BMPackage` function.
@@ -112,7 +113,12 @@ post-deployment options. Use the `New-BMPipelinePostDeploymentOptionsObject` to 
 pipeline's stage sequence enforcement.
 * Function `Set-BMRaftItem` for creating and/or updating a raft item.
 * Parameter `PassThru` to the `Set-BMPipeline` (née `New-BMPipeline`) for returning the created/updated pipeline object.
+* Parameter `AsID` to `Add-BMObjectParameter` to only set a parameter from an object's id, ignoring any names.
 * Parameter `Pipeline` to the `Set-BMRelease` function. This replaces the `PipelineID` parameter, which was removed.
+* `Remove-BMEnvironment` for deleting an environment.
+* `Remove-BMRaft` for removing a raft.
+* `Set-BMRaft` for creating and updating rafts.
+* `PassThru` switch to the `New-Environment` function for returning the created or already existent environment.
 
 ### Changed
 
