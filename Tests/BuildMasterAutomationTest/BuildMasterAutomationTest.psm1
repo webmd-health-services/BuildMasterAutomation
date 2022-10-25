@@ -196,8 +196,11 @@ function ThenError
     param(
         [int] $AtIndex,
 
-        [Parameter(Mandatory, Position=0)]
-        [string] $MatchesPattern
+        [Parameter(Mandatory, Position=0, ParameterSetName='ShouldBeError')]
+        [string] $MatchesPattern,
+
+        [Parameter(Mandatory, ParameterSetName='NoErrors')]
+        [switch] $IsEmpty
     )
 
     if ($PSBoundParameters.ContainsKey('AtIndex'))
@@ -207,6 +210,11 @@ function ThenError
     else
     {
         $Global:Error | Should -Match $MatchesPattern
+    }
+
+    if ($IsEmpty)
+    {
+        $Global:Error | Should -BeNullOrEmpty
     }
 }
 

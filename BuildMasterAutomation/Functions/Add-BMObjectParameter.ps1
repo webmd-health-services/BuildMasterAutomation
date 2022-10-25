@@ -18,6 +18,9 @@ function Add-BMObjectParameter
     parameter. Otherwise, `Add-BMObjectParameter` the first property on the property named `id`, `$($Name)Id`, `name`,
     or `$($Name)Name` is added as `$($Name)Id` or `$($Name)Name` respectively.
 
+    If the parameter must be a name parameter, use the `AsName` switch. If the parameter must be an id parameter, use
+    the `AsID` switch.
+
     If the hashtable will be used as the body to a native API endpoint, use the `-ForNativeApi` switch. The native API
     uses `$($Name)_Id` and `$($Name)_Name` patterns for its id and name parameters.
 
@@ -64,7 +67,7 @@ function Add-BMObjectParameter
     Demonstrates how you can use the `PassThru` switch to add multiple parameters to a parameters hashtable using a
     pipeline.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='IdOrName')]
     param(
         # The hashtable to add the parameter to.
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -89,7 +92,12 @@ function Add-BMObjectParameter
         [switch] $ForNativeApi,
 
         # If set, id properties on the incoming object will be ignored.
-        [switch] $AsName
+        [Parameter(Mandatory, ParameterSetName='AsName')]
+        [switch] $AsName,
+
+        # If set, name properties on the incoming object will be ignored.
+        [Parameter(Mandatory, ParameterSetName='AsID')]
+        [switch] $AsID
     )
 
     process
@@ -97,86 +105,70 @@ function Add-BMObjectParameter
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        if ($null -eq $Value)
+        try
         {
-            if ($PassThru)
+            if ($null -eq $Value)
             {
-                return $Parameter
+                return
             }
 
-            return
-        }
+            $nameParamNameSuffix = 'Name'
+            $idParamNameSuffix = 'Id'
+            if ($ForNativeApi)
+            {
+                $nameParamNameSuffix = "_$($nameParamNameSuffix)"
+                $idParamNameSuffix = "_$($idParamNameSuffix)"
+            }
+            $nameParamName = "$($Name)$($nameParamNameSuffix)"
+            $idParamName = "$($Name)$($idParamNameSuffix)"
 
+            if ($AsName)
+            {
+                $name = $Value | Get-BMObjectName -ObjectTypeName $Name
+                if (-not $name)
+                {
+                    return
+                }
+                $Parameter[$nameParamName] = $name
+                return
+            }
 
-        $isId = $false
-        $idValue = $Value
-        $isName = $false
-        $nameValue = $Value
+            if ($AsId)
+            {
+                $id = $Value | Get-BMObjectID -ObjectTypeName $Name
+                if (-not $id)
+                {
+                    return
+                }
+                $Parameter[$idParamName] = $id
+                return
+            }
 
-        $nativeApiIdParamName = '{0}_Id' -f $Name
-        if ($Value | Test-BMID)
-        {
-            $isId = $true
-            $idValue = $Value
-        }
-        elseif ($Value | Get-Member -Name 'id')
-        {
-            $isId = $true
-            $idValue = $Value.id
-        }
-        elseif ($Value | Get-Member -Name $nativeApiIdParamName)
-        {
-            $isId = $true
-            $idValue = $Value.$nativeApiIdParamName
-        }
+            $id = $Value | Get-BMObjectId -ObjectTypeName $Name -ErrorAction Ignore
+            if ($id)
+            {
+                $Parameter[$idParamName] = $id
+                return
+            }
 
-        $nativeApiNameParamName = '{0}_Name' -f $Name
-        if ($Value | Test-BMName)
-        {
-            $isName = $true
-            $nameValue = $Value
-        }
-        elseif ($Value | Get-Member -Name 'name')
-        {
-            $isName = $true
-            $nameValue = $Value.name
-        }
-        elseif ($Value | Get-Member -Name $nativeApiNameParamName)
-        {
-            $isName = $true
-            $nameValue = $value.$nativeApiNameParamName
-        }
+            $name = $Value | Get-BMObjectName -ObjectTypeName $Name -ErrorAction Ignore
+            if ($name)
+            {
+                $Parameter[$nameParamName] = $name
+                return
+            }
 
-        $idParamName = '{0}Id' -f $Name
-        $nameParamName = '{0}Name' -f $Name
-        if ( $ForNativeApi )
-        {
-            $idParamName = $nativeApiIdParamName
-            $nameParamName = $nativeApiNameParamName
-        }
-
-        if ($isId -and -not $AsName)
-        {
-            $paramName = $idParamName
-            $paramValue = $idValue
-        }
-        elseif ($isName)
-        {
-            $paramName = $nameParamName
-            $paramValue = $nameValue
-        }
-        else
-        {
-            $msg = "Unable to find id or name properties on ""$($Value)""."
+            $msg = "Object ""$($Value)"" isn't an id or name, nor does it have any $($Name)Id, $($Name)_Id, " +
+                   "$($Name)Name, or $($Name)_Name properties."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
+        finally
+        {
             if ($PassThru)
             {
-                reeturn $Parameter
+                $Parameter | Write-Output
             }
-            return
         }
-
-        $Parameter | Add-BMParameter -Name $paramName -Value $paramValue -PassThru:$PassThru
     }
 }
 
