@@ -38,6 +38,9 @@ function Remove-BMPipeline
         [Parameter(Mandatory)]
         [Object] $Session,
 
+        # The raft in which the pipeline is stored. Pass the raft id or raft object.
+        [Object] $Raft,
+
         # The name or pipeline object of the pipeline to delete.
         [Parameter(Mandatory, ValueFromPipeline)]
         [Object] $Pipeline,
@@ -51,6 +54,6 @@ function Remove-BMPipeline
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $Pipeline | Remove-BMRaftItem -Session $session -PurgeHistory:$PurgeHistory
+        $Pipeline | Remove-BMRaftItem -Session $session -Raft $Raft -PurgeHistory:$PurgeHistory
     }
 }

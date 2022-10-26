@@ -6,7 +6,7 @@ function Remove-BMRaftItem
     Removes a raft item from BuildMaster.
 
     .DESCRIPTION
-    The `Remove-BMRaftItem` function removes a raft item from BuildMaster. Pass the raft item's name or a raft item
+    The `Remove-BMRaftItem` function removes a raft item from BuildMaster. Pass the raft item's id or a raft item
     object to the `RaftItem` parameter (or pipe them into the function). The raft item will be deleted, and its change
     history will be preserved.
 
@@ -39,7 +39,10 @@ function Remove-BMRaftItem
         [Parameter(Mandatory)]
         [Object] $Session,
 
-        # The name or or a raft item object of the raft item to delete.
+        # The raft where the raft item is stored.
+        [Object] $Raft,
+
+        # The raft item id or raft item object of the raft item to delete.
         [Parameter(Mandatory, ValueFromPipeline)]
         [Object] $RaftItem,
 
@@ -52,7 +55,7 @@ function Remove-BMRaftItem
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $existingRaftItem = $RaftItem | Get-BMRaftItem -Session $Session -Raft $script:defaultRaftId -ErrorAction Ignore
+        $existingRaftItem = $RaftItem | Get-BMRaftItem -Session $Session -Raft $Raft -ErrorAction Ignore
         if (-not $existingRaftItem)
         {
             $appMsg = $RaftItem | Get-BMObjectName -ObjectTypeName 'Application' -ErrorAction Ignore
@@ -66,9 +69,18 @@ function Remove-BMRaftItem
             return
         }
 
+        $numRaftItems = ($existingRaftItem | Measure-Object).Count
+        if ($numRaftItems -gt 1)
+        {
+            $msg = "Could not delete raft item ""$($RaftItem | Get-BMObjectName -ObjectTypeName 'RaftItem')"" " +
+                   "because there are $($numRaftItems) that match."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+
         $raftParams =
             @{} |
-            Add-BMObjectParameter -Name 'RaftItem' -Value $RaftItem -ForNativeApi -PassThru |
+            Add-BMObjectParameter -Name 'RaftItem' -Value $existingRaftItem -ForNativeApi -PassThru |
             Add-BMParameter -Name 'PurgeHistory_Indicator' -Value $PurgeHistory.IsPresent -PassThru
 
         Invoke-BMNativeApiMethod -Session $Session `

@@ -15,6 +15,7 @@ function New-BMApplication
     Options are `MajorMinorRevision`, `MajorMinor`, or `DateBased`.
     * `BuildNumberScheme`: sets the build number scheme to use when creating new builds for an application.
     Options are `Unique`, `Sequential`, `DateBased`.
+    * `Raft` to set the raft in which the application's scripts, pipelines, etc. should be saved.
 
     .EXAMPLE
     New-BMApplication -Session $session -Name 'MyNewApplication'
@@ -58,7 +59,10 @@ function New-BMApplication
 
         # The application group to assign. By default, the application will be ungrouped. Pass an application group id
         # or object.
-        [Object] $ApplicationGroup
+        [Object] $ApplicationGroup,
+
+        # The raft where the application's raft items will be stored. Pass a raft name or raft object.
+        [Object] $Raft
     )
 
     Set-StrictMode -Version 'Latest'
@@ -76,7 +80,7 @@ function New-BMApplication
     # not provided and won't add it to the parameter hashtable.
     $parameters =
         @{} |
-        Add-BMObjectParameter -Name 'Application' -Value $Name -ForNativeApi -PassThru |
+        Add-BMParameter -Name 'Application_Name' -Value $Name -PassThru |
         Add-BMObjectParameter -Name 'ApplicationGroup' -Value $ApplicationGroup -ForNativeApi -PassThru |
         Add-BMParameter -Name 'ReleaseNumber_Scheme_Name' `
                         -Value $PSBoundParameters['ReleaseNumberSchemeName'] `
@@ -90,6 +94,19 @@ function New-BMApplication
     if( -not $appID )
     {
         return
+    }
+
+    if ($Raft)
+    {
+        $editArgs =
+            @{} |
+            Add-BMParameter -Name 'Application_Id' -Value $appID -PassThru |
+            Add-BMParameter -Name 'Application_Name' -Value $Name -PassThru |
+            Add-BMObjectParameter -Name 'Raft' -Value $Raft -AsName -ForNativeApi -PassThru
+        Invoke-BMNativeApiMethod -Session $Session `
+                                 -Name 'Applications_EditApplication' `
+                                 -Parameter $editArgs `
+                                 -Method Post
     }
 
     Invoke-BMNativeApiMethod -Session $Session `

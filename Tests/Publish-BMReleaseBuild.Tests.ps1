@@ -6,8 +6,9 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
-    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
+    $defaultObjectName = New-BMTestObjectName
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
 
     $stages = & {
         New-BMPipelineStageTargetObject -PlanName 'Integration' -EnvironmentName 'Integration' -AllServers |
@@ -22,7 +23,7 @@ BeforeAll {
     $postDeployOptions = New-BMPipelinePostDeploymentOptionsObject -MarkDeployed $false
 
     $script:pipeline = Set-BMPipeline -Session $script:session `
-                                      -Name $script:pipelineName `
+                                      -Name $defaultObjectName `
                                       -Application $script:app `
                                       -Color '#ffffff' `
                                       -Stage $stages `

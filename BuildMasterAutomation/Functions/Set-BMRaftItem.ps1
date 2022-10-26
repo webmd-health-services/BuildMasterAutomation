@@ -11,7 +11,8 @@ function Set-BMRaftItem
     type to the `TypeCode` parameter. The raft item will be created if it doesn't exist, or updated if it does.
 
     To assign the raft item to a specific application, pass the application's id, name or an application object to the
-    `Application` parameter.
+    `Application` parameter. The application must be configured to use the same raft as the raft item. If it doesn't,
+    you'll get an error.
 
     Pass the raft item's content to the `Content` parameter.
 
@@ -38,14 +39,14 @@ function Set-BMRaftItem
     Demonstrates how to use Set-BMRaftItem. In this example, an module will be created/updated for the application
     represented by the `$app` object with the content in the `$otterScript` variable.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Global')]
     param(
         # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
         [Object] $Session,
 
         # The raft where the raft item should be saved. Pass the raft id, name or a raft object.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='Global')]
         [Object] $Raft,
 
         # The type of the raft item. Valid values are:
@@ -67,6 +68,7 @@ function Set-BMRaftItem
         [Object] $RaftItem,
 
         # The application the raft item belongs to. Pass the application's id, name, or an application object.
+        [Parameter(Mandatory, ParameterSetName='Application')]
         [Object] $Application,
 
         # The content of the raft item.
@@ -96,20 +98,63 @@ function Set-BMRaftItem
     }
 
     $contentBytes = $Content | ConvertTo-BMNativeApiByteValue
-    $raftParams = @{
+    $setRaftArgs =
+        @{
             RaftItem_Name = ($RaftItem | Get-BMObjectName);
             RaftItemType_Code = $TypeCode;
             ModifiedOn_Date = [DateTimeOffset]::Now;
             ModifiedBy_User_Name = $UserName;
         } |
-        Add-BMObjectParameter -ForNativeApi -PassThru -Name 'Application' -Value $Application |
-        Add-BMObjectParameter -ForNativeApi -PassThru -Name 'Raft' -Value $Raft |
         Add-BMParameter -PassThru -Name 'ModifiedBy_User_Name' -Value $UserName |
-        Add-BMParameter -PassThru -Name 'Content_Bytes' -Value $contentBytes
+        Add-BMParameter -PassThru -Name 'Content_Bytes' -Value $contentBytes |
+        Add-BMParameter -PassThru -Name 'Active_Indicator' -Value $true
+
+    if ($Raft)
+    {
+        $Raft = $Raft | Get-BMRaft -Session $Session
+        if (-not $Raft)
+        {
+            return
+        }
+    }
+
+    # Make sure the application exists and use its raft to store the raft item.
+    if ($Application)
+    {
+        $bmApp = Get-BMApplication -Session $Session -Application $Application
+        if (-not $bmApp)
+        {
+            return
+        }
+        $setRaftArgs['Application_Id'] = $bmApp.Application_Id
+
+        if ($bmApp.Raft_Name)
+        {
+            $Raft = $bmApp.Raft_Name | Get-BMRaft -Session $Session
+        }
+
+        if (-not $Raft)
+        {
+            # If an application isn't assigned to a raft, BuildMaster stores its code in the default raft.
+            $Raft = Get-BMRaft -Session $Session -Raft 1
+            if (-not $Raft)
+            {
+                $appName = $bmApp.Application_Name
+                $raftItemName = $RaftItem | Get-BMObjectName
+                $typeName = $TypeCode | Get-BMRaftTypeDisplayName
+                $msg = "Failed to save the ""$($appName)"" application's ""$($raftItemName)"" $($typeName) because " +
+                       'the application is configured to use the default raft but the default raft does not exist.'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            }
+        }
+
+    }
+
+    $setRaftArgs['Raft_Id'] = $Raft.Raft_Id
 
     Invoke-BMNativeApiMethod -Session $Session `
                              -Name 'Rafts_CreateOrUpdateRaftItem' `
-                             -Parameter $raftParams `
+                             -Parameter $setRaftArgs `
                              -Method Post |
         Out-Null
 

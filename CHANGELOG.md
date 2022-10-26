@@ -81,6 +81,8 @@ writes an error if an application exists.
 * Rename usages of the `New-BMSession` function's `Uri` parameter to `Url`.
 * Rename usages of the `Remove-BMServer` function's `Name` parameter to `Server`.
 * Rename usages of the `Set-BMRelease` function's `PipelineID` parameter to `Pipeline`.
+* Update usages of the `Set-BMPipeline` function: its new `Raft` parameter is required. To use BuildMaster's default
+raft, pass `1` as the value.
 
 ### Added
 
@@ -130,6 +132,9 @@ pipeline.
 * `Remove-BMRaft` for removing a raft.
 * `Set-BMRaft` for creating and updating rafts.
 * `PassThru` switch to the `New-Environment` function for returning the created or already existent environment.
+* `Raft` parameter to `New-BMApplication` for setting the raft in which the application's scripts, pipelines, etc. will
+be saved.
+* `Raft` parameter to the `Get-BMPipeline` function for only getting pipelines in a specific raft.
 
 ### Changed
 
@@ -160,8 +165,8 @@ exist. Use `-ErrorAction Ignore` to ignore if the item exists or not.
 names, ids, or application objects.
 * The `Get-BMApplication` function now accepts wildcards in application names.
 * The `Get-BMApplication`, `Get-BMApplicationGroup`, `Get-BMBuild` (née `Get-BMPackage`), `Get-BMDeployment`,
-`Get-BMEnvironment`, `Get-BMPipeline`, `Get-BMRelease`, `Get-BMServer`, and `Get-BMServerRole` functions now each write an error when
-getting a specific item and the item does not exist, unless searching with a wildcard pattern. Use
+`Get-BMEnvironment`, `Get-BMPipeline`, `Get-BMRelease`, `Get-BMServer`, and `Get-BMServerRole` functions now each write
+an error when getting a specific item and the item does not exist, unless searching with a wildcard pattern. Use
 `-ErrorAction Ignore` to ignore if an item doesn't exist.
 * The `Get-BMBuild` (née `Get-BMPackage`) function now writes an when searching for a build in a specific release and
 that release doesn't exist. Use `-ErrorAction Ignore` to ignore the error.

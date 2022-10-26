@@ -7,10 +7,11 @@ BeforeAll {
 
     $script:session = New-BMTestSession
 
-    $nameSuffix = [IO.Path]::GetRandomFileName()
-    $pipelineName = "Get-BMDeployment.Tests.Pipeline.$($nameSuffix)"
+    $defaultObjectName = New-BMTestObjectName
 
-    $script:application = New-BMApplication -Session $script:session -Name "Get-BMDeployment.Tests.Application.$($nameSuffix)"
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+
+    $script:application = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
 
     $stages = & {
         New-BMPipelineStageTargetObject -PlanName 'Get-BMDeployment.Tests.Plan' -EnvironmentName 'Integration' -AllServers |
@@ -27,12 +28,12 @@ BeforeAll {
     }
 
     $pipeline = Set-BMPipeline -Session $script:session `
-                            -Name $pipelineName `
-                            -Application $script:application `
-                            -Color '#ffffff' `
-                            -Stage $stages `
-                            -PassThru `
-                            -ErrorAction Stop
+                               -Name $defaultObjectName `
+                               -Application $script:application `
+                               -Color '#ffffff' `
+                               -Stage $stages `
+                               -PassThru `
+                               -ErrorAction Stop
 
     $script:releaseAll =
         New-BMRelease -Session $script:session -Application $script:application -Pipeline $pipeline -Number '1.0' -Name 'releaseAll'

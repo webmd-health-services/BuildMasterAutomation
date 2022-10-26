@@ -42,7 +42,7 @@ function Set-BMPipeline
     Demonstrates how to create or update a pipeline for a specific application. In this example, the pipeline will be
     called `PowerShell Module` and it will be assigned to the `$app` application.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Global')]
     param(
         # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
@@ -54,9 +54,11 @@ function Set-BMPipeline
 
         # The raft where the pipeline should be saved. Use `Get-BMRaft` to see a list of rafts. By default, uses
         # BuildMaster's default raft. Can be the ID of a raft or a raft object.
+        [Parameter(Mandatory, ParameterSetName='Global')]
         [Object] $Raft,
 
         # The application to assign the pipeline to. Pass an application's id, name or an application object.
+        [Parameter(Mandatory, ParameterSetName='Application')]
         [Object] $Application,
 
         # The background color BuildMaster should use when displaying the pipeline's name in the UI. Should be a CSS
@@ -94,12 +96,22 @@ function Set-BMPipeline
         $pipeline | Add-Member -Name 'PostDeploymentOptions' -MemberType NoteProperty -Value $PostDeploymentOption
     }
 
+    $setRaftItemArgs = @{}
+    if ($Raft)
+    {
+        $setRaftItemArgs['Raft'] = $Raft
+    }
+
+    if ($Application)
+    {
+        $setRaftItemArgs['Application'] = $Application
+    }
+
     $Name |
         Set-BMRaftItem -Session $Session `
-                       -Raft $script:defaultRaftId `
                        -TypeCode ([BMRaftItemTypeCode]::Pipeline) `
-                       -Application $Application `
                        -Content ($pipeline | ConvertTo-Json -Depth 100) `
-                       -PassThru:$PassThru |
+                       -PassThru:$PassThru `
+                       @setRaftItemArgs |
         Add-BMPipelineMember -PassThru
 }
