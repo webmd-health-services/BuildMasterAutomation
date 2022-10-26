@@ -6,9 +6,14 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
-    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline = Set-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff' -PassThru
+    $defaultObjectName = New-BMTestObjectName
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
+    $script:pipeline = Set-BMPipeline -Session $script:session `
+                                      -Name $defaultObjectName `
+                                      -Application $app `
+                                      -Color '#ffffff' `
+                                      -PassThru
 
     function Assert-Release
     {
@@ -50,14 +55,14 @@ Describe 'New-BMRelease' {
         $releaseNumber = New-TestReleaseNumber
         $script:app |
             New-BMRelease -Session $script:session -Number $releaseNumber -Pipeline $script:pipeline |
-            Assert-Release -HasNumber $releaseNumber 
+            Assert-Release -HasNumber $releaseNumber
     }
 
     It 'should create release when piping application name' {
         $releaseNumber = New-TestReleaseNumber
         $script:app.Application_Name |
             New-BMRelease -Session $script:session -Number $releaseNumber -Pipeline $script:pipeline.Pipeline_Name |
-            Assert-Release -HasNumber $releaseNumber 
+            Assert-Release -HasNumber $releaseNumber
     }
 
     It 'should set release name' {

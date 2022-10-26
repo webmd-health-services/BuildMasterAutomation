@@ -6,26 +6,28 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
-    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline = Set-BMPipeline -Session $script:session `
-                                      -Name $script:pipelineName `
-                                      -Application $script:app `
-                                      -Color '#ffffff' -PassThru
+    $defaultObjectName = New-BMTestObjectName
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
+    $pipeline = Set-BMPipeline -Session $script:session `
+                               -Name $defaultObjectName `
+                               -Application $script:app `
+                               -Color '#ffffff' `
+                               -PassThru
     $script:develop = New-BMRelease -Session $script:session `
                                     -Application $script:app `
                                     -Number '1.0' `
-                                    -Pipeline $script:pipeline `
+                                    -Pipeline $pipeline `
                                     -Name 'develop'
     $script:release = New-BMRelease -Session $script:session `
                                     -Application $script:app `
                                     -Number '2.0' `
-                                    -Pipeline $script:pipeline `
+                                    -Pipeline $pipeline `
                                     -Name 'release'
     $script:master = New-BMRelease -Session $script:session `
                                    -Application $script:app `
                                    -Number '3.0' `
-                                   -Pipeline $script:pipeline `
+                                   -Pipeline $pipeline `
                                    -Name 'script:master'
 }
 

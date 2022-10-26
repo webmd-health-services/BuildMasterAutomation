@@ -49,6 +49,8 @@ create the objects you should pass.
 longer returns the pipeline object by default. Use the new `PassThru` switch and the pipeline object will be returned.
 * Update usages of `Set-BMRelease` to pass a pipeline name or pipeline object to the new `Pipeline` paramter and remove
 usages of the `PipelineID` parameter.
+* Update usages of the `Set-BMPipeline` (née New-BMPipeline) function: its new `Raft` parameter is required. To use
+BuildMaster's default raft, pass `1` as the value.
 
 ### Added
 
@@ -119,6 +121,9 @@ pipeline's stage sequence enforcement.
 * `Remove-BMRaft` for removing a raft.
 * `Set-BMRaft` for creating and updating rafts.
 * `PassThru` switch to the `New-Environment` function for returning the created or already existent environment.
+* `Raft` parameter to `New-BMApplication` for setting the raft in which the application's scripts, pipelines, etc. will
+be saved.
+* `Raft` parameter to the `Get-BMPipeline` function for only getting pipelines in a specific raft.
 
 ### Changed
 

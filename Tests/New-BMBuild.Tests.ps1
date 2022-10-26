@@ -6,10 +6,14 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
-    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline =
-    $script:pipeline = Set-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff' -PassThru
+    $defaultObjectName = New-BMTestObjectName
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
+    $script:pipeline = Set-BMPipeline -Session $script:session `
+                                      -Name $defaultObjectName `
+                                      -Application $app `
+                                      -Color '#ffffff' `
+                                      -PassThru
     $script:release =
         New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
 
@@ -31,7 +35,7 @@ BeforeAll {
         $Build | Should -Not -BeNullOrEmpty
         $Build.number | Should -Be $HasNumber
         $Build.applicationId | Should -Be $script:app.Application_Id
-        $Build.pipelineName | Should -Be $pipeline.Pipeline_Name
+        $Build.pipelineName | Should -Be $script:pipeline.Pipeline_Name
         $Build.releaseId | Should -Be $script:release.id
 
         if( $HasVariable )
