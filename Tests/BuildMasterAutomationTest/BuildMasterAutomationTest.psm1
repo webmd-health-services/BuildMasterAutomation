@@ -94,6 +94,23 @@ function New-BMTestApplication
 
 $script:session = New-BMSession -Url $url -ApiKey $apiKey
 
+function New-BMTestObjectName
+{
+    [CmdletBinding()]
+    param(
+    )
+
+    $baseName =
+        Get-PSCallStack |
+        Select-Object -First 2 |
+        Select-Object -Last 1 |
+        Select-Object -ExpandProperty 'ScriptName' |
+        Split-Path -Leaf |
+        ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) } |
+        ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) }
+    return "$($baseName).$([IO.Path]::GetRandomFileName())"
+}
+
 function New-BMTestSession
 {
     return $script:session
@@ -102,11 +119,10 @@ function New-BMTestSession
 function GivenAnApplication
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         $Name,
 
-        [Switch]
-        $ThatIsDisabled
+        [switch] $ThatIsDisabled
     )
 
     $Name = Split-Path -Path $Name -Leaf
@@ -127,13 +143,16 @@ function GivenAnApplication
 function GivenARelease
 {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         $Named,
-        [Parameter(Mandatory=$true)]
+
+        [Parameter(Mandatory)]
         $ForApplication,
-        [Parameter(Mandatory=$true)]
+
+        [Parameter(Mandatory)]
         $WithNumber,
-        [Parameter(Mandatory=$true)]
+
+        [Parameter(Mandatory)]
         $UsingPipeline
     )
 
@@ -145,38 +164,45 @@ function GivenARelease
 
 function GivenAPipeline
 {
+    [CmdletBinding(DefaultParameterSetName='Global')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory, Position=0)]
         $Named,
 
+        [Parameter(ParameterSetName='Global')]
+        [Object] $InRaft = $script:defaultRaft,
+
+        [Parameter(ParameterSetName='Application')]
         $ForApplication
     )
 
     $Named = Split-Path -Path $Named -Leaf
     $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
 
-    $appParam = @{ }
-    if( $ForApplication )
+    $setArgs = @{ }
+    if ($ForApplication)
     {
-        $appParam['Application'] = $ForApplication
+        $setArgs['Application'] = $ForApplication
+    }
+    else
+    {
+        $setArgs['Raft'] = $InRaft
     }
 
-    return Set-BMPipeline -Session $script:session -Name $Named @appParam -PassThru
+    return Set-BMPipeline -Session $script:session -Name $Named @setArgs -PassThru
 }
 
 function GivenABuild
 {
     [CmdletBinding(DefaultParameterSetName='WithAllTheTrimmings')]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='WithAllTheTrimmings')]
-        [string]
-        $ForAnAppNamed,
+        [Parameter(Mandatory, ParameterSetName='WithAllTheTrimmings')]
+        [String] $ForAnAppNamed,
 
-        [Parameter(Mandatory=$true,ParameterSetName='WithAllTheTrimmings')]
-        [string]
-        $ForReleaseNumber,
+        [Parameter(Mandatory, ParameterSetName='WithAllTheTrimmings')]
+        [String] $ForReleaseNumber,
 
-        [Parameter(Mandatory=$true,ParameterSetName='ForARelease')]
+        [Parameter(Mandatory, ParameterSetName='ForARelease')]
         $ForRelease
     )
 
@@ -186,8 +212,11 @@ function GivenABuild
     }
 
     $app = GivenAnApplication -Name $ForAnAppNamed
-    $pipeline = GivenAPipeline -Named ('{0}.pipeline' -f $ForAnAppNamed)  -ForApplication $app
-    $release = GivenARelease -Named ('{0}.release' -f $ForAnAppNamed) -ForApplication $app -WithNumber $ForReleaseNumber -UsingPipeline $pipeline
+    $pipeline = GivenAPipeline -Named "$($ForAnAppNamed).pipeline" -ForApplication $app
+    $release = GivenARelease -Named "$($ForAnAppNamed).release" `
+                             -ForApplication $app `
+                             -WithNumber $ForReleaseNumber `
+                             -UsingPipeline $pipeline
     return New-BMBuild -Session $script:session -Release $release
 }
 
@@ -227,6 +256,12 @@ function ThenNoErrorWritten
 $BMTestSession = $script:session
 
 Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
-Get-BMPipeline -Session $script:session | Remove-BMPipeline -Session $script:session
+Get-BMPipeline -Session $script:session  | Remove-BMPipeline -Session $script:session -PurgeHistory
+
+$script:defaultRaft = Set-BMRaft -Session $script:session -Raft 'BMAutomationDefaultTestRaft' -PassThru
+Get-BMRaft -Session $script:session |
+    Where-Object 'Raft_Name' -NE 'Default' |
+    Where-Object 'Raft_Id' -NE $script:defaultRaft.Raft_Id |
+    Remove-BMRaft -Session $script:session
 
 Export-ModuleMember -Function '*' -Variable 'BMTestSession'

@@ -7,48 +7,49 @@ BeforeAll {
 
     $script:session = New-BMTestSession
 
-    $nameSuffix = [IO.Path]::GetRandomFileName()
-    $pipelineName = "Get-BMDeployment.Tests.Pipeline.$($nameSuffix)"
+    $defaultObjectName = New-BMTestObjectName
 
-    $script:app =
-        New-BMApplication -Session $script:session -Name "Get-BMDeployment.Tests.Application.$($nameSuffix)"
+    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
 
-    $plan = Set-BMRaftItem -Session $script:session `
-                           -Application $script:app `
-                           -Raft 1 `
-                           -RaftItem 'Get-BMDeployment.Tests.Plan' `
-                           -TypeCode DeploymentPlan `
-                           -Content "$([Environment]::NewLine)Log-Information `$ServerName;$([Environment]::NewLine)" `
-                           -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
 
     $stages = & {
-        New-BMPipelineStageTargetObject -PlanName $plan.RaftItem_Name -EnvironmentName 'Integration' -AllServers |
+        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Integration' -AllServers |
             New-BMPipelineStageObject -Name 'Integration' |
             Write-Output
 
-        New-BMPipelineStageTargetObject -PlanName $plan.RaftItem_Name -EnvironmentName 'Testing' -AllServers |
+        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Testing' -AllServers |
             New-BMPipelineStageObject -Name 'Testing' |
             Write-Output
 
-        New-BMPipelineStageTargetObject -PlanName $plan.RaftItem_Name -EnvironmentName 'Production' -AllServers |
+        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Production' -AllServers |
             New-BMPipelineStageObject -Name 'Production' |
             Write-Output
     }
 
     $pipeline = Set-BMPipeline -Session $script:session `
-                            -Name $pipelineName `
-                            -Application $script:app `
-                            -Color '#ffffff' `
-                            -Stage $stages `
-                            -PassThru `
-                            -ErrorAction Stop
+                               -Name $defaultObjectName `
+                               -Application $script:app `
+                               -Color '#ffffff' `
+                               -Stage $stages `
+                               -PassThru `
+                               -ErrorAction Stop
 
-    $script:releaseAll =
-        New-BMRelease -Session $script:session -Application $script:app -Pipeline $pipeline -Number '1.0' -Name 'releaseAll'
-    $script:releaseRelease =
-        New-BMRelease -Session $script:session -Application $script:app -Pipeline $pipeline -Number '2.0' -Name 'releaseBuild'
-    $script:releaseRelease2 =
-        New-BMRelease -Session $script:session -Application $script:app -Pipeline $pipeline -Number '3.0' -Name 'releaseRelease'
+    $script:releaseAll = New-BMRelease -Session $script:session `
+                                       -Application $script:app `
+                                       -Pipeline $pipeline `
+                                       -Number '1.0' `
+                                       -Name 'releaseAll'
+    $script:releaseRelease = New-BMRelease -Session $script:session `
+                                           -Application $script:app `
+                                           -Pipeline $pipeline `
+                                           -Number '2.0' `
+                                           -Name 'releaseBuild'
+    $script:releaseRelease2 = New-BMRelease -Session $script:session `
+                                            -Application $script:app `
+                                            -Pipeline $pipeline `
+                                            -Number '3.0' `
+                                            -Name 'releaseRelease'
 
     'Integration' | Enable-BMEnvironment -Session $script:session
     'Testing' | Enable-BMEnvironment -Session $script:session
@@ -110,7 +111,7 @@ BeforeAll {
                 }
                 elseif( $Application )
                 {
-                    Write-Debug "Getting by application $($Application)."
+                    Write-Debug "Getting by app $($Application)."
                     @(Get-BMDeployment -Session $script:session -Application $Application)
                 }
                 else

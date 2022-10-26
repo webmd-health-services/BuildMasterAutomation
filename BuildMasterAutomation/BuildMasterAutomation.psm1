@@ -1,6 +1,4 @@
 
-$script:defaultRaftId = 1
-
 enum BMRaftItemTypeCode
 {
     Module = 3
