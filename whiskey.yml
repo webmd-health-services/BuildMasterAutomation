@@ -30,8 +30,7 @@ Build:
     TextSeparator: "$(NewLine)$(NewLine)"
 
 - Pester4:
-    Path: Tests\*.Tests.ps1
-    Verbose: false
+    Script: Tests\*.Tests.ps1
     
 - Zip:
     ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation.zip
