@@ -50,4 +50,11 @@ Describe 'New-BMApplication' {
         $app | Should -Not -BeNullOrEmpty
         $app.ApplicationGroup_Name | Should -Be 'TestBMAppGroup'
     }
+
+    It 'should set application''s raft' {
+        $name = New-BMTestObjectName
+        $raft = Set-BMRaft -Session $script:session -Raft $name -PassThru
+        $app = New-BMApplication -Session $script:session -Name $name -Raft $raft
+        $app.Raft_Name | Should -Be $name
+    }
 }

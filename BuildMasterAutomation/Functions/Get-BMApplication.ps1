@@ -50,28 +50,41 @@ function Get-BMApplication
         # Invoke-BMNativeApiMethod uses POST, but we're reading data, so always make the request.
         $WhatIfPreference = $false
 
-        $parameters = @{
-            Application_Count = 0;
-            IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
-        }
+        $searching = $Application -and `
+                     ($Application | Test-BMName) -and `
+                     [wildcardpattern]::ContainsWildcardCharacters($Application)
 
+        $parameters =
+            @{
+                Application_Count = 0;
+                IncludeInactive_Indicator = ($Force.IsPresent -or $PSCmdlet.ParameterSetName -eq 'SpecificApplication');
+            } |
+            Add-BMObjectParameter -Name 'Application' -Value $Application -ForNativeApi -PassThru
+
+        $endpoint = 'Applications_GetApplication'
+        if ($PSCmdlet.ParameterSetName -eq 'AllApplications' -or $searching)
+        {
+            $endpoint = 'Applications_GetApplications'
+        }
         $apps = @()
-        $appName = $Application | Get-BMObjectName -ObjectTypeName 'Application' -Strict -ErrorAction Ignore
-        Invoke-BMNativeApiMethod -Session $Session `
-                                -Name 'Applications_GetApplications' `
-                                -Parameter $parameters `
-                                -Method Post |
-            Where-Object {
-                if ($appName)
+        Invoke-BMNativeApiMethod -Session $Session -Name $endpoint -Parameter $parameters -Method Post |
+            ForEach-Object {
+                if ($_ | Get-Member -Name 'Applications_Extended')
                 {
-                    return $_.Application_Name -like $appName
+                    return $_.Applications_Extended
+                }
+                return $_
+            } |
+            Where-Object {
+                if ($searching)
+                {
+                    return $_.Application_Name -like $Application
                 }
                 return $true
             } |
             Tee-Object -Variable 'apps' |
             Write-Output
 
-        $searching = ($appName -and [wildcardpattern]::ContainsWildcardCharacters($appName))
         if ($Application -and -not $apps -and -not $searching)
         {
             $msg = "Application ""$($Application)"" does not exist."

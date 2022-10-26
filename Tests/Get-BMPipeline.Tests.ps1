@@ -2,11 +2,18 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
+AfterAll {
+    $script:defaultRaft | Remove-BMRaft -Session $script:session
+}
+
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
     $script:result = $null
+    $script:defaultRaft =
+        "Get-BMPipeline.$([IO.Path]::GetRandomFileName())" | Set-BMRaft -Session $script:session -PassThru
+    $script:defaultRaft | Should -Not -BeNullOrEmpty
 
     function GivenApplication
     {
@@ -14,24 +21,45 @@ BeforeAll {
             $Name
         )
 
-        New-BMApplication -Session $script:session -Name $Name
+        $app = Get-BMApplication -Session $script:session -Application $Name -ErrorAction Ignore
+        if ($app)
+        {
+            return $app
+        }
+
+        return New-BMApplication -Session $script:session -Name $Name
     }
 
     function GivenPipeline
     {
+        [CmdletBinding(DefaultParameterSetName='Global')]
         param(
+            [Parameter(Position=0)]
             $Name,
 
-            $ForApplication
+            [Parameter(ParameterSetName='Application')]
+            $ForApplication,
+
+            [Parameter(ParameterSetName='Global')]
+            $InRaft = $script:defaultRaft
         )
 
-        Set-BMPipeline -Session $script:session -Name $Name -Application $ForApplication
+        $setArgs = @{}
+        if ($ForApplication)
+        {
+            $setArgs['Application'] = $ForApplication
+        }
+        else
+        {
+            $setArgs['Raft'] = $InRaft
+        }
+        Set-BMPipeline -Session $script:session -Name $Name @setArgs
     }
 
     function ThenReturned
     {
         param(
-            $Name
+            [String[]] $Name
         )
 
         ($script:result | Measure-Object).Count | Should -Be ($Name | Measure-Object).Count
@@ -44,21 +72,9 @@ BeforeAll {
     function WhenGettingPipeline
     {
         param(
-            $Name,
-            $ForApplication,
+            [hashtable] $WithArgs = @{},
             [Switch]$WhatIf
         )
-
-        $optionalParams = @{ }
-        if( $Name )
-        {
-            $optionalParams['Pipeline'] = $Name
-        }
-
-        if( $ForApplication )
-        {
-            $optionalParams['Application'] = $ForApplication
-        }
 
         $originalWhatIf = $WhatIfPreference
         try
@@ -68,7 +84,7 @@ BeforeAll {
                 $Global:WhatIfPreference = $true
             }
 
-            $script:result = Get-BMPipeline -Session $script:session @optionalParams
+            $script:result = Get-BMPipeline -Session $script:session @WithArgs
         }
         finally
         {
@@ -79,7 +95,7 @@ BeforeAll {
 
 Describe 'Get-BMPipeline' {
     BeforeEach {
-        Get-BMPipeline -Session $session | Remove-BMPipeline -Session $session
+        Get-BMPipeline -Session $session | Remove-BMPipeline -Session $session -PurgeHistory
         Get-BMApplication -Session $session | Remove-BMApplication -Session $session -Force
 
         $script:result = $null
@@ -96,7 +112,7 @@ Describe 'Get-BMPipeline' {
     It 'should return specific pipeline' {
         GivenPipeline 'One'
         GivenPipeline 'Two'
-        WhenGettingPipeline 'One'
+        WhenGettingPipeline -WithArgs @{ Raft = $script:defaultRaft ; Pipeline = 'One' ; }
         ThenReturned 'One'
     }
 
@@ -104,7 +120,7 @@ Describe 'Get-BMPipeline' {
         GivenPipeline 'OneA'
         GivenPipeline 'OneB'
         GivenPipeline 'Two'
-        WhenGettingPipeline 'One*'
+        WhenGettingPipeline -WithArgs @{ Raft = $script:defaultRaft ; Pipeline = 'One*' ; }
         ThenReturned 'OneA','OneB'
     }
 
@@ -113,13 +129,20 @@ Describe 'Get-BMPipeline' {
         GivenPipeline 'One_1' -ForApplication $app.Application_Id
         GivenPipeline 'One_2' -ForApplication $app.Application_Id
         GivenPipeline 'Two'
-        WhenGettingPipeline -ForApplication $app.Application_Id
+        WhenGettingPipeline -WithArgs @{ Application = $app.Application_Id ; }
         ThenReturned 'One_1','One_2'
     }
 
     It 'should still return pipelines when WhatIf is true' {
         GivenPipeline 'One'
-        WhenGettingPipeline -Name 'One' -WhatIf
+        WhenGettingPipeline -WithArgs @{ Pipeline = 'One' ; } -WhatIf
         ThenReturned 'One'
+    }
+
+    It 'should return pipelines in a specific raft' {
+        $bmRaft = 'get-bmpipeline raft' | Set-BMRaft -Session $script:session -PassThru
+        GivenPipeline 'Three' -InRaft $bmRaft
+        WhenGettingPipeline -WithArgs @{ Raft = $bmRaft }
+        ThenReturned 'Three'
     }
 }

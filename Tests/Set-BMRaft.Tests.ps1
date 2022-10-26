@@ -100,4 +100,18 @@ Describe 'Set-BMRaft' {
                         Environment_Id = $script:bmEnv2.id;
                     }
     }
+
+    # So, PowerShell sets all [String] function parameters to an empty string if not passed. This ends up sending an
+    # empty string to BuildMaster for a raft's configuration if the user doesn't set one. BuildMaster then sets the
+    # configuration to an empty string, which results in a mis-configured raft that gives an error in the UI. This test
+    # exists to ensure we're sending no configuration value when the Configuration parameter is omitted.
+    It 'should omit configuration if not passed' {
+        Mock -Command 'Invoke-BMNativeApiMethod' `
+             -ModuleName 'BuildMasterAutomation' `
+             -ParameterFilter { $Name -eq 'Rafts_CreateOrUpdateRaft' }
+        Set-BMRaft -Session $script:session -Raft 'configuration omitted raft'
+        Assert-MockCalled -CommandName 'Invoke-BMNativeApiMethod' `
+                          -ModuleName 'BuildMasterAutomation' `
+                          -ParameterFilter { $null -eq $Parameter['Raft_Configuration'] | Should -BeTrue ; $true }
+    }
 }

@@ -96,7 +96,7 @@ function Set-BMRaft
             @{} |
             Add-BMObjectParameter -Name 'Raft' -Value $bmRaft -AsID -ForNativeApi -PassThru | `
             Add-BMObjectParameter -Name 'Raft' -Value $raftName -AsName -ForNativeApi -PassThru | `
-            Add-BMParameter -Name 'Raft_Configuration' -Value $Configuration -PassThru | `
+            Add-BMParameter -Name 'Raft_Configuration' -Value $PSBoundParameters['Configuration'] -PassThru | `
             Add-BMObjectParameter -Name 'Environment' -Value $bmEnv -AsId -ForNativeApi -PassThru
 
         $id = Invoke-BMNativeApiMethod -Session $Session `

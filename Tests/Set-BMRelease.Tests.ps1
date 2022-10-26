@@ -5,9 +5,10 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
+    $script:pipelineName = $defaultName = New-BMTestObjectname
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
-    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
+    $script:raft = Set-BMRaft -Session $script:session -Raft $defaultName -PassThru
+    $script:app = New-BMApplication -Session $script:session -Name $defaultName -Raft $script:raft
     $script:pipeline = Set-BMPipeline -Session $script:session `
                                       -Name $script:pipelineName `
                                       -Application $script:app `
@@ -76,7 +77,7 @@ Describe 'Set-BMRelease' {
                                  -Application $script:app `
                                  -Number $releaseNumber `
                                  -Pipeline $script:pipeline
-        $newPipeline = Set-BMPipeline -Session $script:session -Name 'updating a release' -PassThru
+        $newPipeline = Set-BMPipeline -Session $script:session -Raft $script:raft -Name 'updating a release' -PassThru
         $updatedRelease = Set-BMRelease -Session $script:session `
                                         -Release $release `
                                         -Pipeline $newPipeline `
