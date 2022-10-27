@@ -199,18 +199,18 @@ function ThenNoErrorWritten
 
 $BMTestSession = $session
 
-Get-BMApplication -Session $session | 
+Get-BMApplication -Session $session |
     ForEach-Object {
         Write-Debug -Message ('Deactivating and purging application {0,5} {1}.' -f $_.Application_Id,$_.Application_Name)
         Disable-BMApplication -Session $session -ID $_.Application_Id
         Invoke-BMNativeApiMethod -Session $session -Name 'Applications_PurgeApplicationData' -Method Post -Parameter @{ Application_Id  = $_.Application_Id }
     }
 
-Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' -Method Post -Parameter @{ } | 
+Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_GetPipelines' -Method Post -Parameter @{ } |
     ForEach-Object {
         Write-Debug -Message ('Deleting pipeline {0,5} {1}.' -f $_.Pipeline_Id,$_.Pipeline_Name)
         Invoke-BMNativeApiMethod -Session $session -Name 'Pipelines_DeletePipeline' -Method Post -Parameter @{ Pipeline_Id = $_.Pipeline_Id }
     }
-    
+
 
 Export-ModuleMember -Function '*' -Variable 'BMTestSession'

@@ -1,89 +1,77 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-$session = New-BMTestSession 
-$app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
-$pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-$pipeline = New-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff'
-$release = New-BMRelease -Session $session -Application $app -Number '1.0' -Pipeline $pipeline
+    $script:session = New-BMTestSession
+    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
+    $script:pipeline =
+        New-BMPipeline -Session $script:session -Name $script:pipelineName -Application $script:app -Color '#ffffff'
+    $script:release =
+        New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
 
-function Assert-Package
-{
-    param(
-        [Parameter(ValueFromPipeline=$true)]
-        $Package,
+    function Assert-Package
+    {
+        param(
+            [Parameter(ValueFromPipeline=$true)]
+            $Package,
 
-        [object]
-        $HasNumber,
+            [object]
+            $HasNumber,
 
-        [hashtable]
-        $HasVariable
-    )
+            [hashtable]
+            $HasVariable
+        )
 
-    It 'should return the package' {
         $Package | Should -Not -BeNullOrEmpty
-    }
+        $Package = Get-BMPackage -Session $script:session -Package $package
+        $Package | Should -Not -BeNullOrEmpty
+        $Package.number | Should -Be $HasNumber
+        $Package.applicationId | Should -Be $script:app.Application_Id
+        $Package.pipelineId | Should -Be $script:pipeline.Pipeline_Id
+        $Package.releaseId | Should -Be $script:release.id
 
-    $Package = Get-BMPackage -Session $session -Package $package
-    Context 'the package' {
-        It 'should exist' {
-            $Package | Should -Not -BeNullOrEmpty
-        }
-
-        It 'should set the number' {
-            $Package.number | Should -Be $HasNumber
-        }
-
-        It 'should set the application' {
-            $Package.applicationId | Should -Be $app.Application_Id
-        }
-
-        It 'should set the pipeline' {
-            $Package.pipelineId | Should -Be $pipeline.Pipeline_Id
-        }
-
-        It 'should set the release' {
-            $Package.releaseId | Should -Be $release.id
-        }
-
-        $variable = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetPackageVariables' -Parameter @{ 'Build_Id' = $Package.id } -Method Post
         if( $HasVariable )
         {
+            $variable = Invoke-BMNativeApiMethod -Session $script:session `
+                                                 -Name 'Variables_GetPackageVariables' `
+                                                 -Parameter @{ 'Build_Id' = $Package.id } `
+                                                 -Method Post
+
             foreach( $key in $HasVariable.Keys )
             {
                 $actualVariable = $variable |  Where-Object { $_.Variable_Name -eq $key }
-                It ('should set {0} variable' -f $key) {
-                    $actualVariable | Should -Not -BeNullOrEmpty
-                    $value = $actualVariable.Variable_Value
-                    $value = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($value))
-                    $value | Should Be $HasVariable[$key]
-                }
+                $actualVariable | Should -Not -BeNullOrEmpty
+                $value = $actualVariable.Variable_Value
+                $value = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($value))
+                $value | Should -Be $HasVariable[$key]
             }
         }
     }
-
 }
 
-Describe 'New-BMPackage.when creating package' {
-    New-BMPackage -Session $session -Release $release |
-        Assert-Package -HasNumber 1
-}
+Describe 'New-BMPackage' {
+    It 'should create package' {
+        New-BMPackage -Session $script:session -Release $script:release |
+            Assert-Package -HasNumber 1
+    }
 
-Describe 'New-BMPackage.when creating package with custom name' {
-    New-BMPackage -Session $session -Release $release -PackageNumber '56.develop' |
-        Assert-Package -HasNumber '56.develop'
-}
+    It 'should create package with custom name' {
+        New-BMPackage -Session $script:session -Release $script:release -PackageNumber '56.develop' |
+            Assert-Package -HasNumber '56.develop'
+    }
 
-Describe 'New-BMPackage.when creating package with package variables' {
-    $variable = @{ 'ProGetPackageName' = '17.125.56+develop.deadbee' } 
-    New-BMPackage -Session $session -Release $release -PackageNumber '3' -Variable $variable |
-        Assert-Package -HasNumber '3' -HasVariable $variable
-}
+    It 'should create package with variables' {
+        $variable = @{ 'ProGetPackageName' = '17.125.56+develop.deadbee' }
+        New-BMPackage -Session $script:session -Release $script:release -PackageNumber '3' -Variable $variable |
+            Assert-Package -HasNumber '3' -HasVariable $variable
+    }
 
-Describe 'New-BMPackage.when creating with release number and application' {
-    New-BMPackage -Session $session -ReleaseNumber $release.number -Application $app |
-        Assert-Package -HasNumber '4'
+    It 'create package with release number and application' {
+        New-BMPackage -Session $script:session -ReleaseNumber $script:release.number -Application $script:app |
+            Assert-Package -HasNumber '4'
+    }
 }

@@ -1,13 +1,15 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-$session = New-BMTestSession
+    $script:session = New-BMTestSession
+}
 
-Describe 'Invoke-BMNativeApiMethod.when using WhatIf switch and GET HTTP method' {
-    It ('should return a result') {
+Describe 'Invoke-BMNativeApiMethod' {
+    It 'should return a result when making GET requests and WhatIf is true' {
         $variable = @{
                         'Variable_Name' = 'Fubar';
                         'Variable_Value' = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('Snafu'))
@@ -15,15 +17,13 @@ Describe 'Invoke-BMNativeApiMethod.when using WhatIf switch and GET HTTP method'
                         'Sensitive_Indicator' = 'False';
                         'EvaluateVariables_Indicator' = 'False';
                     }
-        Invoke-BMNativeApiMethod -Session $session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
-        $result = Invoke-BMNativeApiMethod -Session $session -Name 'Variables_GetVariables' -WhatIf
+        Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
+        $result = Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_GetVariables' -WhatIf
         $result | Should -Not -BeNullOrEmpty
     }
-}
 
-Describe 'Invoke-BMNativeApiMethod.when using WhatIf switch and POST HTTP method' {
-    It ('should not make the HTTP request') {
-        Get-BMVariable -Session $session | Remove-BMVariable -Session $session
+    It 'should not make the HTTP request when making POST requests and WhatIf is true' {
+        Get-BMVariable -Session $script:session | Remove-BMVariable -Session $script:session
         $encodedValue = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('Snafu'))
         $variable = @{
                         'Variable_Name' = 'Fubar';
@@ -32,10 +32,10 @@ Describe 'Invoke-BMNativeApiMethod.when using WhatIf switch and POST HTTP method
                         'Sensitive_Indicator' = 'False';
                         'EvaluateVariables_Indicator' = 'False';
                     }
-        Invoke-BMNativeApiMethod -Session $session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
+        Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
         $variable['Variable_Value'] = 'FizzBuzz'
-        Invoke-BMNativeApiMethod -Session $session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable -WhatIf
-        $result = Get-BMVAriable -Session $session -Name 'Fubar' -ValueOnly
+        Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable -WhatIf
+        $result = Get-BMVAriable -Session $script:session -Name 'Fubar' -ValueOnly
         $result | Should -Be 'Snafu'
     }
 }

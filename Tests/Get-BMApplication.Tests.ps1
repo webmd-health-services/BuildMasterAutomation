@@ -1,97 +1,99 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-[object[]]$result = $null
+    [Object[]] $script:result = $null
 
-function ThenReturns
-{
-    param(
-        $Description,
-        $Application
-    )
-
-    foreach( $app in $Application )
+    function ThenReturns
     {
-        $result | Where-Object { $_.Application_Id -eq $app.Application_Id } | Should -Not -BeNullOrEmpty
+        param(
+            $Description,
+            $Application
+        )
+
+        foreach( $app in $Application )
+        {
+            $script:result | Where-Object { $_.Application_Id -eq $app.Application_Id } | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    function ThenDoesNotReturnInactiveApplications
+    {
+        param(
+            [object[]]
+            $Application
+        )
+
+        foreach( $app in $Application )
+        {
+            $script:result | Where-Object { $_.Application_Id -eq $app.Application_Id } | Should -BeNullOrEmpty
+        }
+    }
+
+    function ThenReturnsActiveApplications
+    {
+        param(
+            [object[]]
+            $Application
+        )
+
+        ThenReturns -Description 'all active' -Application $Application
+    }
+
+    function ThenReturnsAllApplications
+    {
+        param(
+            [object[]]
+            $Application
+        )
+
+        ThenReturns -Description 'all' -Application $Application
+    }
+
+    function WhenGettingAllApplications
+    {
+        param(
+            [Switch]$Force,
+
+            [Switch]$WhatIf
+        )
+
+        $originalWhatIf = $WhatIfPreference
+        if( $WhatIf )
+        {
+            $WhatIfPreference = $true
+        }
+
+        $optionalParams = @{ }
+        if( $Force )
+        {
+            $optionalParams['Force'] = $true
+        }
+
+        try
+        {
+            $script:result = Get-BMApplication -Session $BMTestSession @optionalParams
+        }
+        finally
+        {
+            $WhatIfPreference = $originalWhatIf
+        }
+    }
+
+    function WhenGettingAnApplication
+    {
+        param(
+            $Name
+        )
+
+        $script:result = Get-BMApplication -Session $BMTestSession -Name $Name
     }
 }
 
-function ThenDoesNotReturnInactiveApplications
-{
-    param(
-        [object[]]
-        $Application
-    )
-
-    foreach( $app in $Application )
-    {
-        $result | Where-Object { $_.Application_Id -eq $app.Application_Id } | Should -BeNullOrEmpty
-    }
-}
-
-function ThenReturnsActiveApplications
-{
-    param(
-        [object[]]
-        $Application
-    )
-
-    ThenReturns -Description 'all active' -Application $Application
-}
-
-function ThenReturnsAllApplications
-{
-    param(
-        [object[]]
-        $Application
-    )
-
-    ThenReturns -Description 'all' -Application $Application
-}
-
-function WhenGettingAllApplications
-{
-    param(
-        [Switch]$Force,
-
-        [Switch]$WhatIf
-    )
-
-    $originalWhatIf = $WhatIfPreference
-    if( $WhatIf )
-    {
-        $WhatIfPreference = $true
-    }
-
-    $optionalParams = @{ }
-    if( $Force )
-    {
-        $optionalParams['Force'] = $true
-    }
-
-    try
-    {
-        $script:result = Get-BMApplication -Session $BMTestSession @optionalParams
-    }
-    finally
-    {
-        $WhatIfPreference = $originalWhatIf
-    }
-}
-
-function WhenGettingAnApplication
-{
-    param(
-        $Name
-    )
-
-    $script:result = Get-BMApplication -Session $BMTestSession -Name $Name
-}
-
-Describe 'Get-BMApplication.when getting all applications' {
+Describe 'Get-BMApplication' {
     It 'should get active applications' {
         $app1 = GivenAnApplication -Name $PSCommandPath
         $app2 = GivenAnApplication -Name $PSCommandPath
@@ -102,9 +104,7 @@ Describe 'Get-BMApplication.when getting all applications' {
         ThenReturnsActiveApplications $app1,$app2
         ThenDoesNotReturnInactiveApplications $app3
     }
-}
 
-Describe 'Get-BMApplication.when getting all applications including inactive application' {
     It 'should return active and inactive applications' {
         $app1 = GivenAnApplication -Name $PSCommandPath
         $app2 = GivenAnApplication -Name $PSCommandPath
@@ -114,10 +114,7 @@ Describe 'Get-BMApplication.when getting all applications including inactive app
 
         ThenReturnsAllApplications $app1,$app2,$app3
     }
-}
 
-
-Describe 'Get-BMApplication.when getting a specific disabled applicationn' {
     It 'should get disabled application' {
         $app = GivenAnApplication -Name $PSCommandPath -ThatIsDisabled
 
@@ -125,10 +122,8 @@ Describe 'Get-BMApplication.when getting a specific disabled applicationn' {
 
         ThenReturns -Description '' -Application $app
     }
-}
 
-Describe 'Get-BMApplication.when user''s WhatIfPreference is true' {
-    It 'should return applications' {
+    It 'should ignore WhatIf' {
         $app1 = GivenAnApplication -Name $PSCommandPath
         $app2 = GivenAnApplication -Name $PSCommandPath
         WhenGettingAllApplications -WhatIf

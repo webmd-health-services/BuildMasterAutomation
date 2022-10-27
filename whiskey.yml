@@ -53,6 +53,12 @@ Build:
         'GitHub'
     ]
 
-- Pester4:
-    Path: Tests\*.Tests.ps1
-    Verbose: false
+- Pester:
+    AsJob: true
+    Configuration:
+        Run:
+            Path: Tests\*.Tests.ps1
+        TestResult:
+            Enabled: true
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester.xml
+            TestSuiteName: BuildMasterAutomation
