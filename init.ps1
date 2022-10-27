@@ -23,7 +23,7 @@ $InformationPreference = 'Continue'
 
 & {
     $VerbosePreference = 'SilentlyContinue'
-    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon') -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon.Windows.Installer') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\SqlServer') -Force
 }
 
@@ -81,7 +81,7 @@ if( -not (Test-Path -Path $installerPath -PathType Leaf) )
     Invoke-WebRequest -Uri $installerUri -OutFile $installerPath
 }
 
-$bmInstallInfo = Get-ProgramInstallInfo -Name 'BuildMaster'
+$bmInstallInfo = Get-CInstalledProgram -Name 'BuildMaster' -ErrorAction Ignore
 if( -not $bmInstallInfo )
 {
     $outputRoot = Join-Path -Path $PSScriptRoot -ChildPath '.output'
@@ -107,7 +107,7 @@ if( -not $bmInstallInfo )
 
     Write-Verbose -Message ('{0} exited with code {1}' -f $installerFileName,$process.ExitCode)
 
-    if( -not (Get-ProgramInstallInfo -Name 'BuildMaster') )
+    if( -not (Get-CInstalledProgram -Name 'BuildMaster' -ErrorAction Continue) )
     {
         $logPath, $stdOutLogPath, $stdErrLogPath |
             Where-Object { Test-Path -Path $_ } |
