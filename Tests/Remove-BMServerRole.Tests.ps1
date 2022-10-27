@@ -2,99 +2,90 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-$session = New-BMTestSession
+    $script:session = New-BMTestSession
 
-function Init
-{
-    $Global:Error.Clear()
-    Get-BMServerRole -Session $session | Remove-BMServerRole -Session $session
-}
-
-function GivenRole
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Named
-    )
-
-    New-BMServerRole -Session $session -Name $Named
-}
-
-function ThenRoleExists
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Named
-    )
-
-    Get-BMServerRole -Session $session -Name $Named | Should -Not -BeNullOrEmpty
-}
-
-function ThenRoleDoesNotExist
-{
-    param(
-        [Parameter(Mandatory)]
-        [string]$Named
-    )
-
-    Get-BMServerRole -Session $session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
-}
-
-function WhenRemovingRole
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Named,
-
-        [Switch]
-        $WhatIf
-    )
-
-    $optionalParams = @{ }
-    if( $WhatIf )
+    function GivenRole
     {
-        $optionalParams['WhatIf'] = $true
+        param(
+            [Parameter(Mandatory)]
+            [string]$Named
+        )
+
+        New-BMServerRole -Session $script:session -Name $Named
     }
 
-    $result = Remove-BMServerRole -Session $session -Name $Named @optionalParams
-    $result | Should -BeNullOrEmpty
+    function ThenRoleExists
+    {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Named
+        )
+
+        Get-BMServerRole -Session $script:session -Name $Named | Should -Not -BeNullOrEmpty
+    }
+
+    function ThenRoleDoesNotExist
+    {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Named
+        )
+
+        Get-BMServerRole -Session $script:session -Name $Named -ErrorAction Ignore | Should -BeNullOrEmpty
+    }
+
+    function WhenRemovingRole
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string]$Named,
+
+            [Switch]
+            $WhatIf
+        )
+
+        $optionalParams = @{ }
+        if( $WhatIf )
+        {
+            $optionalParams['WhatIf'] = $true
+        }
+
+        $result = Remove-BMServerRole -Session $script:session -Name $Named @optionalParams
+        $result | Should -BeNullOrEmpty
+    }
 }
 
-Describe 'Remove-BMServerRole.when role exists' {
-    It ('should remove the role') {
-        Init
+Describe 'Remove-BMServerRole' {
+    BeforeEach {
+        $Global:Error.Clear()
+        Get-BMServerRole -Session $script:session | Remove-BMServerRole -Session $script:session
+    }
+
+    It 'should remove role' {
         GivenRole -Named 'Fubar'
         WhenRemovingRole -Named 'Fubar'
         ThenNoErrorWritten
         ThenRoleDoesNotExist -Named 'Fubar'
     }
-}
 
-Describe 'Remove-BMServerRole.when role does not exist' {
-    It ('should not write any errors') {
-        Init
+    It 'should ignore missing role' {
         WhenRemovingRole -Named 'IDoNotExist'
         ThenNoErrorWritten
         ThenRoleDoesNotExist -Named 'IDoNotExist'
     }
-}
 
-Describe 'Remove-BMServerRole.when using -WhatIf' {
-    It ('should not remove the role') {
-        Init
+    It 'should support WhatIf' {
         GivenRole -Named 'One'
         WhenRemovingRole -Named 'One' -WhatIf
         ThenNoErrorWritten
         ThenRoleExists -Named 'One'
     }
-}
 
-Describe 'Remove-BMServerRole.when name contains URI-sensitive characters' {
-    It ('should create role') {
-        Init
+    It 'should encode role name' {
         GivenRole -Named 'Fubar - _ . Snafu'
         WhenRemovingRole -Named 'Fubar - _ . Snafu'
         ThenNoErrorWritten
