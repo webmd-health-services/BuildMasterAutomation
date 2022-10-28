@@ -93,6 +93,10 @@ function New-BMTestApplication
 }
 
 $script:session = New-BMSession -Url $url -ApiKey $apiKey
+$script:objectNum = 0
+$script:wordsPath = Join-Path -Path $PSScriptRoot -ChildPath '..\.words'
+$script:wordsPath = [IO.Path]::GetFullPath($script:wordsPath)
+[String[]] $script:words = @()
 
 function New-BMTestObjectName
 {
@@ -100,6 +104,24 @@ function New-BMTestObjectName
     param(
     )
 
+    if (-not (Test-Path -Path $script:wordsPath))
+    {
+        $script:words = Invoke-RestMethod -Uri 'https://random-word-api.herokuapp.com/all'
+        Write-Warning "Downloaded $(($script:words | Measure-Object).Count) words."
+        $script:words | Set-Content -Path $script:wordsPath
+    }
+
+    if (-not $script:words)
+    {
+        $script:words = Get-Content -Path $script:wordsPath | Where-Object { $_ }
+    }
+
+    Write-Warning -Message "Found $(($script:words | Measure-Object).Count) words."
+
+    # Faster than piping.
+    $word = Get-Random -InputObject $script:words
+
+    $script:objectNum += 1
     $baseName =
         Get-PSCallStack |
         Select-Object -First 2 |
@@ -108,7 +130,7 @@ function New-BMTestObjectName
         Split-Path -Leaf |
         ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) } |
         ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) }
-    return "$($baseName).$([IO.Path]::GetRandomFileName())"
+    return "$($baseName).$($word)"
 }
 
 function New-BMTestSession
