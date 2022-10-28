@@ -1,5 +1,3 @@
-/.output/
-/.vscode/
 /BuildMasterAutomation/CHANGELOG.md
 /BuildMasterAutomation/LICENSE
 /BuildMasterAutomation/NOTICE
@@ -7,3 +5,4 @@
 /PSModules/
 *.log
 *.orig
+.*
