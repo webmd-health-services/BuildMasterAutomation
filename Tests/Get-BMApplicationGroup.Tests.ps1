@@ -1,144 +1,124 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-$conn = New-BMTestSession
+    $script:session = New-BMTestSession
 
-function Init
-{
-    param(
-    )
-
-    $script:getAppGroups = $null
-
-    Get-BMApplicationGroup -Session $conn | ForEach-Object {
-        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_DeleteApplicationGroup' -Parameter @{ ApplicationGroup_Id = $_.ApplicationGroup_Id } -Method Post
-    }
-}
-
-function GivenApplicationGroup
-{
-    param(
-        [string[]]
-        $GroupName
-    )
-
-    $GroupName | ForEach-Object {
-        Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = $_ } -Method Post
-    }
-}
-
-function WhenGettingApplicationGroup
-{
-    param(
-        [String]$Name,
-        
-        [Switch]$WhatIf
-    )
-
-    $Global:Error.Clear()
-
-    $optionalParams = @{ }
-
-    $originalWhatIf = $Global:WhatIfPreference
-    if( $WhatIf )
+    function GivenApplicationGroup
     {
-        $Global:WhatIfPreference = $true
+        param(
+            [string[]]
+            $GroupName
+        )
+
+        $GroupName | ForEach-Object {
+            Invoke-BMNativeApiMethod -Session $script:session -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = $_ } -Method Post
+        }
     }
-    try
+
+    function WhenGettingApplicationGroup
     {
-        $script:getAppGroups = Get-BMApplicationGroup -Session $conn $Name
+        param(
+            [String]$Name,
+
+            [Switch]$WhatIf
+        )
+
+        $Global:Error.Clear()
+
+        $originalWhatIf = $Global:WhatIfPreference
+        if( $WhatIf )
+        {
+            $Global:WhatIfPreference = $true
+        }
+        try
+        {
+            $script:getAppGroups = Get-BMApplicationGroup -Session $script:session $Name
+        }
+        finally
+        {
+            $Global:WhatIfPreference = $originalWhatIf
+        }
     }
-    finally
+
+    function ThenShouldNotThrowErrors
     {
-        $Global:WhatIfPreference = $originalWhatIf
+        param(
+        )
+
+        $Global:Error | Should -BeNullOrEmpty
+    }
+
+    function ThenShouldReturnApplicationGroup
+    {
+        param(
+            [string[]]
+            $GroupName
+        )
+
+        $script:getAppGroups | Should -HaveCount @( $GroupName ).Count
+
+        $GroupName | ForEach-Object {
+            $script:getAppGroups.ApplicationGroup_Name -contains $_ | Should -BeTrue
+        }
+    }
+
+    function ThenShouldNotReturnApplicationGroup
+    {
+        param(
+        )
+
+        $script:getAppGroups | Should -BeNullOrEmpty
     }
 }
 
-function ThenShouldNotThrowErrors
-{
-    param(
-    )
+Describe 'Get-BMApplicationGroup' {
+    BeforeEach {
+        $script:getAppGroups = $null
 
-    $Global:Error | Should BeNullOrEmpty
-}
-
-function ThenShouldReturnApplicationGroup
-{
-    param(
-        [string[]]
-        $GroupName
-    )
-    
-    $script:getAppGroups | Should -HaveCount @( $GroupName ).Count
-    
-    $GroupName | ForEach-Object {
-        $script:getAppGroups.ApplicationGroup_Name -contains $_ | Should -BeTrue
+        Get-BMApplicationGroup -Session $script:session | ForEach-Object {
+            Invoke-BMNativeApiMethod -Session $script:session -Name 'ApplicationGroups_DeleteApplicationGroup' -Parameter @{ ApplicationGroup_Id = $_.ApplicationGroup_Id } -Method Post
+        }
     }
-}
 
-function ThenShouldNotReturnApplicationGroup
-{
-    param(
-    )
-    
-    $script:getAppGroups | Should -BeNullOrEmpty
-}
-
-Describe 'Get-BMApplicationGroup.when getting all application groups' {
     It 'should get application groups' {
-        Init
         GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'
         WhenGettingApplicationGroup
         ThenShouldNotThrowErrors
         ThenShouldReturnApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'
     }
-}
 
-Describe 'Get-BMApplicationGroup.when getting a specific application group' {
-    It 'should get that application group' {
-        Init
+    It 'should get specific application group' {
         GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'
         WhenGettingApplicationGroup 'BMApplicationGroup2'
         ThenShouldNotThrowErrors
         ThenShouldReturnApplicationGroup 'BMApplicationGroup2'
     }
-}
 
-Describe 'Get-BMApplicationGroup.when for application group by wildcard' {
-    It 'should get find the application groups' {
-        Init
+    It 'should get find application groups by wildcard' {
         GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BuildMasterAppGroup3'
         WhenGettingApplicationGroup 'BMApplication*'
         ThenShouldNotThrowErrors
         ThenShouldReturnApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2'
     }
-}
 
-Describe 'Get-BMApplicationGroup.when searching for application group that doesn''t exist' {
-    It 'should return nothing' {
-        Init
+    It 'should ignore no search results' {
         GivenApplicationGroup 'BMApplicationGroup1', 'BMApplicationGroup2', 'BMApplicationGroup3'
         WhenGettingApplicationGroup 'NonExistentApplicationGroup2'
         ThenShouldNotThrowErrors
         ThenShouldNotReturnApplicationGroup
     }
-}
 
-Describe 'Get-BMApplicationGroup.when no application groups exist' {
-    It 'should return nothing' {
-        Init
+    It 'should ignore no application groups' {
         WhenGettingApplicationGroup
         ThenShouldNotThrowErrors
         ThenShouldNotReturnApplicationGroup
     }
-}
 
-Describe 'Get-BMApplicationGroup.when WhatIfPreference is true' {
-    It 'should return application group' {
-        Init
+    It 'should ignore WhatIf' {
         GivenApplicationGroup 'One'
         WhenGettingApplicationGroup 'One' -WhatIf
         ThenShouldNotThrowErrors

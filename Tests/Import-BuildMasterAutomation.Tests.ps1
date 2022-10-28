@@ -1,20 +1,24 @@
 
-Describe 'Import-BuildMasterAutomationPs1.when module isn''t loaded' {
-    Remove-Module -Name 'BuildMasterAutomation' -Verbose:$false
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
 
-    & (Join-Path -Path $PSScriptRoot -ChildPath '..\BuildMasterAutomation\Import-BuildMasterAutomation.ps1' -Resolve) -Verbose:$false
-
-    It 'should import BuildMaster' {
-        Get-Module -Name 'BuildMasterAutomation' | Should Not BeNullOrEmpty
-    }
+BeforeAll {
+    $script:importPath =
+        Join-Path -Path $PSScriptRoot -ChildPath '..\BuildMasterAutomation\Import-BuildMasterAutomation.ps1' -Resolve
 }
 
-Describe 'Import-BuildMasterAutomationPs1.when module is loaded' {
-    & (Join-Path -Path $PSScriptRoot -ChildPath '..\BuildMasterAutomation\Import-BuildMasterAutomation.ps1' -Resolve) -Verbose:$false
-    Get-Module -Name 'BuildMasterAutomation' | Add-Member -MemberType NoteProperty -Name 'Fubar' -Value 'Snafu'
-    & (Join-Path -Path $PSScriptRoot -ChildPath '..\BuildMasterAutomation\Import-BuildMasterAutomation.ps1' -Resolve) -Verbose:$false
+Describe 'Import-BuildMasterAutomationPs1' {
+    It 'should import BuildMaster' {
+        Remove-Module -Name 'BuildMasterAutomation' -Verbose:$false -ErrorAction Ignore
+        & $script:importPath -Verbose:$false
+        Get-Module -Name 'BuildMasterAutomation' | Should -Not -BeNullOrEmpty
+    }
+
     It 'should remove and import module' {
+        & $script:importPath -Verbose:$false
+        Get-Module -Name 'BuildMasterAutomation' | Add-Member -MemberType NoteProperty -Name 'Fubar' -Value 'Snafu'
+        & $script:importPath -Verbose:$false
         $module = Get-Module -Name 'BuildMasterAutomation'
-        $module | Get-Member -Name 'Fubar' | Should BeNullOrEmpty
-    }        
+        $module | Get-Member -Name 'Fubar' | Should -BeNullOrEmpty
+    }
 }

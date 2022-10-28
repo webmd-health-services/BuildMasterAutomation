@@ -1,44 +1,52 @@
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-$session = New-BMTestSession 
-$app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
-$pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-$pipeline = New-BMPipeline -Session $session -Name $pipelineName -Application $app -Color '#ffffff'
-$develop = New-BMRelease -Session $session -Application $app -Number '1.0' -Pipeline $pipeline -Name 'develop'
-$release = New-BMRelease -Session $session -Application $app -Number '2.0' -Pipeline $pipeline -Name 'release'
-$master = New-BMRelease -Session $session -Application $app -Number '3.0' -Pipeline $pipeline -Name 'master'
+    $script:session = New-BMTestSession
+    $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+    $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
+    $script:pipeline =
+        New-BMPipeline -Session $script:session -Name $script:pipelineName -Application $script:app -Color '#ffffff'
+    $script:develop = New-BMRelease -Session $script:session `
+                                    -Application $script:app `
+                                    -Number '1.0' `
+                                    -Pipeline $script:pipeline `
+                                    -Name 'develop'
+    $script:release = New-BMRelease -Session $script:session `
+                                    -Application $script:app `
+                                    -Number '2.0' `
+                                    -Pipeline $script:pipeline `
+                                    -Name 'release'
+    $script:master = New-BMRelease -Session $script:session `
+                                   -Application $script:app `
+                                   -Number '3.0' `
+                                   -Pipeline $script:pipeline `
+                                   -Name 'master'
+}
 
-Describe 'Get-BMRelease.when getting an application''s releases' {
-    $release = Get-BMRelease -Session $session -Application $app | Sort-Object -Property 'id'
-
-    It 'should return releases' {
+Describe 'Get-BMRelease' {
+    It 'should return releases by application' {
+        $release = Get-BMRelease -Session $script:session -Application $script:app | Sort-Object -Property 'id'
         $release | Should -Not -BeNullOrEmpty
         $release.Count | Should -Be 3
         $release[0].number | Should -Be '1.0'
         $release[1].number | Should -Be '2.0'
         $release[2].number | Should -Be '3.0'
     }
-}
 
-Describe 'Get-BMRelease.when getting an application release by name' {
-    $release = Get-BMRelease -Session $session -Application $app -Name 'develop'
-
-    It 'should return release' {
+    It 'should return release by name' {
+        $release = Get-BMRelease -Session $script:session -Application $script:app -Name 'develop'
         $release | Should -Not -BeNullOrEmpty
         $release.name | Should -Be 'develop'
     }
-}
-
-Describe 'Get-BMRelease.when passed no parameters' {
-    $releases = Get-BMRelease -Session $session
 
     It 'should return all releases' {
-        $releases | Where-Object { $_.id -eq $develop.id } | Should -Not -BeNullOrEmpty
-        $releases | Where-Object { $_.id -eq $release.id } | Should -Not -BeNullOrEmpty
-        $releases | Where-Object { $_.id -eq $master.id } | Should -Not -BeNullOrEmpty
+        $releases = Get-BMRelease -Session $script:session
+        $releases | Where-Object { $_.id -eq $script:develop.id } | Should -Not -BeNullOrEmpty
+        $releases | Where-Object { $_.id -eq $script:release.id } | Should -Not -BeNullOrEmpty
+        $releases | Where-Object { $_.id -eq $script:master.id } | Should -Not -BeNullOrEmpty
     }
 }

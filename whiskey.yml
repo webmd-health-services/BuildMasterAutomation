@@ -1,22 +1,15 @@
-PublishOn:
- - master
- - prerelease
 
 Build:
-# The Version task sets the current build's version number. You should almost always 
+# The Version task sets the current build's version number. You should almost always
 # have one of these.
 - Version:
     Path: BuildMasterAutomation\BuildMasterAutomation.psd1
     Prerelease:
     - prerelease: beta$(WHISKEY_BUILD_NUMBER)
 
-- GetPowerShellModule:
-    Name: Carbon
-    Version: 2.*
-
-- GetPowerShellModule:
-    Name: SqlServer
-    Version: 21.*
+- PowerShell:
+    ExceptDuring: Clean
+    ScriptBlock: prism install | Format-Table -Auto
 
 - PowerShell:
     OnlyDuring: Build
@@ -29,42 +22,43 @@ Build:
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
 
-- Pester4:
-    Script: Tests\*.Tests.ps1
-    
+- PublishPowerShellModule:
+    Path: BuildMasterAutomation
+
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [
+        'PushArtifact',
+        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
+        '-DeploymentName',
+        'PowerShellGallery'
+    ]
+
+- Delete:
+    Path: $(WHISKEY_OUTPUT_DIRECTORY)\*.zip
+
 - Zip:
-    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation.zip
+    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BuildMasterAutomation-$(WHISKEY_SEMVER2).zip
     Path:
     - BuildMasterAutomation
-    - LICENSE
-    - NOTICE
 
-Publish:
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [
+        'PushArtifact',
+        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation-$(WHISKEY_SEMVER2).zip',
+        '-DeploymentName',
+        'GitHub'
+    ]
 
-- PublishPowerShellModule:
-    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
-    Path: BuildMasterAutomation
-    RepositoryName: PSGallery
-    RepositoryUri: https://www.powershellgallery.com/api/v2/
-    ApiKeyID: powershellgallery.com
-
-- SetVariableFromPowerShellDataFile:
-    Path: BuildMasterAutomation\BuildMasterAutomation.psd1
-    Variables:
-        PrivateData:
-            PSData:
-                ReleaseNotes: RELEASE_NOTES
-
-- GitHubRelease:
-    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
-    RepositoryName: webmd-health-services/BuildMasterAutomation
-    ApiKeyID: github.com
-    Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
-    Commitish: $(WHISKEY_SCM_COMMIT_ID)
-    Name: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
-    Description: $(RELEASE_NOTES)
-    Assets:
-    - Path: .output\BuildMasterAutomation.zip
-      ContentType: application/zip
-      Name: BuildMasterAutomation-$(WHISKEY_SEMVER2_NO_BUILD_METADATA).zip
-    
+- Pester:
+    AsJob: true
+    Configuration:
+        Run:
+            Path: Tests\*.Tests.ps1
+        TestResult:
+            Enabled: true
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester.xml
+            TestSuiteName: BuildMasterAutomation

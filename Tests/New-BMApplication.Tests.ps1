@@ -1,65 +1,55 @@
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
+#Requires -Version 5.1
 
-$conn = New-BMTestSession
+BeforeAll {
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-Describe 'New-BMApplication.when application doesn''t exist' {
-    $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-    $app = New-BMApplication -Session $conn -Name $appName
-    It 'should return the new application' {
-        $app | Should -Not -BeNullOrEmpty
+    $script:session = New-BMTestSession
+}
+
+Describe 'New-BMApplication' {
+    BeforeEach {
+        $Global:Error.Clear()
     }
 
-    It 'should create the new application' {
-        $freshApp = Get-BMApplication -Session $conn -Name $appName
+    It 'should create new application' {
+        $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
+        $app = New-BMApplication -Session $script:session -Name $appName
+        $app | Should -Not -BeNullOrEmpty
+        $freshApp = Get-BMApplication -Session $script:session -Name $appName
         $freshApp | Should -Not -BeNullOrEmpty
         $freshApp.Application_Id | Should -Be $app.Application_Id
     }
-}
 
-Describe 'New-BMApplication.when application exists' {
-    $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-    $app = New-BMApplication -Session $conn -Name $appName
-    $Global:Error.Clear()
-    $app2 = New-BMApplication -Session $conn -Name $appName -ErrorAction SilentlyContinue
-    It 'should fail' {
+    It 'should fail if application exists' {
+        $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
+        New-BMApplication -Session $script:session -Name $appName
+        $app2 = New-BMApplication -Session $script:session -Name $appName -ErrorAction SilentlyContinue
         $Global:Error | Should -Match 'duplicate key'
-    }
-
-    It 'should return nothing' {
         $app2 | Should -BeNullOrEmpty
     }
-}
 
-Describe 'New-BMApplication.when creating application with all parameters' {
-    $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-    $app = New-BMApplication -Session $conn -Name $appName -ReleaseNumberSchemeName DateBased -BuildNumberSchemeName DateTimeBased -AllowMultipleActiveBuilds
-    It 'should return the new application' {
+    It 'should set values for all parameters' {
+        $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
+        $app = New-BMApplication -Session $script:session `
+                                 -Name $appName `
+                                 -ReleaseNumberSchemeName DateBased `
+                                 -BuildNumberSchemeName DateTimeBased `
+                                 -AllowMultipleActiveBuilds
         $app | Should -Not -BeNullOrEmpty
-    }
-
-    It 'should set release number scheme' {
         $app.ReleaseNumber_Scheme_Name | Should -Be 'DateBased'
-    }
-
-    It 'should set build number scheme' {
         $app.BuildNumber_Scheme_Name | Should -Be 'DateTimeBased'
-    }
-
-    It 'should set allow multiple active build' {
         $app.AllowMultipleActiveBuilds_Indicator | Should -Be $true
     }
-}
 
-Describe 'New-BMApplication.when creating application with designated application group' {
-    $appGroupID = Invoke-BMNativeApiMethod -Session $conn -Name 'ApplicationGroups_GetOrCreateApplicationGroup' -Parameter @{ ApplicationGroup_Name = 'TestBMAppGroup' } -Method Post
-    $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
-    $app = New-BMApplication -Session $conn -Name $appName -ApplicationGroupId $appGroupID
-    It 'should return the new application' {
+    It 'should create application in an application group' {
+        $appGroupID = Invoke-BMNativeApiMethod -Session $script:session `
+                                               -Name 'ApplicationGroups_GetOrCreateApplicationGroup' `
+                                               -Parameter @{ ApplicationGroup_Name = 'TestBMAppGroup' } `
+                                               -Method Post
+        $appName = ('New-BMApplication.{0}' -f [IO.Path]::GetRandomFileName())
+        $app = New-BMApplication -Session $script:session -Name $appName -ApplicationGroupId $appGroupID
         $app | Should -Not -BeNullOrEmpty
-    }
-
-    It 'should assign to the appropriate application group' {
         $app.ApplicationGroup_Name | Should -Be 'TestBMAppGroup'
     }
 }

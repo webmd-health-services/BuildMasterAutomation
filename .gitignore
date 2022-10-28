@@ -1,5 +1,10 @@
 /PSModules/
 /.output/
+/.vscode/
+/BuildMasterAutomation/LICENSE
+/BuildMasterAutomation/NOTICE
+/BuildMasterAutomation/README.md
+/BuildMasterAutomation/CHANGELOG.md
 *.log
 .psgallerykey
-/.vscode/
+*.orig
