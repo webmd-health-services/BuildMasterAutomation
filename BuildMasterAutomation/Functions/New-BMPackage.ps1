@@ -27,8 +27,8 @@ function New-BMPackage
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $msg = 'The BuildMasterAutomation module''s ""Get-BMPackage"" function is obsolete and will be removed in a ' +
-           'future version of BuildMasterAutomation. Use the "Get-BMBuild" function instead.'
+    $msg = 'The BuildMasterAutomation module''s "New-BMPackage" function is obsolete and will be removed in a future ' +
+           'version of BuildMasterAutomation. Use the "Get-BMBuild" function instead.'
     Write-WarningOnce $msg
 
     $newArgs = @{}
