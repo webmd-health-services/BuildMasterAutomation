@@ -12,7 +12,7 @@ Describe 'Invoke-BMNativeApiMethod' {
     It 'should return a result when making GET requests and WhatIf is true' {
         $variable = @{
                         'Variable_Name' = 'Fubar';
-                        'Variable_Value' = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('Snafu'))
+                        'Variable_Value' = ('Snafu' | ConvertTo-BMNativeApiByteValue);
                         'ValueType_Code' = 'string';
                         'Sensitive_Indicator' = 'False';
                         'EvaluateVariables_Indicator' = 'False';
@@ -24,10 +24,9 @@ Describe 'Invoke-BMNativeApiMethod' {
 
     It 'should not make the HTTP request when making POST requests and WhatIf is true' {
         Get-BMVariable -Session $script:session | Remove-BMVariable -Session $script:session
-        $encodedValue = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('Snafu'))
         $variable = @{
                         'Variable_Name' = 'Fubar';
-                        'Variable_Value' = $encodedValue;
+                        'Variable_Value' = ('Snafu' | ConvertTo-BMNativeApiByteValue);
                         'ValueType_Code' = 'string';
                         'Sensitive_Indicator' = 'False';
                         'EvaluateVariables_Indicator' = 'False';

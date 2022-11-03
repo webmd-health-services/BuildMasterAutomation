@@ -42,10 +42,9 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [String]$Named,
 
-            [Switch]
-            $WhatIf
+            [switch] $WhatIf
         )
 
         $optionalParams = @{ }
@@ -72,9 +71,9 @@ Describe 'Remove-BMServer' {
         ThenServerDoesNotExist -Named 'Fubar'
     }
 
-    It 'should ignore when server does not exist' {
-        WhenRemovingServer -Named 'IDoNotExist'
-        ThenNoErrorWritten
+    It 'should reject when server does not exist' {
+        WhenRemovingServer -Named 'IDoNotExist' -ErrorAction SilentlyContinue
+        ThenError 'server .* does not exist'
         ThenServerDoesNotExist -Named 'IDoNotExist'
     }
 
@@ -87,6 +86,7 @@ Describe 'Remove-BMServer' {
 
     It 'should encode server name' {
         Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
+        Mock -CommandName 'Get-BMServer' -ModuleName 'BuildMasterAutomation' -MockWith { [pscustomobject]@{} }
         WhenRemovingServer -Named 'u r i?&'
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `

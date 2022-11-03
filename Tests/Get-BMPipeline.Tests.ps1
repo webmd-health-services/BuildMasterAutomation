@@ -25,7 +25,7 @@ BeforeAll {
             $ForApplication
         )
 
-        New-BMPipeline -Session $script:session -Name $Name -Application $ForApplication
+        Set-BMPipeline -Session $script:session -Name $Name -Application $ForApplication
     }
 
     function ThenReturned
@@ -46,7 +46,6 @@ BeforeAll {
         param(
             $Name,
             $ForApplication,
-            $ForPipeline,
             [Switch]$WhatIf
         )
 
@@ -58,12 +57,7 @@ BeforeAll {
 
         if( $ForApplication )
         {
-            $optionalParams['ApplicationID'] = $ForApplication
-        }
-
-        if( $ForPipeline )
-        {
-            $optionalParams['ID'] = $ForPipeline
+            $optionalParams['Application'] = $ForApplication
         }
 
         $originalWhatIf = $WhatIfPreference
@@ -85,21 +79,8 @@ BeforeAll {
 
 Describe 'Get-BMPipeline' {
     BeforeEach {
-        Invoke-BMNativeApiMethod -Session $script:session -Name 'Pipelines_GetPipelines' |
-            ForEach-Object {
-                Invoke-BMNativeApiMethod -Session $script:session `
-                                         -Name 'Pipelines_DeletePipeline' `
-                                         -Parameter @{ Pipeline_Id = $_.Pipeline_Id } `
-                                         -Method Post
-            }
-
-        Get-BMApplication -Session $script:session |
-            ForEach-Object {
-                Invoke-BMNativeApiMethod -Session $script:session `
-                                         -Name 'Applications_PurgeApplicationData' `
-                                         -Parameter @{ Application_Id = $_.Application_Id } `
-                                         -Method Post
-            }
+        Get-BMPipeline -Session $session | Remove-BMPipeline -Session $session
+        Get-BMApplication -Session $session | Remove-BMApplication -Session $session -Force
 
         $script:result = $null
         $Global:Error.Clear()
@@ -136,16 +117,9 @@ Describe 'Get-BMPipeline' {
         ThenReturned 'One_1','One_2'
     }
 
-    It 'should return pipeline by its id' {
-        $p = GivenPipeline 'One'
-        GivenPipeline 'Two'
-        WhenGettingPipeline -ForPipeline $p.Pipeline_Id
-        ThenReturned 'One'
-    }
-
     It 'should still return pipelines when WhatIf is true' {
-        $p = GivenPipeline 'One'
-        WhenGettingPipeline -ForPipeline $p.Pipeline_Id -WhatIf
+        GivenPipeline 'One'
+        WhenGettingPipeline -Name 'One' -WhatIf
         ThenReturned 'One'
     }
 }

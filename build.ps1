@@ -43,7 +43,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $ProgressPreference = [Management.Automation.ActionPreference]::SilentlyContinue
 
-# Set to a specific version to use a specific version of Whiskey. 
+# Set to a specific version to use a specific version of Whiskey.
 $whiskeyVersion = '0.*'
 $allowPrerelease = $false
 
@@ -52,9 +52,32 @@ $whiskeyModuleRoot = Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Whiskey
 
 if( -not (Test-Path -Path $whiskeyModuleRoot -PathType Container) )
 {
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
-    $release = 
-        Invoke-RestMethod -Uri 'https://api.github.com/repos/webmd-health-services/Whiskey/releases' |
+    [System.Net.ServicePointManager]::SecurityProtocol =
+        [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+    $lastWait = 1
+    $wait = 1
+    $nextWait = 2
+    $releases = $null
+
+    while ($true)
+    {
+        try
+        {
+            $releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/webmd-health-services/Whiskey/releases'
+            break
+        }
+        catch
+        {
+            Write-Warning "Request to GitHub failed (retrying in $($wait) seconds): $($_)"
+            Start-Sleep -Seconds $wait
+            $nextWait = $wait + $lastWait
+            $lastWait = $wait
+            $wait = $nextWait
+        }
+    }
+
+    $release =
+        $releases |
         ForEach-Object { $_ } |
         Where-Object { $_.name -like $whiskeyVersion } |
         Where-Object {
@@ -73,12 +96,12 @@ if( -not (Test-Path -Path $whiskeyModuleRoot -PathType Container) )
         return
     }
 
-    $zipUri = 
+    $zipUri =
         $release.assets |
         ForEach-Object { $_ } |
         Where-Object { $_.name -like 'Whiskey*.zip' } |
         Select-Object -ExpandProperty 'browser_download_url'
-    
+
     if( -not $zipUri )
     {
         Write-Error -Message ('URI to Whiskey ZIP file does not exist.') -ErrorAction Stop
@@ -131,7 +154,7 @@ if( -not (Test-Path -Path $whiskeyModuleRoot -PathType Container) )
     Import-Module -Name $whiskeyModuleRoot -Force
 }
 
-$configPath = Join-Path -Path $PSScriptRoot -ChildPath 'whiskey.yml' 
+$configPath = Join-Path -Path $PSScriptRoot -ChildPath 'whiskey.yml'
 if( -not (Test-Path -Path $configPath -PathType 'Leaf') )
 {
     @'

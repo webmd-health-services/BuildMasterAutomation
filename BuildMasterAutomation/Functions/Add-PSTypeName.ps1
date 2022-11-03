@@ -1,26 +1,28 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Add-PSTypeName
 {
+    <#
+    .SYNOPSIS
+    Adds a BuildMaster type name to an object.
+
+    .DESCRIPTION
+    The `Add-PSTypeName` function adds BuildMaster type names to an object. These types don't actually exist. The type
+    names are used by PowerShell to decide what formats to use when displaying an object.
+
+    If the `Server` switch is set, it adds a `Inedo.BuildMaster.Server` type name.
+
+    If the `RaftItem` switch is set, it adds a `Inedo.BuildMaster.RaftItem` type name.
+    #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory,ValueFromPipeline)]
-        [object]$InputObject,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $InputObject,
 
-        [Parameter(Mandatory,ParameterSetName='Server')]
-        [Switch]$Server
+        [Parameter(Mandatory, ParameterSetName='Server')]
+        [switch] $Server,
+
+        [Parameter(Mandatory, ParameterSetName='RaftItem')]
+        [switch] $RaftItem
     )
 
     process
@@ -29,6 +31,6 @@ function Add-PSTypeName
 
         $typeName = 'Inedo.BuildMaster.{0}' -f $PSCmdlet.ParameterSetName
         $InputObject.pstypenames.Add( $typeName )
-        $InputObject
+        $InputObject | Write-Output
     }
 }

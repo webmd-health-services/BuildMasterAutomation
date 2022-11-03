@@ -8,8 +8,11 @@ BeforeAll {
     $script:session = New-BMTestSession
     $script:app = New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
     $script:pipelineName = ('{0}.{1}' -f (Split-Path -Path $PSCommandPath -Leaf),[IO.Path]::GetRandomFileName())
-    $script:pipeline =
-        New-BMPipeline -Session $script:session -Name $script:pipelineName -Application $script:app -Color '#ffffff'
+    $script:pipeline = Set-BMPipeline -Session $script:session `
+                                      -Name $script:pipelineName `
+                                      -Application $script:app `
+                                      -Color '#ffffff' `
+                                      -PassThru
 
     function Assert-Release
     {
@@ -21,7 +24,7 @@ BeforeAll {
 
             $HasName,
 
-            $HasPipelineID
+            $HasPipeline
         )
 
         begin
@@ -40,11 +43,11 @@ BeforeAll {
             $Release.applicationId | Should -Be $script:app.Application_Id
             $Release.number | Should -Be $HasNumber
 
-            if( -not $HasPipelineID )
+            if (-not $HasPipeline)
             {
-                $HasPipelineID = $script:pipeline.Pipeline_Id
+                 $HasPipeline = $script:pipelineName
             }
-            $Release.pipelineId | Should -Be $HasPipelineID
+            $Release.pipelineName | Should -Be $HasPipeline
 
             if( -not $HasName )
             {
@@ -69,17 +72,29 @@ BeforeAll {
 Describe 'Set-BMRelease' {
     It 'should update release' {
         $releaseNumber = New-TestReleaseNumber
-        $release = New-BMRelease -Session $script:session -Application $script:app -Number $releaseNumber -Pipeline $script:pipeline
-        $newPipeline = New-BMPipeline -Session $script:session -Name 'updating a release'
-        $updatedRelease = Set-BMRelease -Session $script:session -Release $release -PipelineID $newPipeline.pipeline_id -Name 'new name'
-        Assert-Release -Release $updatedRelease -HasName 'new name' -HasNumber $release.number -HasPipelineID $newPipeline.pipeline_id
+        $release = New-BMRelease -Session $script:session `
+                                 -Application $script:app `
+                                 -Number $releaseNumber `
+                                 -Pipeline $script:pipeline
+        $newPipeline = Set-BMPipeline -Session $script:session -Name 'updating a release' -PassThru
+        $updatedRelease = Set-BMRelease -Session $script:session `
+                                        -Release $release `
+                                        -Pipeline $newPipeline `
+                                        -Name 'new name'
+        Assert-Release -Release $updatedRelease `
+                       -HasName 'new name' `
+                       -HasNumber $release.number `
+                       -HasPipeline 'updating a release'
     }
 
     It 'should not change anything' {
         $releaseNumber = New-TestReleaseNumber
         $release = New-BMRelease -Session $script:session -Application $script:app -Number $releaseNumber -Pipeline $script:pipeline
         $updatedRelease = Set-BMRelease -Session $script:session -Release $release
-        Assert-Release -Release $updatedRelease -HasName $release.name -HasNumber $release.number -HasPipelineID $release.pipelineId
+        Assert-Release -Release $updatedRelease `
+                       -HasName $release.name `
+                       -HasNumber $release.number `
+                       -HasPipeline $release.pipelineName
     }
 
     It 'should fail when update does not exist' {

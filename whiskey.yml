@@ -22,6 +22,14 @@ Build:
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
 
+- CopyFile:
+    Path:
+    - LICENSE
+    - NOTICE
+    - README.md
+    - CHANGELOG.md
+    DestinationDirectory: BuildMasterAutomation
+
 - PublishPowerShellModule:
     Path: BuildMasterAutomation
 

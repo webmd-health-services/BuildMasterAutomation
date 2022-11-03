@@ -7,7 +7,7 @@ BeforeAll {
 
     $session = New-BMTestSession
     $app = New-BMTestApplication $session -CommandPath $PSCommandPath
-    $pipeline = New-BMPipeline -Session $session -Name $app.Application_name -Application $app
+    $pipeline = Set-BMPipeline -Session $session -Name $app.Application_Name -Application $app -PassThru
 
     function GivenARelease
     {

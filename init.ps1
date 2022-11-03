@@ -29,48 +29,43 @@ $InformationPreference = 'Continue'
 
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
-$version = '6.1.28'
+$version = '6.2.33'
 Write-Verbose -Message ('Testing BuildMaster {0}' -f $version)
 $sqlServer = $null
 $installerPath = 'SQL'
 $installerUri = 'sql'
 $dbParam = '/InstallSqlExpress'
 
-$sqlServers = @()
-if( (Test-Path -Path 'env:APPVEYOR') )
-{
-    $sqlServers = Get-Item -Path ('SQLSERVER:\SQL\{0}\SQL2017' -f [Environment]::MachineName)
-}
-else
-{
-    $sqlServers = Get-ChildItem -Path ('SQLSERVER:\SQL\{0}' -f [Environment]::MachineName)
-}
+Get-ChildItem -Path 'env:' | Format-Table
 
-foreach( $item in $sqlServers )
-{
-    if( $item.Status -ne [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online )
-    {
-        Write-Verbose -Message ('Skipping SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
-        continue
-    }
-
-    $item | Format-List | Out-String | Write-Verbose
-
-    if( -not $item.InstanceName -or $item.InstanceName -in @( 'Inedo', 'SQL2017' ) )
-    {
-        Write-Verbose -Message ('Found SQL Server instance "{0}": "{1}".' -f $item.Name,$item.Status)
-        $installerPath = 'NO{0}' -f $installerPath
-        $installerUri = 'no{0}' -f $installerUri
-        $sqlServer = $item
-        $credentials = 'Integrated Security=true;'
-        if( $runningUnderAppVeyor )
+$machineSqlPath = Join-Path -Path 'SQLSERVER:\SQL' -ChildPath ([Environment]::MachineName)
+$sqlServer =
+    Get-ChildItem -Path $machineSqlPath |
+    Where-Object {
+        if (Test-Path -Path 'env:SQL_INSTANCE_NAME')
         {
-            $credentials = 'User ID=sa;Password=Password12!'
+            return ($_.DisplayName -eq $env:SQL_INSTANCE_NAME)
         }
-        $dbParam = '"/ConnectionString=Server={0};Database=BuildMaster;{1}"' -f $sqlServer.Name,$credentials
-        break
+    } |
+    Where-Object { $_ | Get-Member -Name 'Status' } |
+    Where-Object { $_.Status -eq [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online }
+    Sort-Object -Property 'Version' -Descending |
+    Select-Object -First 1
+
+if ($sqlServer)
+{
+    $sqlServer | Format-Table -Auto
+
+    $installerPath = 'NO{0}' -f $installerPath
+    $installerUri = 'no{0}' -f $installerUri
+    $credentials = 'Integrated Security=true;'
+    if( $runningUnderAppVeyor )
+    {
+        $credentials = 'User ID=sa;Password=Password12!'
     }
+    $dbParam = '"/ConnectionString=Server={0};Database=BuildMaster;{1}"' -f $sqlServer.Name,$credentials
 }
+
 
 $installerPath = Join-Path -Path $PSScriptRoot -ChildPath ('.output\BuildMasterInstaller{0}-{1}.exe' -f $installerPath,$version)
 $installerUri = 'https://my.inedo.com/services/legacy/downloads/buildmaster/{0}/{1}.exe' -f $installerUri,$version
