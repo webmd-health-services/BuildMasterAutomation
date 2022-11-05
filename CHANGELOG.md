@@ -2,6 +2,13 @@
 
 ## 2.0.0
 
+2022-11-7
+
+### Supported Versions
+
+This version of BuildMasterAutomation is only supported on BuildMaster 6.2. Some of it may work on older or newer
+versions, but we've only tested against BuildMaster 6.2.33.
+
 ### Known Issues
 
 The `Get-BMVariable` function fails to get variables from applications or application groups, due to a bug in the
@@ -32,98 +39,95 @@ already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usag
 * Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
-* Remove usages of the `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. This functionality was
-removed from BuildMaster.
-* Rename usages of `New-BMPipeline` to `Set-BMPipeline`.
 * Remove usages of the `Get-BMPipeline` function's `ID` parameter. BuildMaster pipelines no longer have ids, just
 names.
 * Update usages of the `Get-BMPipeline` function to pass a pipeline name to the `Name` parameter instead of an id.
 * Objects returned by `Get-BMPipeline` are now raft item objects. Check usages to ensure you're using correct
 properties.
+* Remove usages of the `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. This functionality was
+removed from BuildMaster.
+* Rename usages of `New-BMPipeline` to `Set-BMPipeline`.
 * `Set-BMPipeline` (née `New-BMPipeline`) now creates *or* updates a pipeline. Inspect usages to see the impact of this
 new behavior.
 * Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function's `Stage` parameter to pass stage objects
 instead of strings of XML. Use the new `New-BMPipelineStageObject` and `New-BMPipelineStageTargetObject` functions to
 create the objects you should pass.
-* Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function that use the return value. `Set-BMPipeline` no
-longer returns the pipeline object by default. Use the new `PassThru` switch and the pipeline object will be returned.
+* Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function: its new `Raft` parameter is required. To use
+BuildMaster's default raft, pass `1` as the value.
+* Add `-PassThru` to usages of the `Set-BMPipeline` (née `New-BMPipeline`) function that expect a return value.
+The `Set-BMPipeline` (née `New-BMPipeline`) function no longer returns the pipeline object by default.
 * Update usages of `Set-BMRelease` to pass a pipeline name or pipeline object to the new `Pipeline` paramter and remove
 usages of the `PipelineID` parameter.
-* Update usages of the `Set-BMPipeline` (née New-BMPipeline) function: its new `Raft` parameter is required. To use
-BuildMaster's default raft, pass `1` as the value.
 
 ### Added
 
-* Function `Add-BMParameter`, for adding values to a parameter hashtable (i.e. a hashtable that will be used as the body
-of a request to a BuildMaster API endpoint). If the value is `$null`, however, it won't be added.
-* Function `ConvertFrom-BMNativeApiByteValue` for converting `byte[]` values returned by the BuildMaster native API
-into their original strings.
-* The `Disable-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
-* The `Enable-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
-* The `Get-BMApplication` function now accepts application ids, names, or application objects as pipeline input.
-* Parameter `Application` to the`Get-BMApplication` function, which accepts an application id, name, or application
-object. Wildcards supported when passing a name.
-* The `Get-BMApplicationGroup` function now accepts application group ids, names, or application group objects as
-pipeline input.
-* Parameter `ApplicationGroup` to the`Get-BMApplication` function, which accepts an application group id, name, or
-application group object. Wildcards supported when passing a name.
-* Parameter `Deployment` to the `Get-BMDeployment`, which accepts a deployment id or deployment object.
-* The `Get-BMEnvironment` function now accepts environment ids, names, or environment objects as pipeline input.
-* Parameter `Environment` to the `Get-BMEnvironment`, which accepts environment ids, names, or environment objects.
-Wildcards supported when passing a name.
-* Function `Get-BMObjectName` for getting the name of an object that was returned by the BuildMaster API.
-* The `Get-BMServer` function now accepts server names, ids, and server objects as pipeline input.
-* Parameter `Server` to function `Get-BMServer`, which accepts server ids, names, or server objects. Wildcards supported
-when passing a name.
-* The `Get-BMServerRole` function now accepts server role names, ids, and server objects as pipeline input.
-* Parameter `ServerRole` to function `Get-BMServerServer`, which accepts server ids, names, or server objects. Wildcards
-supported when passing a name.
-* The following parameters on `Get-BMVariable` and `Remove-BMVariable` (wildcards supported when passing a name to any
-of these parameters):
-  * `Application`, which accepts application ids, names, or application objects.
-  * `ApplicationGroup`, which accepts application group ids, names, or application group objects.
-  * `Environment`, which accepts environment ids, names, or environment objects.
-  * `Server`, which accpets server ids, names, or server objects.
-  * `ServerRole`, which accepts server role ids, names, or server names.
-* Parameter `Server` to function `Remove-BMServer`, which accepts server ids, names, or server objects. Wildcards
-supported when passed a name.
-* Parameter `ServerRole` to function `Remove-BMServerRole`, which accepts server role ids, names, or server objects.
-Wildcards supported when passed a name.
-* Function `Get-BMBuild` for getting builds. It replaces the now obsolete `Get-BMPackage` function.
-* Parameter `Application` to the `Get-BMPipeline` function which accepts an application id, name, or application object.
-Wildcards supported when passing a name.
-* Function `Get-BMRaft` for getting rafts.
-* Function `Set-BMRaft` for creating and updating rafts.
-* Function `Get-BMRaftItem` for getting raft items.
-* Parameter `ApplicationGroup` on the `New-BMApplication` function, which accepts application group ids, names, or
-application group objects. Wildcards supported when passing a name.
-* Function `New-BMBuild` for creating builds. It replaces the now obsolete `New-BMPackage` function.
-* Function `New-BMPipelinePostDeploymentOptionsObject` for creating a post-deployment options object to use when
-creating a pipeline.
-* Function `New-BMPipelineStageObject` for creating a stage object that can be passed to the `Set-BMPipeline` function's
-`Stage` parameter.
-* Function `New-BMPipelineStageTargetObject` for creating a target object that can be passed to the
-`New-BMPipelineStageObject` function's `Target` parameter.
-* Parameter `Url` to the `New-BMSession` function. It replaces the now obsolete parameter `Uri` parameter.
-* Function `Publish-BMReleaseBuild`. It replaces the now obsolete `Publish-BMReleasePackage` function.
-* Function `Remove-BMApplication` function for deleting applications.
-* Function `Remove-BMPipeline` function for removing pipelines.
-* Function `Remove-BMRaftItem` function for deleting raft items.
-* Parameter `PostDeploymentOption` to the `Set-BMPipeline` (née `New-BMPipeline`) function for configuring a pipeline's
-post-deployment options. Use the `New-BMPipelinePostDeploymentOptionsObject` to create a post-deployment options object.
-* Parameter `EnforceStageSequence` to the `Set-BMPipeline` (née `New-BMPipeline`) function for controlling the
-pipeline's stage sequence enforcement.
-* Function `Set-BMRaftItem` for creating and/or updating a raft item.
-* Parameter `PassThru` to the `Set-BMPipeline` (née `New-BMPipeline`) for returning the created/updated pipeline object.
-* Parameter `AsID` to `Add-BMObjectParameter` to only set a parameter from an object's id, ignoring any names.
-* Parameter `Pipeline` to the `Set-BMRelease` function. This replaces the `PipelineID` parameter, which was removed.
+#### Functions
+
+* `Add-BMParameter`, for adding values to a parameter hashtable (i.e. a hashtable that will be used as the body of a
+request to a BuildMaster API endpoint). If the value is `$null`, however, it won't be added.
+* `ConvertFrom-BMNativeApiByteValue` for converting `byte[]` values returned by the BuildMaster native API into their
+original strings.
+* `Get-BMBuild` for getting builds. It replaces the now obsolete `Get-BMPackage` function.
+* `Get-BMObjectName` for getting the name of an object that was returned by the BuildMaster API.
+* `Get-BMRaft` for getting rafts.
+* `Get-BMRaftItem` for getting raft items.
+* `New-BMBuild` for creating builds. It replaces the now obsolete `New-BMPackage` function.
+* `New-BMPipelinePostDeploymentOptionsObject` for creating a post-deployment options object to use when creating a
+pipeline.
+* `New-BMPipelineStageObject` for creating a stage object that can be passed to the `Set-BMPipeline` function's `Stage`
+parameter.
+* `New-BMPipelineStageTargetObject` for creating a target object that can be passed to the `New-BMPipelineStageObject`
+function's `Target` parameter.
+* `Publish-BMReleaseBuild`. It replaces the now obsolete `Publish-BMReleasePackage` function.
+* `Remove-BMApplication` function for deleting applications.
 * `Remove-BMEnvironment` for deleting an environment.
+* `Remove-BMPipeline` function for removing pipelines.
 * `Remove-BMRaft` for removing a raft.
+* `Remove-BMRaftItem` function for deleting raft items.
 * `Set-BMRaft` for creating and updating rafts.
-* `PassThru` switch to the `New-Environment` function for returning the created or already existent environment.
-* `Raft` parameter to `New-BMApplication` for setting the raft in which the application's scripts, pipelines, etc. will
-be saved.
-* `Raft` parameter to the `Get-BMPipeline` function for only getting pipelines in a specific raft.
+* `Set-BMRaftItem` for creating and/or updating a raft item.
+
+#### Parameters
+
+* `Add-BMObjectParameter`:
+  * `AsID` to only set a parameter from an object's id, ignoring any names.
+  * `AsName` to only set a parameter from an object's name, ignoring any ids.
+* `Get-BMApplication`:
+  * `Application`: accepts an application id, name, or application object. Wildcards supported when passing a name.
+  * `ApplicationGroup`: accepts an application group id, name, or application group object. Wildcards supported when
+  passing a name.
+* `Get-BMDeployment`: `Deployment`, which accepts a deployment id or deployment object.
+* `Get-BMEnvironment`: `Environment`, which accepts environment ids, names, or environment objects. Wildcards supported
+when passing a name.
+* `Get-BMPipeline`:
+  * `Application`:, for setting the application for the pipeline; accepts an application id, name, or application
+  object. Wildcards supported when passing a name.
+  * `Raft` parameter to the `Get-BMPipeline` function for only getting pipelines in a specific raft.
+* `Get-BMServer`: `Server`, which accepts server ids, names, or server objects. Wildcards supported when passing a name.
+* `Get-BMServerRole`: `ServerRole`, which accepts server ids, names, or server objects. Wildcards supported when passing
+a name.
+* `Get-BMVariable` and `Remove-BMVariable` (wildcards supported when passing a name to any of these parameters):
+  * `Application`: accepts application ids, names, or application objects.
+  * `ApplicationGroup`: accepts application group ids, names, or application group objects.
+  * `Environment`: accepts environment ids, names, or environment objects.
+  * `Server`: accepts server ids, names, or server objects.
+  * `ServerRole`: accepts server role ids, names, or server names.
+* `New-BMApplication`:
+  * `ApplicationGroup`: for assigning the application group to a new application; accepts application group ids, names,
+  or application group objects. Wildcards supported when passing a name.
+  * `Raft`: for setting the raft in which the application's scripts, pipelines, etc. will be saved.
+* `New-Environment`: `PassThru`, for returning the environment.
+* `New-BMSession`: `Url`, which is the URL to BuildMaster; `Url` replaces the now obsolete `Uri` parameter.
+* `Remove-BMServer`: `Server`, which accepts server ids, names, or server objects. Wildcards supported when passed a
+name.
+* `Remove-BMServerRole`: `ServerRole`, which accepts server role ids, names, or server objects. Wildcards supported when
+passed a name.
+* `Set-BMPipeline` (née `New-BMPipeline`):
+  * `PostDeploymentOption`: configures a pipeline's post-deployment options. Use the
+  `New-BMPipelinePostDeploymentOptionsObject` to create a post-deployment options object.
+  * `EnforceStageSequence`: controls the pipeline's stage sequence enforcement.
+  * `PassThru`: when set, returns the created/updated pipeline object.
+* `Set-BMRelease`: `Pipeline`, to set the pipeline for the release; this replaces the obsolete `PipelineID` parameter.
 
 ### Changed
 
@@ -143,25 +147,26 @@ exists (for `New` functions). Add `-ErrorAction Ignore` to existing usages to pr
   * `Remove-BMServerRole`
   * `Remove-BMVariable`
   * `Set-BMRelease`
-* The `Add-BMObjectParameter` function now accepts `$null` values. When passed a null value, it does nothing.
-* The `Disable-BMEnvironment` function's `Environment` parameter now accepts an environment id, name, and environment
-object for a value.
-* The `Enable-BMEnvironment` function's `Environment` parameter now accepts an environment id, name, and environment
-object for a value.
-* Renamed the `New-BMPipeline` function to `Set-BMPipeline` since the underlying API no longer has separate create and
-update endpoints, but a single create or update endpoint.
-* `Get-BMPipeline` function returns raft item objects instead of pipeline objects.
-* Renamed the `New-BMPackage` function's `PackageNumber` parameter to `BuildNumber`.
-* Renamed the `New-BMPipeline` function to `Set-BMPipeline` and updated it to create and/or update the pipeline.
-* The `Set-BMPipeline` (née `New-BMPipeline`) function's `Stage` parameter to take in stage objects instead of XML
-strings. Use the new `New-BMPipelineStageObject` and `New-BMPipelineStageTargetObject` functions to create the objects
-you should pass.
-* `Set-BMPipeline` (née `New-BMPipeline`) no longer returns the pipeline. Use the `PassThru` switch to have the pipeline
-object returned.
+* `Add-BMObjectParameter` now accepts `$null` values. When passed a null value, it does nothing.
+* `Disable-BMEnvironment`: the `Environment` parameter now accepts an environment id, name, and environment object for a
+value.
+* `Enable-BMEnvironment`: the `Environment` parameter now accepts an environment id, name, and environment object for a
+value.
+* `Get-BMApplicationGroup` now accepts application group ids, names, or application group objects as pipeline input.
+* `Get-BMEnvironment` now accepts environment ids, names, or environment objects as pipeline input.
+* `Get-BMPipeline` returns raft item objects instead of pipeline objects.
+* `Get-BMServer` now accepts server names, ids, and server objects as pipeline input.
+* `Get-BMServerRole` now accepts server role names, ids, and server objects as pipeline input.
+* `Get-BMApplication` now accepts application ids, names, or application objects as pipeline input.
+* `New-BMPipeline` renamed to `Set-BMPipeline` and:
+  * it creates and/or updates a pipeline.
+  * its `Stage` parameter now takes in stage *objects* instead of XML strings. Use the new `New-BMPipelineStageObject`
+  and `New-BMPipelineStageTargetObject` functions to create the objects you should pass.
+  * it no longer returns the pipeline. Use the `PassThru` switch to have the pipeline object returned.
 
 ### Deprecated
 
-#### Functions
+#### Obsolete Functions
 
 * The `Get-BMPackage` function. It is replaced by `Get-BMBuild`.
 * The `New-BMPackage` function. It is replaced by `New-BMBuild`.
@@ -201,12 +206,12 @@ object returned.
 
 ### Removed
 
-* `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. Its functionality was removed from BuildMaster.
-* `Get-BMPipeline` function's `ID` parameter. Use the `Name` parameter instead. BuildMaster pipelines no longer have
-ids, just names.
 * Removed the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
+* `Get-BMPipeline` function's `ID` parameter. Use the `Name` parameter instead. BuildMaster pipelines no longer have
+ids, just names.
+* `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. Its functionality was removed from BuildMaster.
 
 ## 1.0.1
 

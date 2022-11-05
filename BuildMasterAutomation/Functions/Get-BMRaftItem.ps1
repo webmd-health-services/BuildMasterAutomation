@@ -60,7 +60,7 @@ function Get-BMRaftItem
         # The raft id or raft object whose items to return.
         [Object] $Raft,
 
-        # The raft item to get. Pass the raft ame (wildcards supported) or raft item object.
+        # The raft item to get. Pass the raft name (wildcards supported) or raft item object.
         [Parameter(ValueFromPipeline)]
         [Object] $RaftItem,
 
