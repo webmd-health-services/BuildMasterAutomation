@@ -167,7 +167,7 @@ take the pain out of creating the proper web requests.
             Prerelease = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'https://github.com/webmd-health-services/BuildMasterAutomation/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/webmd-health-services/BuildMasterAutomation/blob/main/CHANGELOG.md'
         } # End of PSData hashtable
 
     } # End of PrivateData hashtable
