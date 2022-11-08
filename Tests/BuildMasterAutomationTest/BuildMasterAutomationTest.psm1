@@ -274,6 +274,31 @@ function ThenNoErrorWritten
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
 $BMTestSession = $script:session
 
+# Before BuildMaster is activated, the APIs return the licensing page HTML.
+$waited = $false
+do
+{
+    $result = Invoke-BMRestMethod -Session $script:session -Name 'infrastructure/servers/list'
+    if ($result -isnot [String])
+    {
+        break
+    }
+    $result | Out-String | Write-Debug
+    if (-not $waited)
+    {
+        Write-Host 'Waiting for BuildMaster activation' -NoNewline
+    }
+    Write-Host '.' -NoNewline
+    $waited = $true
+    Start-Sleep -Milliseconds 100
+}
+while ($true)
+
+if ($waited)
+{
+    Write-Host ''
+}
+
 Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
 Get-BMPipeline -Session $script:session  | Remove-BMPipeline -Session $script:session -PurgeHistory
 
