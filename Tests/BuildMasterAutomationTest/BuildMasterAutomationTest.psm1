@@ -107,7 +107,6 @@ function New-BMTestObjectName
     if (-not (Test-Path -Path $script:wordsPath))
     {
         $script:words = Invoke-RestMethod -Uri 'https://random-word-api.herokuapp.com/all'
-        Write-Warning "Downloaded $(($script:words | Measure-Object).Count) words."
         $script:words | Set-Content -Path $script:wordsPath
     }
 
@@ -115,8 +114,6 @@ function New-BMTestObjectName
     {
         $script:words = Get-Content -Path $script:wordsPath | Where-Object { $_ }
     }
-
-    Write-Warning -Message "Found $(($script:words | Measure-Object).Count) words."
 
     # Faster than piping.
     $word = Get-Random -InputObject $script:words

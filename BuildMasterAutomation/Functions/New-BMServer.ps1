@@ -9,7 +9,7 @@ function New-BMServer
     The `New-BMServer` function creates a new server in BuildMaster. Pass the name of the server to the `Name` parameter. Names may only contain letters, numbers, underscores, or dashes; they must begin with a letter; they must not end with dash or underscore. Pass the server type to the `Type` parameter. Type must be one of 'windows', 'powershell', 'ssh', or 'local'.
 
     Every server must have a unique name. If you create a server with a duplicate name, you'll get an error.
-    
+
     This function uses BuildMaster's infrastructure management API.
 
     Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use the `New-BMSession` function to create session objects.
@@ -42,6 +42,8 @@ function New-BMServer
 
     Demonstrates how to create a new server that uses PowerShell Remoting.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSAvoidUsingPlainTextForPassword', '')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
@@ -129,7 +131,7 @@ function New-BMServer
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $parameter = @{ 
+    $parameter = @{
                     'active' = (-not $InActive.IsPresent);
                  }
 

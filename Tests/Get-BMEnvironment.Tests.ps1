@@ -18,14 +18,6 @@ BeforeAll {
         )
 
         New-BMEnvironment -Session $script:session -Name $Name -ErrorAction Ignore
-        if( $Disabled )
-        {
-            $Name | Disable-BMEnvironment -Session $script:session
-        }
-        else
-        {
-            $Name | Enable-BMEnvironment -Session $script:session
-        }
     }
 
     function ThenNoEnvironmentsReturned
@@ -62,8 +54,6 @@ BeforeAll {
         param(
             [string]$Named,
 
-            [Switch]$Force,
-
             [Switch]$WhatIf
         )
 
@@ -71,10 +61,6 @@ BeforeAll {
         if( $Named )
         {
             $optionalParams['Environment'] = $Named
-        }
-        if( $Force )
-        {
-            $optionalParams['Force'] = $true
         }
 
         $originalWhatIf = $Global:WhatIfPreference
@@ -97,22 +83,18 @@ Describe 'Get-BMEnvironment' {
     BeforeEach {
         $Global:Error.Clear()
         # Disable all existing environments.
-        Get-BMEnvironment -Session $script:session | Disable-BMEnvironment -Session $script:session
+        $envs = Get-BMEnvironment -Session $script:session
+        # Delete child environments first.
+        $envs | Where-Object { $_ | Get-Member -Name 'parent*' } | Remove-BMEnvironment -Session $script:session
+        $envs | Where-Object { -not ($_ | Get-Member -Name 'parent*') } | Remove-BMEnvironment -Session $script:session
         $script:environments = $null
     }
 
-    It 'should return all active server environments' {
+    It 'should return all environments' {
         GivenEnvironment 'One'
         GivenEnvironment 'Two'
         WhenGettingEnvironments
         ThenEnvironmentsReturned 'One','Two'
-        ThenNoErrorWritten
-    }
-
-    It 'should return all active and inactive server environments' {
-        GivenEnvironment 'One'
-        WhenGettingEnvironments -Force
-        ThenEnvironmentsReturned 'One' -AndInactiveEnvironments
         ThenNoErrorWritten
     }
 
@@ -121,39 +103,6 @@ Describe 'Get-BMEnvironment' {
         GivenEnvironment 'Two'
         WhenGettingEnvironments -Named 'One'
         ThenEnvironmentsReturned 'One'
-    }
-
-    It 'should return inactive environment by name' {
-        GivenEnvironment 'One' -Disabled
-        GivenEnvironment 'Two'
-        WhenGettingEnvironments -Named 'One'
-        ThenEnvironmentsReturned 'One'
-    }
-
-    It 'should return only active environments whose name match the wildcard' {
-        GivenEnvironment 'One'
-        GivenEnvironment 'Onf'
-        GivenEnvironment 'Ong' -Disabled
-        GivenEnvironment 'Two'
-        WhenGettingEnvironments -Named 'On*'
-        ThenEnvironmentsReturned 'One','Onf'
-    }
-
-    It 'should return active and inactive environments whose name match the wildcard' {
-        GivenEnvironment 'One'
-        GivenEnvironment 'Onf'
-        GivenEnvironment 'Ong' -Disabled
-        GivenEnvironment 'Two'
-        WhenGettingEnvironments -Named 'On*' -Force
-        ThenEnvironmentsReturned 'One','Onf','Ong'
-    }
-
-    It 'should find no environments by name using wildcard' {
-        GivenEnvironment 'One'
-        GivenEnvironment 'Blah' -Disabled
-        WhenGettingEnvironments -Named 'Blah*'
-        ThenNoEnvironmentsReturned
-        ThenNoErrorWritten
     }
 
     It 'should not find non-existent environment' {

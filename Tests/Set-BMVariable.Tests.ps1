@@ -31,7 +31,6 @@ BeforeAll {
         )
 
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
-        $Named | Enable-BMEnvironment -Session $script:session
         Get-BMVariable -Session $script:session -Environment $Named |
             Remove-BMVariable -Session $script:session -Environment $Named
     }

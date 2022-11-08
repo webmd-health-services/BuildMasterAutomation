@@ -66,15 +66,6 @@ function Remove-BMApplication
             return
         }
 
-        if (-not $Force -and $app.Active_Indicator -eq 'Y')
-        {
-            $msg = "Cannot delete application ""$($app | Get-BmObjectName)"" because it is active. Use the " +
-	           '"Disable-BMApplication" function to disable the application, or use the -Force (switch) on this ' +
-		   'function to delete an active application.'
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-	    return
-        }
-
         $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $app -ForNativeApi -PassThru
         Invoke-BMNativeApiMethod -Session $Session `
                                  -Name 'Applications_PurgeApplicationData' `

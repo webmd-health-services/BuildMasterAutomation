@@ -1,4 +1,51 @@
+<!-- markdownlint-disable MD024 no-duplicate-heading/no-duplicate-header -->
 # BuildMasterAutomation Changelog
+
+## 3.0.0
+
+Minimum supported version of BuildMaster is now 7.0.
+
+### Upgrade Instructions
+
+***This release contains breaking changes. Please read these upgrade instructions carefully before upgrading.***
+
+BuildMaster no longer supports active/inactive environments.
+
+* Remove usages of the `Disable-BMEnvironment` and `Enable-BMEnvironment` functions.
+* Remove usages of the `Get-BMEnvironment` and `Remove-Environment` functions' `Force` switch, which was used to
+operate on inactive environments.
+
+These functions were updated to use BuildMaster's
+[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). For each, check
+API key usages to ensure the key has access to that API and check that property usages on any return objects are using
+[the correct names](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure).
+
+* `Get-BMEnvironment`
+* `Remove-BMEnvironment`
+
+BuildMaster no longer supports active/inactive applications.
+
+* Remove usages of the `Active_Indicator` property on application objects.
+
+### Changed
+
+* The `Get-BMEnvironment` function now uses the BuildMaster
+[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Property names on
+return object may be different. Different API key permissions are required.
+* The `Remove-BMEnvironment` function now uses the BuildMaster
+[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Different API key
+permissions are required.
+
+### Removed
+
+#### Functions
+
+* `Disable-BMEnvironment`
+* `Enable-BMEnvironment`
+
+#### Parameters
+
+* `Force` switch from `Get-BMEnvironment` and `Remove-BMEnvironment`.
 
 ## 2.0.0
 

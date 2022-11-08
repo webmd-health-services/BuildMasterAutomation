@@ -7,12 +7,10 @@ function Remove-BMEnvironment
 
     .DESCRIPTION
     The `Remove-BMEnvironment` function removes an environment from BuildMaster. Pass the environment's id, name, or
-    object to the `Environment` parameter (or pipe them to `Remove-BMEnvironment`). If the environment is disabled, it
-    will be deleted. To delete the environment even if it's still enabled, use the `Force` (switch).
+    object to the `Environment` parameter (or pipe them to `Remove-BMEnvironment`).
 
-    Use `Disable-BMEnvironment` to disable an environment.
-
-    Uses the BuildMaster native API.
+    Uses the BuildMaster
+    [Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure).
 
     .EXAMPLE
     Remove-BMEnvironment -Session $session -Environment $env
@@ -33,11 +31,6 @@ function Remove-BMEnvironment
     $env,433,'So Long 2' | Remove-BMEnvironment -Session $session
 
     Demonstrates that you can pipe environment ids, names, and/or objects to `Remove-BMEnvironment`.
-
-    .EXAMPLE
-    Remove-BMEnvironment -Session $session -Environment $env -Force
-
-    Demonstrates how to delete an environment even if its still enabled by using the `Force` (switch).
     #>
     [CmdletBinding()]
     param(
@@ -47,10 +40,7 @@ function Remove-BMEnvironment
 
         # The environment's id, name, or object to delete. Accepts pipeline input.
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Object] $Environment,
-
-        # If set, will delete an environment even if it is active.
-        [switch] $Force
+        [Object] $Environment
     )
 
     process
@@ -66,22 +56,7 @@ function Remove-BMEnvironment
             return
         }
 
-        if (-not $Force -and $env.Ative_Indicator -eq 'Y')
-        {
-            $msg = "Environment ""$($env | Get-BmObjectName)"" is active. Only inactive environments can be deleted. " +
-                   'Use the "Disable-BMEnvironment" function to disable the application, or use the -Force (switch) ' +
-                   'on this function to delete an active environment.'
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-        }
-
-        $appArg =
-            @{} |
-            Add-BMObjectParameter -Name 'Environment' -Value $env -AsID -ForNativeApi -PassThru |
-            Add-BMParameter -Name 'Purge' -Value 'Y' -PassThru
-        Invoke-BMNativeApiMethod -Session $Session `
-                                 -Name 'Environments_DeleteEnvironment' `
-                                 -Parameter $appArg `
-                                 -Method Post |
-            Out-Null
+        $apiName = "infrastructure/environments/delete/$($env.name)"
+        Invoke-BMRestMethod -Session $Session -Name $apiName -Method Delete | Out-Null
     }
 }

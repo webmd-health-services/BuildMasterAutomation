@@ -33,7 +33,6 @@ BeforeAll {
 
     $script:release =
         New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
-    'Integration' | Enable-BMEnvironment -Session $script:session
 
     function GivenBMReleaseBuild
     {

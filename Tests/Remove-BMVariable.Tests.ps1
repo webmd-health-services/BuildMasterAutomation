@@ -45,7 +45,6 @@ BeforeAll {
         )
 
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
-        $Named | Enable-BMEnvironment -Session $script:session
         Get-BMVariable -Session $script:session -Environment $Named |
             Remove-BMVariable -Session $script:session -Environment $Named
     }
@@ -268,19 +267,17 @@ Describe 'Remove-BMVariable' {
              -ModuleName 'BuildMasterAutomation' `
              -MockWith {
                 [pscustomobject]@{
-                    Name = $Name;
-                    Environment_Id = 1;
-                    Environment_Name = $entityName;
-                    Parent_Environment_Name = 'nope';
-                    Active_Indicator = $true;
-                    Value = 'ok';
+                    name = $entityName;
+                    parent = 'nope';
                 }
              }
         WhenRemovingVariable $varName -ForEnvironment $entityName -SkipResultCheck
         ThenNoErrorWritten
+        $expectedName =
+            "variables/environment/$([Uri]::EscapeDataString($entityName))/$([Uri]::EscapeDataString($varName))"
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
-                          -ParameterFilter { $Name -eq "variables/environment/$([Uri]::EscapeDataString($entityName))/$([Uri]::EscapeDataString($varName))" }
+                          -ParameterFilter { $Name -eq $expectedName }
     }
 
     # BuildMaster's API doesn't work with application variables.

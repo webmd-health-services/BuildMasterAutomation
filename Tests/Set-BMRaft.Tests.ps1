@@ -3,7 +3,7 @@
 Set-StrictMode -Version 'Latest'
 
 AfterAll {
-    $script:bmEnv, $script:bmEnv2 | Remove-BMEnvironment -Session $script:session -Force
+    $script:bmEnv, $script:bmEnv2 | Remove-BMEnvironment -Session $script:session
 }
 
 BeforeAll {
@@ -44,6 +44,7 @@ BeforeAll {
 
 Describe 'Set-BMRaft' {
     BeforeEach {
+        $Global:Error.Clear()
         Get-BMRaft -Session $script:session |
             Where-Object 'Raft_Name' -NE 'Default' |
             Remove-BMRaft -Session $script:session

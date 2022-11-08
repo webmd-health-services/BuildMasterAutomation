@@ -51,10 +51,6 @@ BeforeAll {
                                             -Number '3.0' `
                                             -Name 'releaseRelease'
 
-    'Integration' | Enable-BMEnvironment -Session $script:session
-    'Testing' | Enable-BMEnvironment -Session $script:session
-    'Production' | Enable-BMEnvironment -Session $script:session
-
     function GivenReleaseBuild
     {
         param(

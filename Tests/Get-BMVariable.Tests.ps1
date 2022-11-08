@@ -31,7 +31,6 @@ BeforeAll {
         )
 
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
-        $Named | Enable-BMEnvironment -Session $script:session
         Get-BMVariable -Session $script:session -Environment $Named |
             Remove-BMVariable -Session $script:session -Environment $Named
     }
@@ -334,7 +333,7 @@ Describe 'Get-BMVariable' {
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
                           -ParameterFilter {
-                                $DebugPreference = 'Continue'
+                                # $DebugPreference = 'Continue'
                                 $expectedName = "variables/global/$([Uri]::EscapeDataString('URL Encode Me!'))"
                                 Write-Debug "Name  expected  $($expectedName)"
                                 Write-Debug "      actual    $($Name)"
