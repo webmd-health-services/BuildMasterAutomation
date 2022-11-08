@@ -30,10 +30,9 @@ $InformationPreference = 'Continue'
 $runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
 
-# When updating the version, it's a good time to check if bugs in the API have been fixed. Do the following:
-#
-# * Remove the skipped tests in the Get-BMVariable and Remove-BMVariable tests.
-$version = '6.2.33'
+# When updating the version, it's a good time to check if bugs in the API have been fixed. Search all the test for
+# "-Skip", remove the "-Skip" flag and run tests.
+$version = '7.0.24'
 
 
 

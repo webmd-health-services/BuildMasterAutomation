@@ -11,7 +11,7 @@ PowerShell functions
 # System Requirements
 
 * Windows PowerShell 5.1, PowerShell 6, and PowerShell 7
-* BuildMaster 6.2 (some functions may work on older/newer versions)
+* BuildMaster 7.0 (some functions may work on older/newer versions)
 
 # Installation
 
@@ -74,8 +74,6 @@ Use `Invoke-BMNativeApiMethod` to call a native API endpoint:
 ## Functions That Call BuildMaster APIs
 
 * Disable-BMApplication
-* Disable-BMEnvironment
-* Enable-BMEnvironment
 * Get-BMApplication
 * Get-BMApplicationGroup
 * Get-BMBuild

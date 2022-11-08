@@ -18,7 +18,6 @@ BeforeAll {
         foreach( $name in $Named )
         {
             New-BMEnvironment -Session $script:session -Name $name -ErrorAction Ignore
-            $name | Enable-BMEnvironment -Session $script:session
         }
     }
 
@@ -59,6 +58,7 @@ BeforeAll {
 
     function ThenServerExists
     {
+        [Diagnostics.CodeAnalysis.SuppressMessage('PSAvoidUsingPlainTextForPassword', '')]
         [CmdletBinding(DefaultParameterSetName='AnyType')]
         param(
             [Parameter(Mandatory)]
@@ -222,6 +222,7 @@ BeforeAll {
 
     function WhenCreatingServer
     {
+        [Diagnostics.CodeAnalysis.SuppressMessage('PSAvoidUsingPlainTextForPassword', '')]
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
@@ -343,7 +344,7 @@ Describe 'New-BMServer' {
         ThenServerExists -Named 'Fubar' -OfType 'local'
     }
 
-    It 'should reject server names that end with <_>' -Skip -TestCases @('_', '-') {
+    It 'should reject server names that end with <_>' -TestCases @('_', '-') {
         $badChar = $_
         $name = 'Fubar{0}' -f $badChar
         { WhenCreatingServer -Named $name -OfType 'windows' } | Should -Throw
@@ -365,7 +366,7 @@ Describe 'New-BMServer' {
         ThenServerExists -Named $name -OfType 'windows' -HostName $name
     }
 
-    It 'should reject server name that is too long' -Skip {
+    It 'should reject server name that is too long' {
         $name = 'F' * 51
         { WhenCreatingServer -Named $name -OfType 'windows' } | Should -Throw
         ThenError 'is\ too\ long'

@@ -19,14 +19,6 @@ BeforeAll {
         foreach( $name in $Named )
         {
             New-BMEnvironment -Session $script:session -Name $name -ErrorAction Ignore
-            if( $Disabled )
-            {
-                $Name | Disable-BMEnvironment -Session $script:session
-            }
-            else
-            {
-                $Name | Enable-BMEnvironment -Session $script:session
-            }
         }
     }
 
@@ -41,23 +33,12 @@ BeforeAll {
             [Parameter(Mandatory)]
             [String]$Named,
 
-            [switch]$Disabled,
-
             [string]$WithParent
         )
 
         $environment = $Named | Get-BMEnvironment -Session $script:session
 
         $environment | Should -Not -BeNullOrEmpty
-
-        if( $Disabled )
-        {
-            $environment.active | Should -BeFalse
-        }
-        else
-        {
-            $environment.active | Should -BeTrue
-        }
 
         if( $WithParent )
         {
@@ -118,7 +99,6 @@ BeforeAll {
 Describe 'New-BMEnvironment' {
     BeforeEach {
         $Global:Error.Clear()
-        Get-BMEnvironment -Session $script:session | Disable-BMEnvironment -Session $script:session
     }
 
     It 'should create environment' {
@@ -128,13 +108,6 @@ Describe 'New-BMEnvironment' {
         ThenEnvironmentExists -Named $name
     }
 
-    It 'should create inactive environment' {
-        $name = New-EnvironmentName
-        WhenCreatingEnvironment -Named $name -Inactive
-        ThenNoErrorWritten
-        ThenEnvironmentExists -Named $name -Disabled
-    }
-
     It 'should fail creating duplicate environment' {
         GivenEnvironment -Named 'Fubar'
         WhenCreatingEnvironment -Named 'Fubar' -ErrorAction SilentlyContinue
@@ -142,14 +115,7 @@ Describe 'New-BMEnvironment' {
         ThenEnvironmentExists -Named 'Fubar'
     }
 
-    It 'should not enable existing disabled environment when creating a duplicate environment' {
-        GivenEnvironment -Named 'Fubar' -Disabled
-        WhenCreatingEnvironment -Named 'Fubar' -ErrorAction SilentlyContinue
-        ThenError 'already\ exists'
-        ThenEnvironmentExists -Named 'Fubar' -Disabled
-    }
-
-    It 'should reject <_> from end of environment name' -Skip -TestCases @('_', '-') {
+    It 'should reject <_> from end of environment name' -TestCases @('_', '-') {
         $badChar = $_
         $name = 'Fubar{0}' -f $badChar
         { WhenCreatingEnvironment -Named $name } | Should -Throw
@@ -171,7 +137,7 @@ Describe 'New-BMEnvironment' {
         $Global:Error | Should -Not -Match 'does\ not\ match'
     }
 
-    It 'should reject environment names that are too long' -Skip {
+    It 'should reject environment names that are too long' {
         $name = 'F' * 51
         { WhenCreatingEnvironment -Named $name } | Should -Throw
         ThenError 'is\ too\ long'

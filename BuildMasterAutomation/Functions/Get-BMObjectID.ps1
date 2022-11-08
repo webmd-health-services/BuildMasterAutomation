@@ -13,7 +13,7 @@ function Get-BMObjectID
     * if the object is $null, returns $null.
     * if the object is a numeric value, returns it.
     * returns the value of the object's `id` property, if it exists.
-    * returns the value of the object's `$(ObjectTypeName)_Id` (e.g. Raft_Id, Environment_Id) property, if it exists.
+    * returns the value of the object's `$(ObjectTypeName)_Id` (e.g. Raft_Id, Application_Id) property, if it exists.
     * returns the value of the object's `$(ObjectTypeName)Id` property, if it exists.
     * if it can't find an id, writes an error and returns nothing.
 
