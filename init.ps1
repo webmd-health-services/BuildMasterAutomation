@@ -18,31 +18,25 @@ param(
 #Requires -RunAsAdministrator
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
-
+$ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
 & {
     $VerbosePreference = 'SilentlyContinue'
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon.Windows.Installer') -Force
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\SqlServer') -Force
+    Import-Module -Name 'Microsoft.PowerShell.Archive'
 }
 
-$runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
 
 
-# When updating the version, it's a good time to check if bugs in the API have been fixed. Search all the test for
+# When updating the version, it's a good time to check if bugs in the API have been fixed. Search all the tests for
 # "-Skip", remove the "-Skip" flag and run tests.
 $version = '7.0.24'
 
 
 
 Write-Verbose -Message ('Testing BuildMaster {0}' -f $version)
-$sqlServer = $null
-$installerPath = 'SQL'
-$installerUri = 'sql'
-$dbParam = '/InstallSqlExpress'
-
-Get-ChildItem -Path 'env:' | Format-Table
 
 $machineSqlPath = Join-Path -Path 'SQLSERVER:\SQL' -ChildPath ([Environment]::MachineName)
 $sqlServer =
@@ -52,77 +46,51 @@ $sqlServer =
         {
             return ($_.DisplayName -eq $env:SQL_INSTANCE_NAME)
         }
+        return $true
     } |
     Where-Object { $_ | Get-Member -Name 'Status' } |
     Where-Object { $_.Status -eq [Microsoft.SqlServer.Management.Smo.ServerStatus]::Online }
     Sort-Object -Property 'Version' -Descending |
     Select-Object -First 1
 
-if ($sqlServer)
+if (-not $sqlServer)
 {
-    $sqlServer | Format-Table -Auto
-
-    $installerPath = 'NO{0}' -f $installerPath
-    $installerUri = 'no{0}' -f $installerUri
-    $credentials = 'Integrated Security=true;'
-    if( $runningUnderAppVeyor )
-    {
-        $credentials = 'User ID=sa;Password=Password12!'
-    }
-    $dbParam = '"/ConnectionString=Server={0};Database=BuildMaster;{1}"' -f $sqlServer.Name,$credentials
+    Write-Error -Message 'Failed to find an installed instance of SQL Server.'
+    return
 }
 
-
-$installerPath = Join-Path -Path $PSScriptRoot -ChildPath ('.output\BuildMasterInstaller{0}-{1}.exe' -f $installerPath,$version)
-$installerUri = 'https://my.inedo.com/services/legacy/downloads/buildmaster/{0}/{1}.exe' -f $installerUri,$version
-
-if( -not (Test-Path -Path $installerPath -PathType Leaf) )
+$outputPath = Join-Path -Path $PSScriptRoot -ChildPath '.output'
+if (-not (Test-Path -Path $outputPath))
 {
-    Write-Verbose -Message ('Downloading {0}' -f $installerUri)
-    Invoke-WebRequest -Uri $installerUri -OutFile $installerPath
+    New-Item -Path $outputPath -ItemType 'Directory' | Out-String | Write-Verbose
 }
 
-$bmInstallInfo = Get-CInstalledProgram -Name 'BuildMaster' -ErrorAction Ignore
-if( -not $bmInstallInfo )
+$hubPath = Join-Path -Path $outputPath -ChildPath 'InedoHub\hub.exe'
+$hubUrl = 'https://proget.inedo.com/upack/Products/download/InedoReleases/DesktopHub?contentOnly=zip&latest'
+if( -not (Test-Path -Path $hubPath) )
 {
-    $outputRoot = Join-Path -Path $PSScriptRoot -ChildPath '.output'
-    New-Item -Path $outputRoot -ItemType 'Directory' -ErrorAction Ignore
-
-    $logRoot = Join-Path -Path $outputRoot -ChildPath 'logs'
-    New-Item -Path $logRoot -ItemType 'Directory' -ErrorAction Ignore
-
-    Write-Verbose -Message ('Running BuildMaster installer {0}.' -f $installerPath)
-    $logPath = Join-Path -Path $logRoot -ChildPath 'buildmaster.install.log'
-    $installerFileName = $installerPath | Split-Path -Leaf
-    $stdOutLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stdout.log' -f $installerFileName)
-    $stdErrLogPath = Join-Path -Path $logRoot -ChildPath ('{0}.stderr.log' -f $installerFileName)
-    $argumentList = '/S','/Edition=LicenseKey','/LicenseKey=C2G2G010-GC100V-7M8X70-0QC1GFNK-H98U',$dbParam,('"/LogFile={0}"' -f $logPath)
-    Write-Verbose ('{0} {1}' -f $installerPath,($argumentList -join ' '))
-    $process = Start-Process -FilePath $installerPath `
-                             -ArgumentList $argumentList `
-                             -Wait `
-                             -PassThru `
-                             -RedirectStandardError $stdErrLogPath `
-                             -RedirectStandardOutput $stdOutLogPath
-    $process.WaitForExit()
-
-    Write-Verbose -Message ('{0} exited with code {1}' -f $installerFileName,$process.ExitCode)
-
-    if( -not (Get-CInstalledProgram -Name 'BuildMaster' -ErrorAction Continue) )
-    {
-        $logPath, $stdOutLogPath, $stdErrLogPath |
-            Where-Object { Test-Path -Path $_ } |
-            ForEach-Object {
-                $filePath = $_
-                Write-Information "$($filePath):"
-                Get-Content -Path $filePath | ForEach-Object { Write-Information $_ }
-                Write-Information ""
-            }
-        Write-Error 'BuildMaster installer failed.'
-    }
-}
-elseif( $bmInstallInfo.DisplayVersion -notmatch ('^{0}\b' -f [regex]::Escape($version)) )
-{
-    Write-Warning -Message ('You''ve got an old version of BuildMaster installed. You''re on version {0}, but we expected version {1}. Please *completely* uninstall version {0} using the Programs and Features control panel, then re-run this script.' -f $bmInstallInfo.DisplayVersion,$version)
+    $hubZipPath = Join-Path -Path $outputPath -ChildPath 'InedoHub.zip'
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest $hubUrl -OutFile $hubZipPath
+    Expand-Archive -Path $hubZipPath -DestinationPath ($hubPath | Split-Path)
 }
 
+if( -not (Test-Path -Path $hubPath) )
+{
+    Write-Error -Message "Failed to download and extract Inedo Hub from ""$($hubUrl)""."
+}
+
+$runningUnderAppVeyor = (Test-Path -Path 'env:APPVEYOR')
+$dbCredentials = 'Integrated Security=true;'
+if( $runningUnderAppVeyor )
+{
+    $dbCredentials = 'User ID=sa;Password=Password12!'
+}
+
+# Free edition license
+& $hubPath 'install' `
+           "BuildMaster:$($version)" `
+           --ConnectionString="Server=$($sqlServer.name); $($dbCredentials)" `
+           --LicenseKey=C2G2G010-GC100V-7M8X70-0QC1GFNK-H98U
+
+Get-Service -Name 'Inedo*' | Start-Service
