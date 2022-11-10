@@ -10,6 +10,7 @@ This is a continuation of the types of changes made in 2.0.0. See that release's
 
 * These functions now write an error if an item doesn't exist (for `Get`, `Remove`, and `Set` functions) or if an item
 already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usages to preserve previous behavior:
+  * `Set-BMRelease`
   * `Set-BMVariable`
   * `Stop-BMRelease`
 
