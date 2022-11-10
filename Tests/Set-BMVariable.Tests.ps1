@@ -83,27 +83,27 @@ BeforeAll {
         $optionalParams = @{ }
         if( $ForApplication )
         {
-            $optionalParams['ApplicationName'] = $ForApplication
+            $optionalParams['Application'] = $ForApplication
         }
 
         if( $ForApplicationGroup )
         {
-            $optionalParams['ApplicationGroupName'] = $ForApplicationGroup
+            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
         if( $ForEnvironment )
         {
-            $optionalParams['EnvironmentName'] = $ForEnvironment
+            $optionalParams['Environment'] = $ForEnvironment
         }
 
         if( $ForServer )
         {
-            $optionalParams['ServerName'] = $ForServer
+            $optionalParams['Server'] = $ForServer
         }
 
         if( $ForServerRole )
         {
-            $optionalParams['ServerRoleName'] = $ForServerRole
+            $optionalParams['ServerRole'] = $ForServerRole
         }
 
         Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
@@ -181,27 +181,27 @@ BeforeAll {
 
         if( $ForApplication )
         {
-            $optionalParams['ApplicationName'] = $ForApplication
+            $optionalParams['Application'] = $ForApplication
         }
 
         if( $ForApplicationGroup )
         {
-            $optionalParams['ApplicationGroupName'] = $ForApplicationGroup
+            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
         if( $ForEnvironment )
         {
-            $optionalParams['EnvironmentName'] = $ForEnvironment
+            $optionalParams['Environment'] = $ForEnvironment
         }
 
         if( $ForServer )
         {
-            $optionalParams['ServerName'] = $ForServer
+            $optionalParams['Server'] = $ForServer
         }
 
         if( $ForServerRole )
         {
-            $optionalParams['ServerRoleName'] = $ForServerRole
+            $optionalParams['ServerRole'] = $ForServerRole
         }
 
         if( $WhatIf )
@@ -239,6 +239,9 @@ Describe 'Set-BMVariable' {
 
     It 'should encode variable name' {
         Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation'
+        Mock -CommandName 'Get-BMEnvironment' `
+             -ModuleName 'BuildMasterAutomation' `
+             -MockWith { return [pscustomobject]@{ 'Environment_Name' = 'Get BMVariable' }}
         WhenSettingVariable 'F u b a r' -WithValue 'Varlue' -ForEnvironment 'Get BMVariable'
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `

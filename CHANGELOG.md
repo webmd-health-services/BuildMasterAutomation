@@ -4,12 +4,26 @@
 
 ### Added
 
-* Parameter `Application` to the `Disable-BMApplication` function. This parameter accepts an application name, id, or
+#### Parameters
+
+* `Application` to the `Disable-BMApplication` function. This parameter accepts an application name, id, or
 application object and replaces the now-obsolete `ID` parameter.
+* `Set-BMVariable`:
+  * `Application`: accepts application ids, names, or application objects.
+  * `ApplicationGroup`: accepts application group ids, names, or application group objects.
+  * `Environment`: accepts environment ids, names, or environment objects.
+  * `Server`: accepts server ids, names, or server objects.
+  * `ServerRole`: accepts server role ids, names, or server names.
 
 ### Deprecated
 
 * The `ID` parameter on the `Disable-BMApplication` function. Use the new `Application` parameter instead.
+* The following parameters on `Set-BMVariable`:
+  * `ApplicationName`; use `Application` instead.
+  * `ApplicationGroupName`; use `ApplicationGroup` instead.
+  * `EnvironmentName`; use `Environment` instead.
+  * `ServerName`; use `Server` instead.
+  * `ServerRoleName`; use `ServerRole` instead.
 
 ## 2.0.0
 
@@ -47,6 +61,7 @@ already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usag
   * `Remove-BMServerRole`
   * `Remove-BMVariable`
   * `Set-BMRelease`
+  * `Set-BMVariable`
 * Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
