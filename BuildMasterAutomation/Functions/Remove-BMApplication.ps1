@@ -58,7 +58,7 @@ function Remove-BMApplication
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $app = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
+        $bmApp = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
         if (-not $app)
         {
             $msg = "Cannot delete application ""$($app | Get-BMObjectName)"" because it does not exist."
@@ -66,7 +66,16 @@ function Remove-BMApplication
             return
         }
 
-        $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $app -ForNativeApi -PassThru
+        if (-not $Force -and $bmApp.Active_Indicator -eq 'Y')
+        {
+            $msg = "Cannot delete application ""$($bmApp | Get-BmObjectName)"" because it is active. Use the " +
+                   '"Disable-BMApplication" function to disable the application, or use the -Force (switch) on this ' +
+                   'function to delete an active application.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+
+        $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $bmApp -ForNativeApi -PassThru
         Invoke-BMNativeApiMethod -Session $Session `
                                  -Name 'Applications_PurgeApplicationData' `
                                  -Parameter $appArg `

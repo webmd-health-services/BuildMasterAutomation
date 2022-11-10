@@ -1,6 +1,11 @@
 <!-- markdownlint-disable MD024 no-duplicate-heading/no-duplicate-header -->
 # BuildMasterAutomation Changelog
 
+## 3.0.1
+
+Fixed: BuildMaster *does* support active/inactive applications. Updatd 3.0.0 upgrade instructions to remove sentence
+about removing usages of the `Active_Indicator` property on applications.
+
 ## 3.0.0
 
 Minimum supported version of BuildMaster is now 7.0.
@@ -22,10 +27,6 @@ API key usages to ensure the key has access to that API and check that property 
 
 * `Get-BMEnvironment`
 * `Remove-BMEnvironment`
-
-BuildMaster no longer supports active/inactive applications.
-
-* Remove usages of the `Active_Indicator` property on application objects.
 
 ### Changed
 
