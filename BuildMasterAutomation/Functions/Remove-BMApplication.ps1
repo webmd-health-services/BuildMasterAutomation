@@ -61,18 +61,18 @@ function Remove-BMApplication
         $app = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
         if (-not $app)
         {
-            $msg = "Cannot delete application ""$($app | Get-BMObjectName)"" because it does not exist."
+            $msg = "Cannot delete application ""$($Application | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
         if (-not $Force -and $app.Active_Indicator -eq 'Y')
         {
-            $msg = "Cannot delete application ""$($app | Get-BmObjectName)"" because it is active. Use the " +
-	           '"Disable-BMApplication" function to disable the application, or use the -Force (switch) on this ' +
-		   'function to delete an active application.'
+            $msg = "Cannot delete application ""$($app | Get-BMObjectName -ObjectTypeName 'Application')"" because it " +
+                   'is active. Use the "Disable-BMApplication" function to disable the application, or use the ' +
+                   '-Force (switch) on this function to delete an active application.'
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-	    return
+            return
         }
 
         $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $app -ForNativeApi -PassThru
