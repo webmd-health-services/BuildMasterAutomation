@@ -8,7 +8,11 @@ function Invoke-BMVariableEndpoint
 
         [Parameter(Mandatory, ParameterSetName='Delete')]
         [Parameter(ParameterSetName='Get')]
+        [Parameter(Mandatory, ParameterSetName='Set')]
         [Object] $Variable,
+
+        [Parameter(Mandatory, ParameterSetName='Set')]
+        [String] $Value,
 
         [Parameter(Mandatory)]
         [ValidateSet('application', 'application-group', 'environment', 'global', 'server', 'role')]
@@ -25,16 +29,19 @@ function Invoke-BMVariableEndpoint
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $variableName = ''
+    $getting = $PSCmdlet.ParameterSetName -eq 'Get'
+    $deleting = $ForDelete.IsPresent
+    $updating = $PSCmdlet.ParameterSetName -eq 'Set'
     if ($Variable)
     {
         $variableName = $Variable | Get-BMObjectName -Strict
-        if (-not $variableName -and $ForDelete)
+        if (-not $variableName -and ($deleting -or $updating))
         {
             return
         }
     }
 
-    $searching = -not $ForDelete -and $variableName -and [wildcardpattern]::ContainsWildcardCharacters($variableName)
+    $searching = $getting -and $variableName -and [wildcardpattern]::ContainsWildcardCharacters($variableName)
 
     $variablePathSegment = ''
     if ($variableName -and -not $searching)
@@ -83,10 +90,15 @@ function Invoke-BMVariableEndpoint
         {
             $entityName = $entity | Get-BMObjectName
             $msg = "$($entityDescCapitalized) ""$($entityName)"" does not exist."
-            if ($ForDelete)
+            if ($deleting)
             {
                 $msg = "Unable to delete variable ""$($variableName)"" because the $($entityDesc) " +
                        """$($entityName)"" does not exist."
+            }
+            elseif ($updating)
+            {
+                $msg = "Unable to set variable ""$($variableName)"" because the $($entityDesc) ""$($entityName)"" " +
+                       'does not exist.'
             }
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
@@ -101,8 +113,12 @@ function Invoke-BMVariableEndpoint
 
     $endpointPath = "variables/$($entityPathSegment)"
 
-    $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath
-    if ($Variable -and -not $searching -and -not $variables)
+    $variables = @{}
+    if (-not $updating)
+    {
+        $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath
+    }
+    if ($Variable -and -not $searching -and -not $variables -and -not $updating)
     {
         $msg = "Variable ""$($variableName)"" does not exist."
         if ($bmEntity)
@@ -124,36 +140,40 @@ function Invoke-BMVariableEndpoint
         return
     }
 
-    if ($ForDelete)
+    if ($deleting)
     {
         Invoke-BMRestMethod -Session $session -Name $endpointPath -Method Delete
+        return
     }
-    else
+
+    if ($updating)
     {
-        if ($variables -is [String])
-        {
-            return [pscustomobject]@{
-                Name = $variableName;
-                Value = $variables;
-            }
-        }
-
-        $variables |
-            Get-Member -MemberType NoteProperty |
-            ForEach-Object {
-                return [pscustomobject]@{
-                    'Name' = $_.Name;
-                    'Value' = $variables.($_.Name);
-                }
-            } |
-            Where-Object {
-                if ($variableName)
-                {
-                    return $_.Name -like $variableName
-                }
-                return $true
-            } |
-            Write-Output
+        Invoke-BMRestMethod -Session $session -Name $endpointPath -Body $Value -Method Post
+        return
     }
 
+    if ($variables -is [String])
+    {
+        return [pscustomobject]@{
+            Name = $variableName;
+            Value = $variables;
+        }
+    }
+
+    $variables |
+        Get-Member -MemberType NoteProperty |
+        ForEach-Object {
+            return [pscustomobject]@{
+                'Name' = $_.Name;
+                'Value' = $variables.($_.Name);
+            }
+        } |
+        Where-Object {
+            if ($variableName)
+            {
+                return $_.Name -like $variableName
+            }
+            return $true
+        } |
+        Write-Output
 }
