@@ -1,5 +1,16 @@
 # BuildMasterAutomation Changelog
 
+## 2.0.1
+
+### Added
+
+* Parameter `Application` to the `Disable-BMApplication` function. This parameter accepts an application name, id, or
+application object and replaces the now-obsolete `ID` parameter.
+
+### Deprecated
+
+* The `ID` parameter on the `Disable-BMApplication` function. Use the new `Application` parameter instead.
+
 ## 2.0.0
 
 2022-11-7
