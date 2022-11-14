@@ -29,6 +29,12 @@ object and replaces the now-obsolete `ID` parameter.
 * `Application` to the `Stop-BMRelease` function. This parameter accepts an application name, id, or application object
 and replaces the now-obsolete `ID` parameter.
 
+## Changed
+
+* Updated `Get-BMVariable` and `Remove-BMVariable` so they can get and remove variables for applications and application
+groups, which works around a bug in the BuildMaster
+[Variables API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
+
 ### Deprecated
 
 * The `ID` parameter on the `Disable-BMApplication` function. Use the new `Application` parameter instead.
@@ -48,11 +54,6 @@ and replaces the now-obsolete `ID` parameter.
 
 This version of BuildMasterAutomation is only supported on BuildMaster 6.2. Some of it may work on older or newer
 versions, but we've only tested against BuildMaster 6.2.33.
-
-### Known Issues
-
-The `Get-BMVariable` function fails to get variables from applications or application groups, due to a bug in the
-BuildMaster [Variables Mangement API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
 
 ### Upgrade Instructions
 
