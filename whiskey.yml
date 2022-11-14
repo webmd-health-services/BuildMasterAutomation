@@ -66,7 +66,19 @@ Build:
     Configuration:
         Run:
             Path: Tests\*.Tests.ps1
+            ExcludePath: "*-BMVariable.Tets.ps1"
         TestResult:
             Enabled: true
-            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester.xml
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester1.xml
+            TestSuiteName: BuildMasterAutomation
+
+# Call depth overflow workaround.
+- Pester:
+    AsJob: true
+    Configuration:
+        Run:
+            Path: Tests\*-BMVariable.Tests.ps1
+        TestResult:
+            Enabled: true
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester2.xml
             TestSuiteName: BuildMasterAutomation
