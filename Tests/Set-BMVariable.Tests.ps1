@@ -249,14 +249,14 @@ Describe 'Set-BMVariable' {
         ThenNoErrorWritten
     }
 
-    It 'should create application variable' -Skip {
+    It 'should create application variable' {
         $app = GivenApplication
         WhenSettingVariable 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
         ThenVariableSet 'AppFubar' -To 'AppValue' -ForApplication $app.Application_Name
         ThenNoErrorWritten
     }
 
-    It 'should create application group variable' -Skip {
+    It 'should create application group variable' {
         GivenApplicationGroup 'fizzbuzz'
         WhenSettingVariable 'AppGroupFubar' -WithValue 'AppGropuValue' -ForApplicationGroup 'fizzbuzz'
         ThenVariableSet 'AppGroupFubar' -To 'AppGropuValue' -ForApplicationGroup 'fizzbuzz'

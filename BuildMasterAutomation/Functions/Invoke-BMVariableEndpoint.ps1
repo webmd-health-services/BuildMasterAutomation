@@ -114,10 +114,41 @@ function Invoke-BMVariableEndpoint
     $endpointPath = "variables/$($entityPathSegment)"
 
     $variables = @{}
+
+    $nativeApiEntityIdParam = @{}
+    [Object[]] $nativeVariables = @()
+    $useNativeApi = $EntityTypeName -in @('application', 'application-group')
+    if ($EntityTypeName -eq 'application')
+    {
+        $nativeApiEntityIdParam['Application_Id'] = $bmEntity.Application_Id
+    }
+    elseif ($EntityTypeName -eq 'application-group')
+    {
+        $nativeApiEntityIdParam['ApplicationGroup_Id'] = $bmEntity.ApplicationGroup_Id
+    }
+
     if (-not $updating)
     {
-        $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath
+        if ($useNativeApi)
+        {
+            $nativeVariables = Invoke-BMNativeApiMethod -Session $Session `
+                                                        -Name 'Variables_GetVariablesForScope' `
+                                                        -Method Post `
+                                                        -Parameter $nativeApiEntityIdParam
+
+            foreach ($nativeVar in $nativeVariables)
+            {
+                $bytes = [Convert]::FromBase64String($nativeVar.Variable_Value)
+                $variables[$nativeVar.Variable_Name] = [Text.Encoding]::UTF8.GetString($bytes)
+            }
+            $variables = [pscustomobject]$variables
+        }
+        else
+        {
+            $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath
+        }
     }
+
     if ($Variable -and -not $searching -and -not $variables -and -not $updating)
     {
         $msg = "Variable ""$($variableName)"" does not exist."
@@ -142,6 +173,14 @@ function Invoke-BMVariableEndpoint
 
     if ($deleting)
     {
+        if ($useNativeApi)
+        {
+            $nativeVar = $nativeVariables | Where-Object 'Variable_Name' -EQ $variableName
+            Invoke-BMNativeApiMethod -Session $session `
+                                     -Name 'Variables_DeleteVariable' `
+                                     -Method Post `
+                                     -Parameter @{ Variable_Id = $nativeVar.Variable_Id }
+        }
         Invoke-BMRestMethod -Session $session -Name $endpointPath -Method Delete
         return
     }
