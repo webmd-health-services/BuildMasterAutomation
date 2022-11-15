@@ -22,7 +22,9 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `Application` parameter.
 
-    This function uses BuildMaster's variables and native API.
+    This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
+    API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
+    native API.
 
     .EXAMPLE
     Get-BMVariable

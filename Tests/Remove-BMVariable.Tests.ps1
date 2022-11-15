@@ -281,7 +281,7 @@ Describe 'Remove-BMVariable' {
     }
 
     # BuildMaster's API doesn't work with application variables.
-    It 'should remove application variable' -Skip {
+    It 'should remove application variable' {
         $app = GivenApplication
         GivenVariable -Named 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
         WhenRemovingVariable 'AppFubar' -ForApplication $app.Application_Name
@@ -300,7 +300,7 @@ Describe 'Remove-BMVariable' {
     }
 
     # BuildMaster's API doesn't work with application group variables.
-    It 'should remove application group variable' -Skip {
+    It 'should remove application group variable' {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable -Named 'AppGroupFubar' -WithValue 'AppGropuValue' -ForApplicationGroup 'fizzbuzz'
         WhenRemovingVariable 'AppGroupFubar' -ForApplicationGroup 'fizzbuzz'

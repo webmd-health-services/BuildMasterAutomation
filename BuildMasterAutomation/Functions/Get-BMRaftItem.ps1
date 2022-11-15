@@ -176,7 +176,7 @@ function Get-BMRaftItem
             }
             $typeCodeName = $TypeCode | Get-BMRaftTypeDisplayName -ErrorAction Ignore
             $msg = "$($typeCodeName) ""$($RaftItem | Get-BMObjectName -ObjectTypeName 'RaftItem')""$($appMsg) " +
-                   'doesn''t exist.'
+                   'does not exist.'
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         }
     }

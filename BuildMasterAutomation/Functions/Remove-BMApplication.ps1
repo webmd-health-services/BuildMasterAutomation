@@ -15,7 +15,7 @@ function Remove-BMApplication
     Uses the BuildMaster native API.
 
     .EXAMPLE
-    Remove-BMApplication -Session $session -Application $app
+    Remove-BMApplication -Session $session -Application $bmApp
 
     Demonstrates how to delete an application by passing an application object to the `Application` parameter.
 
@@ -30,12 +30,12 @@ function Remove-BMApplication
     Demonstrates how to delete an application by passing its name to the `Application` parameter.
 
     .EXAMPLE
-    $app,433,'So Long 2' | Remove-BMApplication -Session $session
+    $bmApp,433,'So Long 2' | Remove-BMApplication -Session $session
 
     Demonstrates that you can pipe application ids, names, and/or objects to `Remove-BMApplication`.
 
     .EXAMPLE
-    Remove-BMApplication -Session $session -Application $app -Force
+    Remove-BMApplication -Session $session -Application $bmApp -Force
 
     Demonstrates how to delete an application even if its still enabled by using the `Force` (switch).
     #>
@@ -58,15 +58,24 @@ function Remove-BMApplication
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $app = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
-        if (-not $app)
+        $bmApp = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
+        if (-not $bmApp)
         {
-            $msg = "Cannot delete application ""$($app | Get-BMObjectName)"" because it does not exist."
+            $msg = "Cannot delete application ""$($Application | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
-        $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $app -ForNativeApi -PassThru
+        if (-not $Force -and $bmApp.Active_Indicator -eq 'Y')
+        {
+            $msg = "Cannot delete application ""$($bmApp.Application_Name)"" because it is active. Use the " +
+                   '"Disable-BMApplication" function to disable the application then delete it, or use this ' +
+                   'function''s -Force (switch) to delete this active application.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+
+        $appArg = @{} | Add-BMObjectParameter -Name 'Application' -Value $bmApp -ForNativeApi -PassThru
         Invoke-BMNativeApiMethod -Session $Session `
                                  -Name 'Applications_PurgeApplicationData' `
                                  -Parameter $appArg `
