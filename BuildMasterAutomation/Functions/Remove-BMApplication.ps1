@@ -59,18 +59,18 @@ function Remove-BMApplication
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         $bmApp = $Application | Get-BMApplication -Session $Session -ErrorAction Ignore
-        if (-not $app)
+        if (-not $bmApp)
         {
-            $msg = "Cannot delete application ""$($app | Get-BMObjectName)"" because it does not exist."
+            $msg = "Cannot delete application ""$($Application | Get-BMObjectName)"" because it does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
         if (-not $Force -and $bmApp.Active_Indicator -eq 'Y')
         {
-            $msg = "Cannot delete application ""$($bmApp | Get-BmObjectName)"" because it is active. Use the " +
-                   '"Disable-BMApplication" function to disable the application, or use the -Force (switch) on this ' +
-                   'function to delete an active application.'
+            $msg = "Cannot delete application ""$($bmApp.Application_Name)"" because it is active. Use the " +
+                   'Use the "Disable-BMApplication" function to disable the application then delete, or use the ' +
+                   '-Force (switch) on this function to delete the application even if it is active.'
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }

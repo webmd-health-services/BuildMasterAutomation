@@ -87,7 +87,7 @@ function Get-BMApplication
 
         if ($Application -and -not $apps -and -not $searching)
         {
-            $msg = "Application ""$($Application)"" does not exist."
+            $msg = "Application ""$($Application | Get-BMObjectName -ObjectTypeName 'Application')"" does not exist."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         }
     }

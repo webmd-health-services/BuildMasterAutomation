@@ -85,8 +85,7 @@ function New-BMTestApplication
 
     if (-not $Name)
     {
-        $Name = Split-Path -Path $CommandPath -Leaf
-        $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+        $Name = New-BMTestObjectName
     }
 
     return New-BMApplication -Session $Session -Name $Name
@@ -119,10 +118,11 @@ function New-BMTestObjectName
     $word = Get-Random -InputObject $script:words
 
     $script:objectNum += 1
+    $filesToSkip = @( $PSCommandPath, (Get-Module -Name 'Pester').Path )
     $baseName =
         Get-PSCallStack |
-        Select-Object -First 2 |
-        Select-Object -Last 1 |
+        Where-Object 'ScriptName' -NotIn $filesToSkip |
+        Select-Object -First 1 |
         Select-Object -ExpandProperty 'ScriptName' |
         Split-Path -Leaf |
         ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) } |

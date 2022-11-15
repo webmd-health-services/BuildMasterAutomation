@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD024 no-duplicate-heading/no-duplicate-header -->
+
 # BuildMasterAutomation Changelog
 
 ## 3.0.1
@@ -48,6 +49,50 @@ permissions are required.
 
 * `Force` switch from `Get-BMEnvironment` and `Remove-BMEnvironment`.
 
+## 2.0.1
+
+### Upgrade Instructions
+
+This is a continuation of the types of changes made in 2.0.0. See that release's changelog for upgrade instructions.
+
+* These functions now write an error if an item doesn't exist (for `Get`, `Remove`, and `Set` functions) or if an item
+already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usages to preserve previous behavior:
+  * `Set-BMRelease`
+  * `Set-BMVariable`
+  * `Stop-BMRelease`
+
+### Added
+
+#### Parameters
+
+* `Application` to the `Disable-BMApplication` function. This parameter accepts an application name, id, or application
+object and replaces the now-obsolete `ID` parameter.
+* `Set-BMVariable`:
+  * `Application`: accepts application ids, names, or application objects.
+  * `ApplicationGroup`: accepts application group ids, names, or application group objects.
+  * `Environment`: accepts environment ids, names, or environment objects.
+  * `Server`: accepts server ids, names, or server objects.
+  * `ServerRole`: accepts server role ids, names, or server names.
+* `Application` to the `Stop-BMRelease` function. This parameter accepts an application name, id, or application object
+and replaces the now-obsolete `ID` parameter.
+
+## Changed
+
+* Updated `Get-BMVariable` and `Remove-BMVariable` so they can get and remove variables for applications and application
+groups, which works around a bug in the BuildMaster
+[Variables API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
+
+### Deprecated
+
+* The `ID` parameter on the `Disable-BMApplication` function. Use the new `Application` parameter instead.
+* The following parameters on `Set-BMVariable`:
+  * `ApplicationName`; use `Application` instead.
+  * `ApplicationGroupName`; use `ApplicationGroup` instead.
+  * `EnvironmentName`; use `Environment` instead.
+  * `ServerName`; use `Server` instead.
+  * `ServerRoleName`; use `ServerRole` instead.
+* `ApplicationID` on the `Stop-BMRelease` function. Use the new `Application` parameter isntead.
+
 ## 2.0.0
 
 2022-11-7
@@ -56,11 +101,6 @@ permissions are required.
 
 This version of BuildMasterAutomation is only supported on BuildMaster 6.2. Some of it may work on older or newer
 versions, but we've only tested against BuildMaster 6.2.33.
-
-### Known Issues
-
-The `Get-BMVariable` function fails to get variables from applications or application groups, due to a bug in the
-BuildMaster [Variables Mangement API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
 
 ### Upgrade Instructions
 
@@ -84,6 +124,8 @@ already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usag
   * `Remove-BMServerRole`
   * `Remove-BMVariable`
   * `Set-BMRelease`
+  * `Set-BMVariable`
+  * `Stop-BMRelease`
 * Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.

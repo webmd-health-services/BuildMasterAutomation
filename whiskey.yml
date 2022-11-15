@@ -61,6 +61,7 @@ Build:
         'GitHub'
     ]
 
+# Call depth overflow workaround.
 - Pester:
     AsJob: true
     Configuration:
@@ -68,10 +69,12 @@ Build:
             Path:
             - Tests\New-BMEnvironment.Tests.ps1
             - Tests\New-BMServer.Tests.ps1
+            - Tests\*-BMVariable.Tests.ps1
         TestResult:
             Enabled: true
             OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester1.xml
             TestSuiteName: BuildMasterAutomation
+
 
 - Pester:
     AsJob: true
@@ -81,7 +84,9 @@ Build:
             ExcludePath:
             - "*\\New-BMEnvironment.Tests.ps1"
             - "*\\New-BMServer.Tests.ps1"
+            - "*\\*-BMVariable.Tests.ps1"
         TestResult:
             Enabled: true
-            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester2.xml
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester3.xml
             TestSuiteName: BuildMasterAutomation
+
