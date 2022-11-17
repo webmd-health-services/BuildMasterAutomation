@@ -64,27 +64,50 @@ BeforeAll {
         }
     }
 
+    function GivenRelease
+    {
+        $releaseNumber = New-TestReleaseNumber
+        $script:release = New-BMRelease -Session $script:session `
+                                        -Application $script:app `
+                                        -Number $releaseNumber `
+                                        -Pipeline $script:pipeline
+    }
+
     function New-TestReleaseNumber
     {
         [IO.Path]::GetRandomFileName()
     }
+
+    function WhenSetting
+    {
+        [CmdletBinding()]
+        param(
+            [Object] $Release = $script:release,
+
+            [hashtable] $WithArgs = @{}
+        )
+
+        Set-BMRelease -Session $script:session -Release $Release @WithArgs
+
+    }
 }
 
 Describe 'Set-BMRelease' {
+    BeforeEach {
+        $Global:Error.Clear()
+        $script:release = $null
+    }
+
     It 'should update release' {
-        $releaseNumber = New-TestReleaseNumber
-        $release = New-BMRelease -Session $script:session `
-                                 -Application $script:app `
-                                 -Number $releaseNumber `
-                                 -Pipeline $script:pipeline
+        GivenRelease
         $newPipeline = Set-BMPipeline -Session $script:session -Raft $script:raft -Name 'updating a release' -PassThru
         $updatedRelease = Set-BMRelease -Session $script:session `
-                                        -Release $release `
+                                        -Release $script:release `
                                         -Pipeline $newPipeline `
                                         -Name 'new name'
         Assert-Release -Release $updatedRelease `
                        -HasName 'new name' `
-                       -HasNumber $release.number `
+                       -HasNumber $script:release.number `
                        -HasPipeline 'updating a release'
     }
 
@@ -103,5 +126,16 @@ Describe 'Set-BMRelease' {
         $updatedRelease = Set-BMRelease -Session $script:session -Release -1 -ErrorAction SilentlyContinue
         $updatedRelease | Should -BeNullOrEmpty
         $Global:Error | Should -Match 'Release\ "-1"\ does\ not\ exist\.'
+    }
+
+    It 'should validate pipeline' {
+        GivenRelease
+        WhenSetting -WithArgs @{ Pipeline = 'i do not exist' } -ErrorAction SilentlyContinue
+        ThenError -MatchesPattern 'Pipeline "i do not exist" does not exist'
+    }
+
+    It 'should validate release' {
+        WhenSetting -Release 'i do not exist' -ErrorAction SilentlyContinue
+        ThenError -MatchesPattern 'Release "i do not exist" does not exist'
     }
 }

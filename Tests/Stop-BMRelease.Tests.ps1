@@ -5,9 +5,9 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-    $session = New-BMTestSession
-    $app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
-    $pipeline = GivenAPipeline $app.Application_Name -ForApplication $app
+    $script:session = New-BMTestSession
+    $script:app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
+    $script:pipeline = GivenAPipeline $app.Application_Name -ForApplication $app
 
     function GivenARelease
     {
@@ -19,18 +19,14 @@ BeforeAll {
         New-BMRelease -Session $session -Application $app -Number $Number -Pipeline $pipeline.Pipeline_Name -Name $Name
     }
 
-    function Init
-    {
-        $script:app = $null
-    }
-
     function ThenTheReleaseIsCancelled
     {
         param(
             $Number
         )
 
-        $release = Get-BMRelease -Session $session -Application $app |
+        $release =
+            Get-BMRelease -Session $session -Application $app |
             Where-Object { $_.number -eq $Number }
 
         $release.status | Should -Be 'canceled'
@@ -49,19 +45,33 @@ BeforeAll {
 }
 
 Describe 'Stop-BMRelease' {
-    It 'should cancel using application object' {
-        GivenARelease 'fubar' '3.4'
-        WhenCancellingTheRelease $app.Application_Id '3.4'
+    It 'should cancel with application id' {
+        GivenARelease (New-BMTestObjectName) '3.4'
+        WhenCancellingTheRelease $script:app.Application_Id '3.4'
         ThenTheReleaseIsCancelled '3.4'
+    }
+
+    It 'should cancel with application name' {
+        GivenARelease (New-BMTestObjectName) '3.5'
+        WhenCancellingTheRelease $script:app.Application_Name '3.5'
+        ThenTheReleaseIsCancelled '3.5'
+    }
+
+    It 'should cancel with application object' {
+        GivenARelease (New-BMTestObjectName) '3.6'
+        WhenCancellingTheRelease $script:app '3.6'
+        ThenTheReleaseIsCancelled '3.6'
     }
 
     # BuildMaster API doesn't expose a way to see the cancellation reason, so we mock the call.
     It 'should cancel when using reason' {
-        Mock -CommandName 'Invoke-BMNativeApiMethod' -ModuleName 'BuildMasterAutomation'
-        GivenARelease 'snafu' '3.5'
-        WhenCancellingTheRelease $app.Application_Id '3.5' 'it looked at me funny'
-        Assert-MockCalled -CommandName 'Invoke-BMNativeApiMethod' `
-                          -ModuleName 'BuildMasterAutomation' `
-                          -ParameterFilter { $Parameter['CancelledReason_Text'] -eq 'it looked at me funny' }
+        Mock 'Invoke-BMNativeApiMethod' `
+             -ModuleName 'BuildMasterAutomation' `
+             -ParameterFilter { $Name -eq 'Releases_CancelRelease'}
+        GivenARelease 'snafu' '3.7'
+        WhenCancellingTheRelease $script:app.Application_Id '3.7' 'it looked at me funny'
+        Should -Invoke 'Invoke-BMNativeApiMethod' `
+                       -ModuleName 'BuildMasterAutomation' `
+                       -ParameterFilter { $Parameter['CancelledReason_Text'] -eq 'it looked at me funny' }
     }
 }

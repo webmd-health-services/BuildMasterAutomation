@@ -6,9 +6,11 @@ function Remove-BMVariable
     Deletes BuildMaster variables.
 
     .DESCRIPTION
-    The `Remove-BMVariable` function deletes BuildMaster variables. By default, it deletes global variables. It can also delete variables for a specific environment, server, server role, application group, and application variables.
+    The `Remove-BMVariable` function deletes BuildMaster variables. By default, it deletes global variables. It can also
+    delete variables for a specific environment, server, server role, application group, and application variables.
 
-    Pass the name of the variable to delete to the `Name` parameter. If no variable exists to delete, you'll get an error.
+    Pass the name of the variable to delete to the `Name` parameter. If no variable exists to delete, you'll get an
+    error.
 
     To delete an environment's variables, pass the environment's name to the `EnvironmentName` parameter.
 
@@ -20,9 +22,13 @@ function Remove-BMVariable
 
     To delete an application's variables, pass the application's name to the `ApplicationName` parameter.
 
-    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use `New-BMSession` to create a session object.
+    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
+    `New-BMSession` to create a session object.
 
-    This function uses BuildMaster's variables API. When deleting application and application group variables, it uses BuildMaster's native API.
+    This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
+    API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
+    native API.
+
 
     .EXAMPLE
     Remove-BMVariable -Session $session -Name 'Var'
