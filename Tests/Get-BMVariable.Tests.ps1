@@ -266,7 +266,7 @@ Describe 'Get-BMVariable' {
     }
 
     # Doesn't currently work in BuildMaster.
-    It 'should return the variables for an application' -Skip {
+    It 'should return the variables for an application' {
         $app = GivenApplication
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
         GivenVariable 'AppFubar' -WithValue 'Snafu' -ForApplication $app.Application_Name
@@ -286,7 +286,7 @@ Describe 'Get-BMVariable' {
     }
 
     # Doesn't currently work in BuildMaster.
-    It 'should return application group''s variable' -Skip {
+    It 'should return application group''s variable' {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
         GivenVariable 'AppGroupFubar' -WithValue 'Snafu' -ForApplicationGroup 'fizzbuzz'
@@ -333,10 +333,7 @@ Describe 'Get-BMVariable' {
         Assert-MockCalled -CommandName 'Invoke-BMRestMethod' `
                           -ModuleName 'BuildMasterAutomation' `
                           -ParameterFilter {
-                                # $DebugPreference = 'Continue'
                                 $expectedName = "variables/global/$([Uri]::EscapeDataString('URL Encode Me!'))"
-                                Write-Debug "Name  expected  $($expectedName)"
-                                Write-Debug "      actual    $($Name)"
                                 return $Name -eq $expectedName
                             }
         ThenNoErrorWritten

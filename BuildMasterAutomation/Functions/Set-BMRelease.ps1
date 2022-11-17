@@ -25,7 +25,7 @@ function Set-BMRelease
         [Object] $Session,
 
         # The release to update. Pass the release's id, name, or a release object.
-        [Parameter(Mandatory, ParameterSetName='Update')]
+        [Parameter(Mandatory)]
         [Object] $Release,
 
         # The release's pipeline.
@@ -47,11 +47,18 @@ function Set-BMRelease
             return
         }
 
-        $pipelineName = $bmRelease.pipelineName
-        if ($Pipeline)
+        if (-not $Pipeline)
         {
-            $pipelineName = $Pipeline.RaftItem_Name
+            $Pipeline = $bmRelease.pipelineName
         }
+
+        $bmPipeline = $Pipeline | Get-BMPipeline -Session $Session
+        if (-not $bmPipeline)
+        {
+            return
+        }
+
+        $pipelineName = $bmPipeline.RaftItem_Name
 
         if( -not $Name )
         {

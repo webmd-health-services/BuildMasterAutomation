@@ -9,7 +9,7 @@ function Set-BMVariable
     The `Set-BMVariable` function creates or sets the value of a BuildMaster variable. By default, it creates/sets global variables. It can also set environment, server, server role, application group, and application variables.
 
     Pass the variable's name to the `Name` parameter. Pass the variable's value to the `Value` parameter. The value is passed as-is to BuildMaster.
-    
+
     To set an environment's variable, pass the environment's name to the `EnvironmentName` parameter.
 
     To set a server role's variable, pass the server role's name to the `ServerRoleName` parameter.
@@ -25,7 +25,7 @@ function Set-BMVariable
     This function uses BuildMaster's variables API.
 
     .EXAMPLE
-    Set-BMVariable -Session $session -Name 'Var' -Value 'Value' 
+    Set-BMVariable -Session $session -Name 'Var' -Value 'Value'
 
     Demonstrates how to create or set a global variable.
 
@@ -54,60 +54,53 @@ function Set-BMVariable
 
     Demonstrates how to create or set a variable for an application.
     #>
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName='global')]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='global')]
     param(
+        # The session to BuildMaster. Use `New-BMSession` to create a session.
         [Parameter(Mandatory)]
-        # An object representing the instance of BuildMaster to connect to. Use `New-BMSession` to create session objects.
-        [object]$Session,
+        [Object] $Session,
 
-        [Parameter(Mandatory)]
         # The name of the variable to create.
-        [string]$Name,
-
         [Parameter(Mandatory)]
+        [String] $Name,
+
         # The variable's value. Passed to BuildMaster as-is.
-        [string]$Value,
+        [Parameter(Mandatory)]
+        [String] $Value,
 
-        [Parameter(Mandatory,ParameterSetName='application')]
         # The name of the application where the variable should be created. The default is to create a global variable.
-        [string]$ApplicationName,
+        [Parameter(Mandatory,ParameterSetName='application')]
+        [Alias('ApplicationName')]
+        [Object] $Application,
 
-        [Parameter(Mandatory,ParameterSetName='application-group')]
         # The name of the application group where the variable should be created. The default is to create a global variable.
-        [string]$ApplicationGroupName,
+        [Parameter(Mandatory,ParameterSetName='application-group')]
+        [Alias('ApplicationGroupName')]
+        [Object] $ApplicationGroup,
 
-        [Parameter(Mandatory,ParameterSetName='environment')]
         # The name of the environment where the variable should be created. The default is to create a global variable.
-        [string]$EnvironmentName,
+        [Parameter(Mandatory,ParameterSetName='environment')]
+        [Alias('EnvironmentName')]
+        [Object] $Environment,
 
-        [Parameter(Mandatory,ParameterSetName='server')]
         # The name of the server where the variable should be created. The default is to create a global variable.
-        [string]$ServerName,
+        [Parameter(Mandatory,ParameterSetName='server')]
+        [Alias('ServerName')]
+        [Object] $Server,
 
-        [Parameter(Mandatory,ParameterSetName='role')]
         # The name of the server role where the variable should be created. The default is to create a global variable.
-        [string]$ServerRoleName
+        [Parameter(Mandatory,ParameterSetName='role')]
+        [Alias('ServerRoleName')]
+        [Object] $ServerRole
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $entityParamNames = @{
-                            'application' = 'ApplicationName';
-                            'application-group' = 'ApplicationGroupName';
-                            'environment' = 'EnvironmentName';
-                            'server' = 'ServerName';
-                            'role' = 'ServerRoleName';
-                        }
-
-    $endpointName = ('variables/{0}' -f $PSCmdlet.ParameterSetName)
-    if( $PSCmdlet.ParameterSetName -ne 'global' )
-    {
-        $entityParamName = $entityParamNames[$PSCmdlet.ParameterSetName]
-        $entityName = $PSBoundParameters[$entityParamName]
-        $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($entityName)
-    }
-    $endpointName = '{0}/{1}' -f $endpointName,[uri]::EscapeDataString($Name)
-
-    Invoke-BMRestMethod -Session $Session -Name $endpointName -Method Post -Body $Value
+    Invoke-BMVariableEndpoint -Session $Session `
+                              -Variable $Name `
+                              -Value $Value `
+                              -EntityTypeName $PSCmdlet.ParameterSetName `
+                              -BoundParameter $PSBoundParameters
 }
