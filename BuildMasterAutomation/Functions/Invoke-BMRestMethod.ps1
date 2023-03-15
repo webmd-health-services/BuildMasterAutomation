@@ -134,7 +134,7 @@ function Invoke-BMRestMethod
                 }
 
     # $DebugPreference = 'Continue'
-    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
+    Write-Verbose -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
     if( $ContentType )
     {
         Write-Debug -Message ('Content-Type: {0}' -f $ContentType)
