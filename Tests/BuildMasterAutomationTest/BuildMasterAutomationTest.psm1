@@ -1,4 +1,6 @@
 
+$script:itemNum = 0
+
 $apiKey = 'HKgaAKWjjgB9YRrTbTpHzw=='
 
 $bmNotInstalledMsg = 'It looks like BuildMaster isn''t installed. Please run init.ps1 to install and configure a local BuildMaster instance so we can run automated tests against it.'
@@ -138,14 +140,12 @@ function New-BMTestSession
 function GivenAnApplication
 {
     param(
-        [Parameter(Mandatory)]
         $Name,
 
         [switch] $ThatIsDisabled
     )
 
-    $Name = Split-Path -Path $Name -Leaf
-    $Name = '{0}.{1}' -f $Name,[IO.Path]::GetRandomFileName()
+    $Name = New-BMTestObjectName
 
     $app = New-BMApplication -Session $script:session -Name $Name
 
@@ -162,7 +162,6 @@ function GivenAnApplication
 function GivenARelease
 {
     param(
-        [Parameter(Mandatory)]
         $Named,
 
         [Parameter(Mandatory)]
@@ -175,17 +174,20 @@ function GivenARelease
         $UsingPipeline
     )
 
-    $Named = Split-Path -Path $Named -Leaf
-    $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
+    $Named = New-BMTestObjectName
 
-    return New-BMRelease -Session $script:session -Application $ForApplication -Number $WithNumber -Name $Named -Pipeline $UsingPipeline
+    return New-BMRelease -Session $script:session `
+                         -Application $ForApplication `
+                         -Number $WithNumber `
+                         -Name $Named `
+                         -Pipeline $UsingPipeline
 }
 
 function GivenAPipeline
 {
     [CmdletBinding(DefaultParameterSetName='Global')]
     param(
-        [Parameter(Mandatory, Position=0)]
+        [Parameter(Position=0)]
         $Named,
 
         [Parameter(ParameterSetName='Global')]
@@ -195,8 +197,7 @@ function GivenAPipeline
         $ForApplication
     )
 
-    $Named = Split-Path -Path $Named -Leaf
-    $Named = '{0}.{1}' -f $Named,[IO.Path]::GetRandomFileName()
+    $Named = New-BMTestObjectName
 
     $setArgs = @{ }
     if ($ForApplication)
