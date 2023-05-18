@@ -50,28 +50,13 @@ Build:
     AsJob: true
     Configuration:
         Run:
-            Path:
-            - Tests\New-BMEnvironment.Tests.ps1
-            - Tests\New-BMServer.Tests.ps1
-            - Tests\*-BMVariable.Tests.ps1
-        TestResult:
-            Enabled: true
-            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester1.xml
-            TestSuiteName: BuildMasterAutomation
-
-- Pester:
-    AsJob: true
-    Configuration:
-        Run:
             Path: Tests\*.Tests.ps1
-            ExcludePath:
-            - "*\\New-BMEnvironment.Tests.ps1"
-            - "*\\New-BMServer.Tests.ps1"
-            - "*\\*-BMVariable.Tests.ps1"
         TestResult:
             Enabled: true
             OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester2.xml
             TestSuiteName: BuildMasterAutomation
+        Output:
+            Verbosity: Detailed
 
 - PublishPowerShellModule:
     Path: BuildMasterAutomation
