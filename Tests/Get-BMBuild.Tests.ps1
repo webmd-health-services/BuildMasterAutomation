@@ -92,7 +92,8 @@ Describe 'Get-BMBuild' {
         $pipeline = GivenAPipeline -Named $PSCommandPath
 
         $app1 = GivenAnApplication -Name $PSCommandPath
-        $app1Release1 = GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
+        $app1Release1 =
+            GivenARelease -Named $PSCommandPath -ForApplication $app1 -WithNumber '1.0.0' -UsingPipeline $pipeline
         $app1Release1Build1 = GivenABuild -ForRelease $app1Release1
         $app1Release1Build2 = GivenABuild -ForRelease $app1Release1
 

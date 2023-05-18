@@ -60,14 +60,30 @@ function New-BMRelease
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         $parameters = @{
-                            releaseNumber = $Number;
-                            releaseName = $Name;
-                       }
+            releaseNumber = $Number;
+            releaseName = $Name;
+        }
 
-        $parameters |
-            Add-BMObjectParameter -Name 'application' -Value $Application -PassThru |
-            Add-BMObjectParameter -Name 'RaftItem' -Value $Pipeline -PassThru |
-            Add-BMObjectParameter -Name 'pipeline' -Value $Pipeline -AsName
+        # If $Pipeline is a string, then it's the pipeline name, so use it.
+        if ($Pipeline | Test-BMName)
+        {
+            $parameters['pipelineName'] = $Pipeline
+        }
+        # If $Pipeline has an Application_Name property with a value, then the pipelin doesn't need the raft's naem as
+        # a prefix.
+        elseif ($Pipeline | Get-ObjectName -ObjectTypeName 'Application' -ErrorAction Ignore)
+        {
+            $parameters['pipelineName'] = $Pipeline | Get-BMObjectName -ObjectTypeName 'Pipeline'
+        }
+        # Pipeline is in a global raft, so its name has to be prefixed with the raft name.
+        else
+        {
+            $raftName = Get-BMRaft -Raft $Pipeline | Get-BMObjectName -ObjectTypeName 'Raft'
+            $pipelineName = $Pipeline | Get-ObjectName -ObjectTypeName 'Pipeline'
+            $parameters['pipelineName'] = "$($raftName)::$($pipelineName)"
+        }
+
+        $parameters | Add-BMObjectParameter -Name 'application' -Value $Application
 
         Invoke-BMRestMethod -Session $Session -Name 'releases/create' -Method Post -Parameter $parameters
     }

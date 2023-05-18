@@ -209,7 +209,8 @@ function GivenAPipeline
         $setArgs['Raft'] = $InRaft
     }
 
-    return Set-BMPipeline -Session $script:session -Name $Named @setArgs -PassThru
+    $stages = New-BMPipelineStageObject -Name 'One'
+    return Set-BMPipeline -Session $script:session -Name $Named -Stage $stages @setArgs -PassThru
 }
 
 function GivenABuild
