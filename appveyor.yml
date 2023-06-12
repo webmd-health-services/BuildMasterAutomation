@@ -7,7 +7,7 @@ skip_branch_with_pr: true
 build:
   verbosity: minimal
 
-test: off
+test: false
 
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
@@ -29,7 +29,7 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
 
   - job_name: PowerShell 7.2 on Windows
-    job_group: pwsh_sql2019
+    job_group: pwsh_sql2022
     appveyor_build_worker_image: Visual Studio 2022
 
 
@@ -85,5 +85,14 @@ for:
   environment:
     SQL_INSTANCE_NAME: SQL2019
   init: net start mssql$sql2019
+  build_script:
+  - pwsh: *ps
+
+- matrix:
+    only:
+    - job_group: pwsh_sql2022
+  environment:
+    SQL_INSTANCE_NAME: SQL2022
+  init: net start mssql$sql2022
   build_script:
   - pwsh: *ps

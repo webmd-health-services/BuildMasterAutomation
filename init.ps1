@@ -55,6 +55,9 @@ $sqlServer =
 
 if (-not $sqlServer)
 {
+    Get-Service '*mssql*' | Format-List * -Force | Out-String
+    Write-Information $machineSqlPath
+    Get-ChildItem -Path $machineSqlPath | Format-List * -Force | Out-String
     Write-Error -Message 'Failed to find an installed instance of SQL Server.'
     return
 }
