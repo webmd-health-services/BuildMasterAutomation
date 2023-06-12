@@ -71,15 +71,15 @@ function New-BMRelease
         }
         # If $Pipeline has an Application_Name property with a value, then the pipelin doesn't need the raft's naem as
         # a prefix.
-        elseif ($Pipeline | Get-ObjectName -ObjectTypeName 'Application' -ErrorAction Ignore)
+        elseif ($Pipeline | Get-BMObjectName -ObjectTypeName 'Application' -ErrorAction Ignore)
         {
             $parameters['pipelineName'] = $Pipeline | Get-BMObjectName -ObjectTypeName 'Pipeline'
         }
         # Pipeline is in a global raft, so its name has to be prefixed with the raft name.
         else
         {
-            $raftName = Get-BMRaft -Raft $Pipeline | Get-BMObjectName -ObjectTypeName 'Raft'
-            $pipelineName = $Pipeline | Get-ObjectName -ObjectTypeName 'Pipeline'
+            $raftName = Get-BMRaft -Session $Session -Raft $Pipeline | Get-BMObjectName -ObjectTypeName 'Raft'
+            $pipelineName = $Pipeline | Get-BMObjectName -ObjectTypeName 'Pipeline'
             $parameters['pipelineName'] = "$($raftName)::$($pipelineName)"
         }
 
