@@ -7,6 +7,8 @@ AfterAll {
 }
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
@@ -75,7 +77,6 @@ Describe 'Set-BMRaft' {
                  -Exists `
                  -HasPropertyValues @{
                         Raft_Configuration = $fsRaftConfig;
-                        Environment_Id = $script:bmEnv.id;
                     }
     }
 
@@ -98,7 +99,6 @@ Describe 'Set-BMRaft' {
                  -Exists `
                  -HasPropertyValues @{
                         Raft_Configuration = $fsRaftConfig;
-                        Environment_Id = $script:bmEnv2.id;
                     }
     }
 

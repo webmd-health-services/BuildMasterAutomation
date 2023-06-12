@@ -3,6 +3,8 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
@@ -40,11 +42,11 @@ BeforeAll {
 
         $environment | Should -Not -BeNullOrEmpty
 
-        if( $WithParent )
+        if ($WithParent)
         {
             $environment.parentName | Should -Be $WithParent
         }
-        else
+        elseif ($environment | Get-Member -Name 'parentName')
         {
             $environment.parentName | Should -BeNullOrEmpty
         }
