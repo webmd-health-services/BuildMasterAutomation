@@ -7,6 +7,7 @@
 ### Fixed
 
 * Some expected/handled errors are not ignored.
+* `Get-BMRaftItem` searches *all* applications when looking for a global item.
 
 ## 3.0.1
 

@@ -77,11 +77,20 @@ function Get-BMRaftItem
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
         $WhatIfPreference = $false # Gets items, but the API requires a POST.
 
-        $appFilter = $null
+        $bmApplication = $null
+        if ($Application)
+        {
+            $bmApplication = $Application | Get-BMApplication -Session $Session
+        }
     }
 
     process
     {
+        if ($Application -and -not $bmApplication)
+        {
+            return
+        }
+
         $getRaftArgs = @{}
         if ($Raft)
         {
@@ -89,6 +98,17 @@ function Get-BMRaftItem
         }
 
         $searching = ($RaftItem | Test-BMName) -and [wildcardpattern]::ContainsWildcardCharacters($RaftItem)
+
+        if (-not $bmApplication -and $RaftItem)
+        {
+            # Raft items can be scoped to applications so check if the raft item we got is scoped to an application.
+            $bmApplication = $RaftItem | Get-BMObjectID -PropertyName 'Application' -ErrorAction Ignore
+            if (-not $bmApplication)
+            {
+                $bmApplication = $RaftItem | Get-BMObjectName -PropertyName 'Application' -ErrorAction Ignore
+            }
+            $bmApplication = $bmApplication | Get-BMApplication -Session $Session -ErrorAction Ignore
+        }
 
         $raftItems = $null
         & {
@@ -109,37 +129,16 @@ function Get-BMRaftItem
                         $getArgs | Add-BMParameter -Name 'RaftItemType_Code' -Value $TypeCode
                     }
 
-                    if (-not $Application)
+                    if ($bmApplication)
                     {
-                        # If no Application_Id parameter, BuildMaster's API only returns pipelines that are not
-                        # associated with an application.
-                        Invoke-BMNativeApiMethod -Session $Session `
-                                                 -Name 'Rafts_GetRaftItems' `
-                                                 -Method Post `
-                                                 -Parameter $getArgs
+                        $getArgs | Add-BMObjectParameter -Name 'Application' -Value $bmApplication -ForNativeApi -AsID
                     }
 
-                    if ($null -eq $appFilter)
-                    {
-                        if ($Application)
-                        {
-                            $appFilter = $Application
-                        }
-                        else
-                        {
-                            $appFilter = Get-BMApplication -Session $Session
-                        }
-                    }
-
-                    # Get all raft items associated with the users application or any application.
-                    foreach ($appItem in $appFilter)
-                    {
-                        $getArgs | Add-BMObjectParameter -Name 'Application' -Value $appItem -ForNativeApi -AsID
-                        Invoke-BMNativeApiMethod -Session $Session `
-                                                 -Name 'Rafts_GetRaftItems' `
-                                                 -Method Post `
-                                                 -Parameter $getArgs
-                    }
+                    Invoke-BMNativeApiMethod -Session $Session `
+                                             -Name 'Rafts_GetRaftItems' `
+                                             -Method Post `
+                                             -Parameter $getArgs |
+                        Write-Output
                 }
             } |
             Where-Object {
