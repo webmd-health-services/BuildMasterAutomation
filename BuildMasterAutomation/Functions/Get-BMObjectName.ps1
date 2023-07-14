@@ -68,7 +68,8 @@ function Get-BMObjectName
                 return $InputObject
             }
 
-            Write-Error -Message "Object does not have a ""$($PropertyName)"" property."
+            $msg = "Object does not have a ""${PropertyName}"" property."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
