@@ -17,7 +17,6 @@ if( -not $svcConfig )
 
 $url = $svcConfig.SelectSingleNode('/InedoAppConfig/WebServer').Attributes['Urls'].Value
 $url = $url -replace '\*',$env:COMPUTERNAME
-Write-Information $url
 $connString = $svcConfig.SelectSingleNode('/InedoAppConfig/ConnectionString').InnerText
 
 $conn = New-Object 'Data.SqlClient.SqlConnection'
