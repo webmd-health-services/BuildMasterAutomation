@@ -1,14 +1,29 @@
+<!-- markdownlint-disable MD012 no-multiple-blanks -->
 <!-- markdownlint-disable MD024 no-duplicate-heading/no-duplicate-header -->
 
 # BuildMasterAutomation Changelog
 
 ## 3.0.2
 
+> Released 17 Jul 2023
+
+### Changes
+
+* `Get-BMEnvironment` ensures that returned objects always have a `parentName` property.
+
 ### Fixed
 
 * Some expected/handled errors are not ignored.
 
+### Deprecated
+
+* The `Set-BMRaft` function's `Environment` parameter. BuildMaster does not support setting the environment for a raft.
+This parameter was added because of a typo in the BuildMaster docs.
+
+
 ## 3.0.1
+
+> Released 17 Nov 2022
 
 ### Upgrade Instructions
 
