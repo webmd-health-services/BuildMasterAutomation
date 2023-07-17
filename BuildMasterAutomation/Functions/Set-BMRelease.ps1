@@ -47,12 +47,16 @@ function Set-BMRelease
             return
         }
 
-        if (-not $Pipeline)
+        if ($Pipeline)
         {
-            $Pipeline = $bmRelease.pipelineName
+            $bmPipeline = $Pipeline | Get-BMPipeline -Session $Session
+        }
+        else
+        {
+            $bmPipeline =
+                $bmRelease.pipelineName | Get-BMPipeline -Session $Session -Application $bmRelease.applicationId
         }
 
-        $bmPipeline = $Pipeline | Get-BMPipeline -Session $Session
         if (-not $bmPipeline)
         {
             return
@@ -73,6 +77,6 @@ function Set-BMRelease
                      }
         Invoke-BMNativeApiMethod -Session $Session -Name 'Releases_CreateOrUpdateRelease' -Method Post -Parameter $parameter | Out-Null
 
-        Get-BMRelease -Session $Session -Release $bmRelease
+        Get-BMRelease -Session $Session -Release $bmRelease -Application $bmRelease.ApplicationId
     }
 }
