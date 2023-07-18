@@ -10,7 +10,7 @@
 		},
 		{
 			"Name": "SqlServer",
-			"Version": "21.*"
+			"Version": "22.*"
 		}
 	]
 }
