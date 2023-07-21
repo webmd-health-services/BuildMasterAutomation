@@ -3,10 +3,13 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:pipelineName = $defaultName = New-BMTestObjectname
     $script:session = New-BMTestSession
+    $script:defaultRaft = Get-BMRaft -Session $script:session -Raft 'Default'
     $script:raft = Set-BMRaft -Session $script:session -Raft $defaultName -PassThru
     $script:app = New-BMApplication -Session $script:session -Name $defaultName -Raft $script:raft
     $script:pipeline = Set-BMPipeline -Session $script:session `
@@ -37,10 +40,9 @@ BeforeAll {
         {
             $processedSomething = $true
 
+            $Release = $Release | Get-BMRelease -Session $script:session
             $Release | Should -Not -BeNullOrEmpty
-            $newRelease = $Release | Get-BMRelease -Session $script:session
-            $newRelease | Should -Not -BeNullOrEmpty
-            $newRelease.id | Should -Be $Release.id
+
             $Release.applicationId | Should -Be $script:app.Application_Id
             $Release.number | Should -Be $HasNumber
 
@@ -66,11 +68,6 @@ BeforeAll {
 
     function GivenRelease
     {
-        $releaseNumber = New-TestReleaseNumber
-        $script:release = New-BMRelease -Session $script:session `
-                                        -Application $script:app `
-                                        -Number $releaseNumber `
-                                        -Pipeline $script:pipeline
     }
 
     function New-TestReleaseNumber
@@ -96,29 +93,46 @@ Describe 'Set-BMRelease' {
     BeforeEach {
         $Global:Error.Clear()
         $script:release = $null
+        $script:releaseNumber = New-TestReleaseNumber
+        $script:release = New-BMRelease -Session $script:session `
+                                        -Application $script:app `
+                                        -Number $script:releaseNumber `
+                                        -Pipeline $script:pipeline
+
     }
 
     It 'should update release' {
-        GivenRelease
-        $newPipeline = Set-BMPipeline -Session $script:session -Raft $script:raft -Name 'updating a release' -PassThru
+        $newPipeline =
+            Set-BMPipeline -Session $script:session -Raft $script:defaultRaft -Name (New-BMTestObjectName) -PassThru
         $updatedRelease = Set-BMRelease -Session $script:session `
                                         -Release $script:release `
                                         -Pipeline $newPipeline `
-                                        -Name 'new name'
-        Assert-Release -Release $updatedRelease `
-                       -HasName 'new name' `
+                                        -Name (New-BMTestObjectName)
+
+        Assert-Release -Release $script:release.id `
+                       -HasName $updatedRelease.name `
                        -HasNumber $script:release.number `
-                       -HasPipeline 'updating a release'
+                       -HasPipeline "$($script:defaultRaft.Raft_Prefix)::$($newPipeline.RaftItem_Name)"
+    }
+
+    It 'should update release with a pipeline from a custom raft' {
+        $newPipeline = Set-BMPipeline -Session $script:session -Raft $script:raft -Name (New-BMTestObjectName) -PassThru
+        $updatedRelease = Set-BMRelease -Session $script:session `
+                                        -Release $script:release `
+                                        -Pipeline $newPipeline `
+                                        -Name (New-BMTestObjectName)
+        Assert-Release -Release $script:release.id `
+                       -HasName $updatedRelease.name `
+                       -HasNumber $script:release.number `
+                       -HasPipeline "$($script:raft.Raft_Prefix)::$($newPipeline.RaftItem_Name)"
     }
 
     It 'should not change anything' {
-        $releaseNumber = New-TestReleaseNumber
-        $release = New-BMRelease -Session $script:session -Application $script:app -Number $releaseNumber -Pipeline $script:pipeline
-        $updatedRelease = Set-BMRelease -Session $script:session -Release $release
+        $updatedRelease = Set-BMRelease -Session $script:session -Release $script:release
         Assert-Release -Release $updatedRelease `
                        -HasName $release.name `
                        -HasNumber $release.number `
-                       -HasPipeline $release.pipelineName
+                       -HasPipeline "$($script:raft.Raft_Prefix)::$($release.pipelineName)"
     }
 
     It 'should fail when update does not exist' {
@@ -129,7 +143,6 @@ Describe 'Set-BMRelease' {
     }
 
     It 'should validate pipeline' {
-        GivenRelease
         WhenSetting -WithArgs @{ Pipeline = 'i do not exist' } -ErrorAction SilentlyContinue
         ThenError -MatchesPattern 'Pipeline "i do not exist" does not exist'
     }

@@ -59,6 +59,11 @@ function Get-BMEnvironment
                 }
                 return $true
             } |
+            ForEach-Object {
+                # BuildMaster API doesn't always return these properties.
+                $_ | Add-Member -MemberType NoteProperty -Name 'parentName' -Value '' -ErrorAction Ignore
+                return $_
+            } |
             Tee-Object -Variable 'environments' |
             Write-Output
 

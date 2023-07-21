@@ -3,6 +3,8 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
@@ -38,7 +40,7 @@ BeforeAll {
 
         $environment = $Named | Get-BMEnvironment -Session $script:session
 
-        $environment | Should -Not -BeNullOrEmpty
+        $environment | Should -Not -BeNullOrEmpty -Because """${Named}"" environment should exist"
 
         if( $WithParent )
         {

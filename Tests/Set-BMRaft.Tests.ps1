@@ -2,17 +2,12 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-AfterAll {
-    $script:bmEnv, $script:bmEnv2 | Remove-BMEnvironment -Session $script:session
-}
-
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:envName =
-    $script:bmEnv = New-BMEnvironment $script:session -Name 'Set-BMRaft' -ErrorAction Ignore -PassThru
-    $script:bmEnv2 = New-BMEnvironment $script:session -Name 'Set-BMRaft2' -ErrorAction Ignore -PassThru
 
     function ThenRaft
     {
@@ -36,7 +31,7 @@ BeforeAll {
                 $raft |
                     Get-Member -Name $propertyName |
                     Should -Not -BeNullOrEmpty -Because "missing property $($propertyName)"
-                $raft.$propertyName | Should -Be $HasPropertyValues[$propertyName]
+                $raft.$propertyName | Should -Be $HasPropertyValues[$propertyName] -Because $propertyName
             }
         }
     }
@@ -69,13 +64,11 @@ Describe 'Set-BMRaft' {
 
         Set-BMRaft -Session $script:session `
                    -Raft 'all properties raft' `
-                   -Configuration $fsRaftConfig `
-                   -Environment $script:bmEnv
+                   -Configuration $fsRaftConfig
         ThenRaft 'all properties raft' `
                  -Exists `
                  -HasPropertyValues @{
                         Raft_Configuration = $fsRaftConfig;
-                        Environment_Id = $script:bmEnv.id;
                     }
     }
 
@@ -88,17 +81,15 @@ Describe 'Set-BMRaft' {
         $raft = Set-BMRaft -Session $script:session `
                            -Raft 'update properties raft' `
                            -Configuration $fsRaftConfig `
-                           -Environment $script:bmEnv `
                            -PassThru
 
         $fsRaftConfig = $fsRaftConfig -replace '\bFileSystemRaft\b', '\bFileSystemRaft2\b'
-        $raft | Set-BMRaft -Session $script:session -Configuration $fsRaftConfig -Environment $script:bmEnv2
+        $raft | Set-BMRaft -Session $script:session -Configuration $fsRaftConfig
 
         ThenRaft 'update properties raft' `
                  -Exists `
                  -HasPropertyValues @{
                         Raft_Configuration = $fsRaftConfig;
-                        Environment_Id = $script:bmEnv2.id;
                     }
     }
 

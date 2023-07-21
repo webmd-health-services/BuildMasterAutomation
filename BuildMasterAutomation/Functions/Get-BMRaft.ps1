@@ -62,6 +62,15 @@ function Get-BMRaft
             }
         }
 
+        $raftPrefixScriptBlock = {
+            if ($this.Raft_Id -eq 1)
+            {
+                return 'global'
+            }
+
+            return $this.Raft_Name
+        }
+
         $rafts = @()
         Invoke-BMNativeApiMethod -Session $Session -Name $endpointName -Method Post -Parameter $parameters |
             Where-Object {
@@ -72,6 +81,11 @@ function Get-BMRaft
 
                 return $true
             } |
+            Add-Member -Name 'Raft_Prefix' `
+                       -MemberType ScriptProperty `
+                       -Value $raftPrefixScriptBlock `
+                       -PassThru `
+                       -ErrorAction Ignore |
             Tee-Object -Variable 'rafts' |
             Write-Output
 

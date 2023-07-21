@@ -3,6 +3,8 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
@@ -33,7 +35,10 @@ BeforeAll {
             [int] $Count,
 
             [Parameter(Mandatory, ParameterSetName='ByName')]
-            [String] $RaftNamed
+            [String] $RaftNamed,
+
+            [Parameter(ParameterSetName='ByName')]
+            [String] $WithPrefix
         )
 
         if ($PSCmdlet.ParameterSetName -eq 'ByCount')
@@ -44,6 +49,10 @@ BeforeAll {
 
         $script:results | Should -Not -BeNullOrEmpty
         $script:results | Where-Object 'Raft_Name' -EQ $RaftNamed | Should -Not -BeNullOrEmpty
+        if ($PSBoundParameters.ContainsKey('WithPrefix'))
+        {
+            $script:results | Where-Object 'Raft_Prefix' -EQ $WithPrefix | Should -Not -BeNullOrEmpty
+        }
     }
 
     function WhenGettingRafts
@@ -70,8 +79,8 @@ Describe 'Get-BMRaft' {
         GivenRaft 'all rafts'
         WhenGettingRafts
         ThenReturned -Count 2
-        ThenReturned -RaftNamed 'Default'
-        ThenReturned -RaftNamed 'all rafts'
+        ThenReturned -RaftNamed 'Default' -WithPrefix 'global'
+        ThenReturned -RaftNamed 'all rafts' -WithPrefix 'all rafts'
     }
 
     It 'should get raft by name' {

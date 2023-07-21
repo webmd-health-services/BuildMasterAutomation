@@ -46,7 +46,8 @@ function Set-BMRaft
         # The XML configuration for the raft.
         [String] $Configuration,
 
-        # The environment id, name, or environment object the raft should belong to.
+        # ***OBSOLETE.*** Not used and has no affect.
+        [Parameter(DontShow)]
         [Object] $Environment,
 
         # If set, the new/updated raft will be returned.
@@ -59,16 +60,10 @@ function Set-BMRaft
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
         $bmEnv = $null
-        if( $Environment )
+        if ($Environment)
         {
-            $bmEnv = $Environment | Get-BMEnvironment -Session $Session -ErrorAction Ignore
-            if (-not $bmEnv)
-            {
-                $msg = "Unable to set raft ""$($Raft | Get-BMObjectName)"" because the environment " +
-                    """$($bmEnv | Get-BMObjectName)"" does not exist."
-                Write-Error -Message $msg
-                return
-            }
+            $msg = 'The Set-BMRaft function''s "Environment" parameter is obsolete and usages should be removed.'
+            Write-Warning -Message $msg
         }
 
         $raftID = $Raft | Get-BMObjectID -ObjectTypeName 'Raft' -ErrorAction Ignore

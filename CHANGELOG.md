@@ -1,8 +1,34 @@
+<!-- markdownlint-disable MD012 no-multiple-blanks -->
 <!-- markdownlint-disable MD024 no-duplicate-heading/no-duplicate-header -->
 
 # BuildMasterAutomation Changelog
 
+## 3.1.0
+
+> Released 21 Jul 2023
+
+### Added
+
+* `Get-BMRaft` adds a `Raft_Prefix` property to objects it returns.
+
+### Changes
+
+* `Get-BMEnvironment` ensures that returned objects always have a `parentName` property.
+* `Set-BMRelease` now works around a bug/feature in BuildMaster that fails to change a release's pipeline.
+
+### Fixed
+
+* Some expected/handled errors are not ignored.
+
+### Deprecated
+
+* The `Set-BMRaft` function's `Environment` parameter. BuildMaster does not support setting the environment for a raft.
+This parameter was added because of a typo in the BuildMaster docs.
+
+
 ## 3.0.1
+
+> Released 17 Nov 2022
 
 ### Upgrade Instructions
 
@@ -32,8 +58,8 @@ and replaces the now-obsolete `ID` parameter.
 ### Changed
 
 * Updated `Get-BMVariable` and `Remove-BMVariable` so they can get and remove variables for applications and application
-groups, which works around a bug in the BuildMaster
-[Variables API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
+groups, which works around a bug in the BuildMaster [Variables
+API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
 
 ### Deprecated
 
@@ -46,7 +72,10 @@ groups, which works around a bug in the BuildMaster
   * `ServerRoleName`; use `ServerRole` instead.
 * `ApplicationID` on the `Stop-BMRelease` function. Use the new `Application` parameter instead.
 
+
 ## 3.0.0
+
+> Released 17 Nov 2022
 
 Minimum supported version of BuildMaster is now 7.0.
 
@@ -57,13 +86,13 @@ Minimum supported version of BuildMaster is now 7.0.
 BuildMaster no longer supports active/inactive environments.
 
 * Remove usages of the `Disable-BMEnvironment` and `Enable-BMEnvironment` functions.
-* Remove usages of the `Get-BMEnvironment` and `Remove-Environment` functions' `Force` switch, which was used to
-operate on inactive environments.
+* Remove usages of the `Get-BMEnvironment` and `Remove-Environment` functions' `Force` switch, which was used to operate
+on inactive environments.
 
-These functions were updated to use BuildMaster's
-[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). For each, check
-API key usages to ensure the key has access to that API and check that property usages on any return objects are using
-[the correct names](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure).
+These functions were updated to use BuildMaster's [Infrastructure Management
+API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). For each, check API key usages to ensure the
+key has access to that API and check that property usages on any return objects are using [the correct
+names](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure).
 
 * `Get-BMEnvironment`
 * `Remove-BMEnvironment`
@@ -74,12 +103,11 @@ BuildMaster no longer supports active/inactive applications.
 
 ### Changed
 
-* The `Get-BMEnvironment` function now uses the BuildMaster
-[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Property names on
-return object may be different. Different API key permissions are required.
-* The `Remove-BMEnvironment` function now uses the BuildMaster
-[Infrastructure Management API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Different API key
-permissions are required.
+* The `Get-BMEnvironment` function now uses the BuildMaster [Infrastructure Management
+API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Property names on return object may be
+different. Different API key permissions are required.
+* The `Remove-BMEnvironment` function now uses the BuildMaster [Infrastructure Management
+API](https://docs.inedo.com/docs/buildmaster-reference-api-infrastructure). Different API key permissions are required.
 
 ### Removed
 
@@ -92,7 +120,10 @@ permissions are required.
 
 * `Force` switch from `Get-BMEnvironment` and `Remove-BMEnvironment`.
 
+
 ## 2.0.1
+
+> Released 15 Nov 2022
 
 ### Upgrade Instructions
 
@@ -122,8 +153,8 @@ and replaces the now-obsolete `ID` parameter.
 ### Changed
 
 * Updated `Get-BMVariable` and `Remove-BMVariable` so they can get and remove variables for applications and application
-groups, which works around a bug in the BuildMaster
-[Variables API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
+groups, which works around a bug in the BuildMaster [Variables
+API](https://docs.inedo.com/docs/buildmaster-reference-api-variables).
 
 ### Deprecated
 
@@ -136,9 +167,10 @@ groups, which works around a bug in the BuildMaster
   * `ServerRoleName`; use `ServerRole` instead.
 * `ApplicationID` on the `Stop-BMRelease` function. Use the new `Application` parameter instead.
 
+
 ## 2.0.0
 
-2022-11-7
+> Released 7 Nov 2022
 
 ### Supported Versions
 
@@ -172,13 +204,12 @@ already exists (for `New` functions). Add `-ErrorAction Ignore` to existing usag
 * Remove usages of the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
 [Release and build deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
 supports getting deploys for builds, releases, and applications.
-* Remove usages of the `Get-BMPipeline` function's `ID` parameter. BuildMaster pipelines no longer have ids, just
-names.
+* Remove usages of the `Get-BMPipeline` function's `ID` parameter. BuildMaster pipelines no longer have ids, just names.
 * Update usages of the `Get-BMPipeline` function to pass a pipeline name to the `Name` parameter instead of an id.
 * Objects returned by `Get-BMPipeline` are now raft item objects. Check usages to ensure you're using correct
 properties.
-* Remove usages of the `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. This functionality was
-removed from BuildMaster.
+* Remove usages of the `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. This functionality was removed
+from BuildMaster.
 * Rename usages of `New-BMPipeline` to `Set-BMPipeline`.
 * `Set-BMPipeline` (née `New-BMPipeline`) now creates *or* updates a pipeline. Inspect usages to see the impact of this
 new behavior.
@@ -187,8 +218,8 @@ instead of strings of XML. Use the new `New-BMPipelineStageObject` and `New-BMPi
 create the objects you should pass.
 * Update usages of the `Set-BMPipeline` (née `New-BMPipeline`) function: its new `Raft` parameter is required. To use
 BuildMaster's default raft, pass `1` as the value.
-* Add `-PassThru` to usages of the `Set-BMPipeline` (née `New-BMPipeline`) function that expect a return value.
-The `Set-BMPipeline` (née `New-BMPipeline`) function no longer returns the pipeline object by default.
+* Add `-PassThru` to usages of the `Set-BMPipeline` (née `New-BMPipeline`) function that expect a return value. The
+`Set-BMPipeline` (née `New-BMPipeline`) function no longer returns the pipeline object by default.
 * Update usages of `Set-BMRelease` to pass a pipeline name or pipeline object to the new `Pipeline` paramter and remove
 usages of the `PipelineID` parameter.
 
@@ -339,87 +370,134 @@ value.
 
 ### Removed
 
-* Removed the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster
-[Release and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer
-supports getting deploys for builds, releases, and applications.
+* Removed the `Get-BMDeployment` function's `Build`, `Release`, and `Application` parameters. The BuildMaster [Release
+and Build Deployment API](https://docs.inedo.com/docs/buildmaster-reference-api-release-and-build) no longer supports
+getting deploys for builds, releases, and applications.
 * `Get-BMPipeline` function's `ID` parameter. Use the `Name` parameter instead. BuildMaster pipelines no longer have
 ids, just names.
 * `New-BMApplication` function's `AllowMultipleActiveBuilds` switch. Its functionality was removed from BuildMaster.
 
+
 ## 1.0.1
 
-2021-8-3
+> Released 3 Aug 2021
 
 * Publishing version 1.0.0 to GitHub failed. This version is identical to 1.0.0.
 
+
 ## 1.0.0
 
-2021-8-3
+> Released 3 Aug 2021
 
 * Updated to version 1.0.0 because there haven't been any breaking changes for over a year.
 * Updated to support BuildMaster 6.1.28.
 * Added support for PowerShell Core.
 
+
 ## 0.9.0
 
-2020-2-12
+> Released 12 Feb 2020
 
 * Improved import speed by merging all functions into the module's .psm1 file.
 * Updating to support BuildMaster 6.1.25.
 * Fixed: New-BMServerRole requires a request body in BuildMaster 6.1.25.
 
+
 ## 0.8.0
 
-2019-10-31
+> Released 31 Oct 2019
 
-* Added support for BuildMaster 6.1.17. Fixed an issue where environments created with `New-BMEnvironment` are disabled/inactive in that version.
-* Added `Inactive` switch to `New-BMEnvironment` to create inactive/disabled environments. The default is to create active/enabled environments.
+* Added support for BuildMaster 6.1.17. Fixed an issue where environments created with `New-BMEnvironment` are
+  disabled/inactive in that version.
+* Added `Inactive` switch to `New-BMEnvironment` to create inactive/disabled environments. The default is to create
+  active/enabled environments.
+
 
 ## 0.7.1
 
-2019-7-8
+> Released 8 Jul 2019
 
 * Fixed: Get-BMApplication, Get-BMApplicationGroup, and Get-BMPipeline fail if the user's WhatIfPreference is true.
 * Fixed: New-BMEnvironment wasn't setting an environment's parent.
 * Fixed: Get-BMEnvironment wasn't returning an environments parent.
 
+
 ## 0.7.0
 
-2019-7-5
+> Released 5 Jul 2019
 
 * Created `Get-BMServerRole`, `New-BMServerRole`, and `Remove-BMServerRole` functions for managing server roles.
 * Created `Get-BMServer`, `New-BMServer`, and `Remove-BMServer` functions for managing servers.
-* Created `Get-BMEnvironment`, `New-BMEnvironment`, `Disable-BMEnvironment`, and `Enable-BMEnvironment` functions for managing environments.
+* Created `Get-BMEnvironment`, `New-BMEnvironment`, `Disable-BMEnvironment`, and `Enable-BMEnvironment` functions for
+  managing environments.
 * Created `Get-BMVariable`, `Remove-BMVariable`, and `Set-BMVariable` functions for managing variables.
+
 
 ## 0.6.0
 
-2018-11-29
+> Released 29 Nov 2018
 
 * Created `Get-BMDeployment` function to retrieve deployment information for release packages.
 
+
 ## 0.5.0
 
-2018-9-14
+> Released 14 Sep 2018
 
 ***This relese contains breaking changes. Please read the release notes carefully for upgrade instructions.***
 
 * Created `Stop-BMRelease` function for canceling releases.
 * Fixed: module functions don't respect calling scope preferences (e.g. VerbosePreference, ErrorActionPreference, etc.).
 * Added `Force` switch to `Publish-BMReleasePackage` to force BuildMaster to deploy a package when it normally wouldn't.
-* Changed the default HTTP method on `Invoke-BMRestMethod` and `Invoke-BMNativeApiMethod` from `POST` to `GET`. Update all your usages of these functions to add an explicit `-Method Post` parameter.
-* Fixed: `Import-BuildMasterAutomation.ps1` script fails to remove exiting BuildMasterAutomation modules before re-importing when `WhatIfPreference` is `true`.
+* Changed the default HTTP method on `Invoke-BMRestMethod` and `Invoke-BMNativeApiMethod` from `POST` to `GET`. Update
+  all your usages of these functions to add an explicit `-Method Post` parameter.
+* Fixed: `Import-BuildMasterAutomation.ps1` script fails to remove exiting BuildMasterAutomation modules before
+  re-importing when `WhatIfPreference` is `true`.
 * Added `WhatIf` support to `Invoke-BMRestMethod` and `Invoke-BMNativeApiMethod`.
 * Fixed: `Invoke-BMNativeApiMethod` fails when making HTTP GET requests.
 
-## 0.0.0
+
+## 0.4.0
+
+> Released 1 Nov 2017
+
+* Created `Stop-BMRelease` function for canceling releases.
+* Fixed: module functions don't respect calling scope preferences (e.g. VerbosePreference, ErrorActionPreference, etc.).
+
+
+## 0.2.1
+
+> Released 14 Jul 2017
+
+Fixed: Calling any REST API that has a body in its request fails under PowerShell 5.1.
+
+
+## 0.2.0
+
+> Released 23 Jun 2017
+
+* Renamed `Get-BMReleasePackage` to `Get-BMPackage`.
+* Renamed `New-BMReleasePackage` to `New-BMPackage`.
+* `Get-BMPackage` can now return packages for a specific release. Pass the release or release ID to the new `Release`
+  parameter.
+* Fixed: `Get-BMRelease` only filters by name only if getting a specific application's releases.
+* `Get-BMRelease` now returns all releases when passed no parameters.
+* `Get-BMApplication` no longer returns inactive/disabled applications. Use the `Force` switch to return active *and*
+  inactive applications.
+* Added `Disable-BMApplication` function for disabling/deactivating an application.
+
+
+## 0.1.0
+
+> Released 23 Jun 2017
 
 * Created `New-BMSession` function for creating a session to a BuildMaster instance
 * Created `Get-BMApplication` function for getting applications.
 * Created `New-BMApplication` function for creating new applications.
 * Created `Invoke-BMRestMethod` function for calling unimplemented API methods.
 * Created `Invoke-BMNativeApiMethod` function for calling native API methods.
-* Created `Add-BMObjectParameter` function to aid in converting and adding objects to parameter hashtables that get sent to BuildMaster in API requests.
+* Created `Add-BMObjectParameter` function to aid in converting and adding objects to parameter hashtables that get sent
+  to BuildMaster in API requests.
 * Created `New-BMRelease` function for creating releases.
 * Created `Get-BMRelease` function for getting releases.
 * Created `Get-BMPipeline` function for creating pipelines.
