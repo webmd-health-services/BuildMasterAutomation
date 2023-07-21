@@ -3,13 +3,18 @@
 
 # BuildMasterAutomation Changelog
 
-## 3.0.2
+## 3.1.0
 
-> Released 17 Jul 2023
+> Released 21 Jul 2023
+
+### Added
+
+* `Get-BMRaft` adds a `Raft_Prefix` property to objects it returns.
 
 ### Changes
 
 * `Get-BMEnvironment` ensures that returned objects always have a `parentName` property.
+* `Set-BMRelease` now works around a bug/feature in BuildMaster that fails to change a release's pipeline.
 
 ### Fixed
 

@@ -62,7 +62,11 @@ function Set-BMRelease
             return
         }
 
-        $pipelineName = $bmPipeline.RaftItem_Name
+        $raft = $bmPipeline.Raft_Id | Get-BMRaft -Session $Session
+        if (-not $raft)
+        {
+            return
+        }
 
         if( -not $Name )
         {
@@ -70,12 +74,15 @@ function Set-BMRelease
         }
 
         $parameter = @{
-                        Application_Id = $bmRelease.ApplicationId;
-                        Release_Number = $bmRelease.number;
-                        Pipeline_Name = $pipelineName;
-                        Release_Name = $Name;
-                     }
-        Invoke-BMNativeApiMethod -Session $Session -Name 'Releases_CreateOrUpdateRelease' -Method Post -Parameter $parameter | Out-Null
+            Application_Id = $bmRelease.ApplicationId;
+            Release_Number = $bmRelease.number;
+            Pipeline_Name = "$($raft.Raft_Prefix)::$($bmPipeline.RaftItem_Name)";
+            Release_Name = $Name;
+        }
+        Invoke-BMNativeApiMethod -Session $Session `
+                                 -Name 'Releases_CreateOrUpdateRelease' `
+                                 -Method Post `
+                                 -Parameter $parameter | Out-Null
 
         Get-BMRelease -Session $Session -Release $bmRelease -Application $bmRelease.ApplicationId
     }
