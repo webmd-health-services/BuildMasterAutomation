@@ -3,6 +3,14 @@
 
 # BuildMasterAutomation Changelog
 
+## 3.2.0
+
+> Released 18 Aug 2023
+
+### Changes
+
+* `Get-BMDeployment` now allows for additional filters when resolving deployments.
+
 ## 3.1.0
 
 > Released 21 Jul 2023
