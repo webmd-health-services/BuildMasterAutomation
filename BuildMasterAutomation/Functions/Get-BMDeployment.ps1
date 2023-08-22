@@ -6,8 +6,11 @@ function Get-BMDeployment
     Gets a deployment from BuildMaster.
 
     .DESCRIPTION
-    The `Get-BMDeployment` function gets a deployment from BuildMaster. Each parameter acts as an filter to the list
-    of deployments returned. Only the deployments that match the provided parameters will be returnned.
+    The Get-BMDeployment function gets deployments from BuildMaster. To get a single deployment, pass the deployment ID
+    to the Deployment parameter.
+
+    The rest of the parameters are used to get one or more deployments. Each parameter is combined into a logical "AND"
+    that is used to filter for deployments. Only the deployments that match all the parameters are returned.
 
     Pass the current BuildMaster session to the `Session` parameter.
 
@@ -15,11 +18,11 @@ function Get-BMDeployment
 
     Pass the application name, id, or object to the `Application` parameter.
 
-    Pass the release nome, id, or object to the `Release` parameter.
+    Pass the release name, id, or object to the `Release` parameter.
 
-    Pass the build nome, id, or object to the `Build` parameter.
+    Pass the build name, id, or object to the `Build` parameter.
 
-    Pass the environment nome, id, or object to the `Environment` parameter.
+    Pass the environment name, id, or object to the `Environment` parameter.
 
     Pass the release number to the `ReleaseNumber` parameter.
 
@@ -50,39 +53,43 @@ function Get-BMDeployment
         [Object] $Session,
 
         # The deployment to get. You can pass a deployment id or object.
+        [Parameter(Mandatory, ParameterSetName='ById')]
         [Alias('ID')]
         [Object] $Deployment,
 
-        # The application to get deployments for. You can pass an application id, application name, or object.
+        # The application to get deployments for. You can pass an application id, application name, or application object.
+        [Parameter(ParameterSetName='ByFilter')]
         [Object] $Application,
 
-        # The release to get deployments for. You can pass an release id, release name, or object.
+        # The release to get deployments for. You can pass an release id, release name, or release object.
+        [Parameter(ParameterSetName='ByFilter')]
         [Object] $Release,
 
-        # The build to get deployments for. You can pass an build id, build name, or object.
+        # The build to get deployments for. You can pass an build id, build name, build number, or build object.
+        [Parameter(ParameterSetName='ByFilter')]
         [Object] $Build,
 
-        # The environment to get deployments for. You can pass an environment id, environment name, or object.
+        # The environment to get deployments for. You can pass an environment id, environment name, or environment object.
+        [Parameter(ParameterSetName='ByFilter')]
         [Object] $Environment,
 
-        # The number for the release to get deployments for.
-        [String] $ReleaseNumber,
-
-        # The number for the build to get deployments for.
-        [String] $BuildNumber,
-
         # The name of the pipeline to get deployments for.
-        [String] $PipelineName,
+        [Parameter(ParameterSetName='ByFilter')]
+        [String] $Pipeline,
 
         # The name of the pipeline stage to get deployments for.
-        [String] $PipelineStageName,
+        [Parameter(ParameterSetName='ByFilter')]
+        [String] $Stage,
 
         # The status of the deployments to get. Accepted values are 'pending', 'executing', 'succeeded', 'warned', or 'failed'
+        [Parameter(ParameterSetName='ByFilter')]
+        [ValidateSet('pending', 'executing', 'succeeded', 'warned', 'failed')]
         [String] $Status
     )
 
     process
     {
+
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
         $WhatIfPreference = $false
@@ -91,35 +98,32 @@ function Get-BMDeployment
             @{ } |
             Add-BMObjectParameter -Name 'deployment' -Value $Deployment -PassThru |
             Add-BMObjectParameter -Name 'application' -Value $Application -PassThru |
-            Add-BMObjectParameter -Name 'release' -Value $Release -PassThru |
-            Add-BMObjectParameter -Name 'build' -Value $Build -PassThru |
-            Add-BMObjectParameter -Name 'environment' -Value $Environment -PassThru
+            Add-BMObjectParameter -Name 'environment' -Value $Environment -PassThru |
+            Add-BMObjectParameter -Name 'release' -Value $Release -PassThru
 
-        if($ReleaseNumber)
+        if($Build)
         {
-            $parameter['releaseNumber'] = $ReleaseNumber
+            if ($Build -is [string] -and -not [Int64]::TryParse($Build, [ref] $Build))
+            {
+                $parameter['buildNumber'] = $Build
+            }
+            else
+            {
+                $parameter = $parameter | Add-BMObjectParameter -Name 'build' -Value $Build -PassThru
+            }
         }
-        if($BuildNumber)
+
+        if($Pipeline)
         {
-            $parameter['buildNumber'] = $BuildNumber
+            $parameter['pipelineName'] = $Pipeline
         }
-        if($PipelineName)
+        if($Stage)
         {
-            $parameter['pipelineName'] = $PipelineName
-        }
-        if($PipelineStageName)
-        {
-            $parameter['pipelineStageName'] = $PipelineStageName
+            $parameter['pipelineStageName'] = $Stage
         }
         if($Status)
         {
-            $valid = @('pending', 'executing', 'succeeded', 'warned', 'failed')
-            if($Status -notin $valid)
-            {
-                $msg = "Unable to get deployment with status ${status} because it is not a valid input. Valid inputs " +
-                       "for status are: $($valid -join ', ')."
-                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-            }
+            $parameter['status'] = $Status
         }
 
         $deployments = @()

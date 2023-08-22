@@ -5,11 +5,12 @@
 
 ## 3.2.0
 
-> Released 18 Aug 2023
+> Released 22 Aug 2023
 
 ### Changes
 
-* `Get-BMDeployment` now allows for additional filters when resolving deployments.
+* Added parameters to `Get-BMDeployment` to filter for deployments by `Application`, `Release`, `Build`, `Environment`,
+`Pipeline`, `Stage`, and `Status`
 
 ## 3.1.0
 

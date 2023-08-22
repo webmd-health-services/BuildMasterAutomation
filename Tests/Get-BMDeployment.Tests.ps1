@@ -88,8 +88,6 @@ BeforeAll {
 
             [Object] $Environment,
 
-            [String] $ReleaseNumber,
-
             [String] $BuildNumber,
 
             [String] $PipelineName,
@@ -126,21 +124,17 @@ BeforeAll {
                 {
                     $bmDeploymentArgs['Environment'] = $Environment
                 }
-                if( $ReleaseNumber )
-                {
-                    $bmDeploymentArgs['ReleaseNumber'] = $ReleaseNumber
-                }
                 if( $BuildNumber )
                 {
-                    $bmDeploymentArgs['BuildNumber'] = $BuildNumber
+                    $bmDeploymentArgs['Build'] = $BuildNumber
                 }
                 if( $PipelineName )
                 {
-                    $bmDeploymentArgs['PipelineName'] = $PipelineName
+                    $bmDeploymentArgs['Pipeline'] = $PipelineName
                 }
                 if( $PipelineStageName )
                 {
-                    $bmDeploymentArgs['PipelineStageName'] = $PipelineStageName
+                    $bmDeploymentArgs['Stage'] = $PipelineStageName
                 }
                 if( $Status )
                 {
@@ -345,20 +339,6 @@ Describe 'Get-BMDeployment' {
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
         WhenGettingBMDeployment -Build $build.id
-        ThenShouldNotThrowErrors
-        ThenTotalDeploymentsReturned 2
-        ThenDeploymentShouldBeReturned $deployment
-        ThenDeploymentShouldBeReturned $deployment2
-        ThenDeploymentShouldNotBeReturned $deployment3
-    }
-
-    It 'should get deployment by release number' {
-        $build = GivenReleaseBuild $script:releaseAll
-        $build2 = GivenReleaseBuild $script:releaseRelease
-        $deployment = GivenDeployment $build
-        $deployment2 = GivenDeployment $build -Stage 'Testing'
-        $deployment3 = GivenDeployment $build2
-        WhenGettingBMDeployment -ReleaseNumber '1.0'
         ThenShouldNotThrowErrors
         ThenTotalDeploymentsReturned 2
         ThenDeploymentShouldBeReturned $deployment
