@@ -129,8 +129,7 @@ function Get-BMDeployment
         Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post |
             Tee-Object -Variable 'deployments' |
             Write-Output
-
-        if(-not $deployments)
+        if (-not $deployments)
         {
             if ($PSCmdlet.ParameterSetName -eq 'ById')
             {
@@ -138,9 +137,10 @@ function Get-BMDeployment
             }
             else
             {
-                $params = ($parameter.Keys | ForEach-Object { "$($_): $($parameter[$_])"}) -join ', '
-                $msg = "Unable to get deployment with parameters ""${params}"" because it does not exist."
+                $params = ($parameter.Keys | ForEach-Object { "$($_) = $($parameter[$_])"}) -join ', '
+                $msg = "No deployments exist that match: ""$($params)""."
             }
+
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         }
     }

@@ -162,7 +162,6 @@ function Invoke-BMRestMethod
             Invoke-RestMethod -Method $Method -Uri $uri @webRequestParam -Headers $headers |
                 ForEach-Object { $_ } |
                 Where-Object { $_ }
-
         }
     }
     catch

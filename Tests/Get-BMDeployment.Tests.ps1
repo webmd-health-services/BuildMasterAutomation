@@ -77,6 +77,7 @@ BeforeAll {
 
     function WhenGettingBMDeployment
     {
+        [CmdletBinding()]
         param(
             [Object] $Deployment,
 
@@ -90,9 +91,9 @@ BeforeAll {
 
             [String] $BuildNumber,
 
-            [String] $PipelineName,
+            [String] $Pipeline,
 
-            [String] $PipelineStageName,
+            [String] $Stage,
 
             [String] $Status
         )
@@ -103,45 +104,7 @@ BeforeAll {
         do {
             Start-Sleep -Milliseconds 500
             $script:result = & {
-                $bmDeploymentArgs = @{}
-                if( $Deployment )
-                {
-                    $bmDeploymentArgs['Deployment'] = $Deployment
-                }
-                if( $Application )
-                {
-                    $bmDeploymentArgs['Application'] = $Application
-                }
-                if( $Release )
-                {
-                    $bmDeploymentArgs['Release'] = $Release
-                }
-                if( $Build )
-                {
-                    $bmDeploymentArgs['Build'] = $Build
-                }
-                if( $Environment )
-                {
-                    $bmDeploymentArgs['Environment'] = $Environment
-                }
-                if( $BuildNumber )
-                {
-                    $bmDeploymentArgs['Build'] = $BuildNumber
-                }
-                if( $PipelineName )
-                {
-                    $bmDeploymentArgs['Pipeline'] = $PipelineName
-                }
-                if( $PipelineStageName )
-                {
-                    $bmDeploymentArgs['Stage'] = $PipelineStageName
-                }
-                if( $Status )
-                {
-                    $bmDeploymentArgs['Status'] = $Status
-                }
-
-                @(Get-BMDeployment -Session $script:session @bmDeploymentArgs -ErrorAction 'SilentlyContinue')
+                @(Get-BMDeployment -Session $script:session @PSBoundParameters -ErrorAction 'SilentlyContinue')
             }
 
             if ($script:result)
@@ -166,6 +129,14 @@ BeforeAll {
         )
 
         $Global:Error | Should -BeNullOrEmpty
+    }
+
+    function ThenShouldThrowError
+    {
+        param(
+        )
+
+        $Global:Error | Should -Not -BeNullOrEmpty
     }
 
     function ThenDeploymentShouldBeReturned
@@ -350,7 +321,7 @@ Describe 'Get-BMDeployment' {
         $deployment = GivenDeployment $build
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
-        WhenGettingBMDeployment -PipelineName $script:pipeline.Pipeline_Name
+        WhenGettingBMDeployment -Pipeline $script:pipeline.Pipeline_Name
         ThenShouldNotThrowErrors
         ThenTotalDeploymentsReturned 2
         ThenDeploymentShouldBeReturned $deployment
@@ -364,11 +335,11 @@ Describe 'Get-BMDeployment' {
         $deployment = GivenDeployment $build
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
-        WhenGettingBMDeployment -PipelineStageName 'Testing'
+        WhenGettingBMDeployment -Stage 'Testing'
         ThenShouldNotThrowErrors
         ThenDeploymentShouldNotBeReturned $deployment
         ThenDeploymentShouldBeReturned $deployment2
-        ThenDeploymentShouldNetBeReturned $deployment3
+        ThenDeploymentShouldNotBeReturned $deployment3
         ThenTotalDeploymentsReturned 1
     }
 
@@ -382,7 +353,7 @@ Describe 'Get-BMDeployment' {
         ThenShouldNotThrowErrors
         ThenDeploymentShouldNotBeReturned $deployment
         ThenDeploymentShouldBeReturned $deployment2
-        ThenDeploymentShouldNetBeReturned $deployment3
+        ThenDeploymentShouldNotBeReturned $deployment3
         ThenTotalDeploymentsReturned 1
     }
 
@@ -392,12 +363,12 @@ Describe 'Get-BMDeployment' {
         $deployment = GivenDeployment $build
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
-        WhenGettingBMDeployment -Release $script:releaseAll -PipelineStageName 'Testing'
+        WhenGettingBMDeployment -Release $script:releaseAll -Pipeline 'Testing'
         ThenShouldNotThrowErrors
         ThenDeploymentShouldNotBeReturned $deployment
-        ThenDeploymentShouldBeReturned $deployment2
-        ThenDeploymentShouldNetBeReturned $deployment3
-        ThenTotalDeploymentsReturned 1
+        ThenDeploymentShouldNotBeReturned $deployment2
+        ThenDeploymentShouldNotBeReturned $deployment3
+        ThenTotalDeploymentsReturned 0
     }
 
     It 'should find no deployments' {
@@ -406,11 +377,11 @@ Describe 'Get-BMDeployment' {
         $deployment = GivenDeployment $build
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
-        WhenGettingBMDeployment -Release $script:releaseAll -PipelineStageName 'Testing' -Application $script:app
-        ThenShouldNotThrowErrors
+        WhenGettingBMDeployment -Release $script:releaseRelease -Stage 'Testing' -Application $script:app
+        ThenShouldThrowError
         ThenDeploymentShouldNotBeReturned $deployment
-        ThenDeploymentShouldBeReturned $deployment2
-        ThenDeploymentShouldNetBeReturned $deployment3
-        ThenTotalDeploymentsReturned 1
+        ThenDeploymentShouldNotBeReturned $deployment2
+        ThenDeploymentShouldNotBeReturned $deployment3
+        ThenTotalDeploymentsReturned 0
     }
 }
