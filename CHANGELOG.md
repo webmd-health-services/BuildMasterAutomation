@@ -10,7 +10,7 @@
 ### Changes
 
 * Added parameters to `Get-BMDeployment` to filter for deployments by `Application`, `Release`, `Build`, `Environment`,
-`Pipeline`, `Stage`, and `Status`
+`Pipeline`, `Stage`, and `Status`.
 
 ## 3.1.0
 

@@ -6,11 +6,10 @@ function Get-BMDeployment
     Gets a deployment from BuildMaster.
 
     .DESCRIPTION
-    The Get-BMDeployment function gets deployments from BuildMaster. To get a single deployment, pass the deployment ID
-    to the Deployment parameter.
-
-    The rest of the parameters are used to get one or more deployments. Each parameter is combined into a logical "AND"
-    that is used to filter for deployments. Only the deployments that match all the parameters are returned.
+    The Get-BMDeployment function gets deployments from BuildMaster. Pass a deployment ID to the Deployment parameter to
+    get a single deployment. To filter for one or more deployments, pass the criteria to filter by to the rest of the
+    parameters. Each parameter is combined into a logical "AND" that is used to filter for deployments. Only the
+    deployments that match all the parameters are returned.
 
     Pass the current BuildMaster session to the `Session` parameter.
 
@@ -81,7 +80,7 @@ function Get-BMDeployment
         [Parameter(ParameterSetName='ByFilter')]
         [String] $Stage,
 
-        # The status of the deployments to get. Accepted values are 'pending', 'executing', 'succeeded', 'warned', or 'failed'
+        # The status of the deployments to get. Accepted values are 'pending', 'executing', 'succeeded', 'warned', or 'failed'.
         [Parameter(ParameterSetName='ByFilter')]
         [ValidateSet('pending', 'executing', 'succeeded', 'warned', 'failed')]
         [String] $Status
@@ -133,8 +132,15 @@ function Get-BMDeployment
 
         if(-not $deployments)
         {
-            $params = ($parameter.Keys | ForEach-Object { "$($_): $($parameter[$_])"}) -join ', '
-            $msg = "Unable to get deployment with parameters ""$($params)"" because it does not exist."
+            if ($PSCmdlet.ParameterSetName -eq 'ById')
+            {
+                $msg = "Unable to get deployment ""$($Deployment | Get-BMObjectName)"" because it does not exist."
+            }
+            else
+            {
+                $params = ($parameter.Keys | ForEach-Object { "$($_): $($parameter[$_])"}) -join ', '
+                $msg = "Unable to get deployment with parameters ""${params}"" because it does not exist."
+            }
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         }
     }

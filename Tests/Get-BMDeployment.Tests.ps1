@@ -141,7 +141,6 @@ BeforeAll {
                     $bmDeploymentArgs['Status'] = $Status
                 }
 
-                Write-Debug "Getting deployment by $($bmDeploymentArgs)"
                 @(Get-BMDeployment -Session $script:session @bmDeploymentArgs -ErrorAction 'SilentlyContinue')
             }
 
@@ -276,7 +275,6 @@ Describe 'Get-BMDeployment' {
     }
 
     It 'should get a deployment by release object' {
-        $DebugPreference = 'Continue'
         $build = GivenReleaseBuild $script:releaseAll
         $build2 = GivenReleaseBuild $script:releaseRelease
         $deployment = GivenDeployment $build
@@ -381,6 +379,34 @@ Describe 'Get-BMDeployment' {
         $deployment2 = GivenDeployment $build -Stage 'Testing'
         $deployment3 = GivenDeployment $build2
         WhenGettingBMDeployment -Status 'failed'
+        ThenShouldNotThrowErrors
+        ThenDeploymentShouldNotBeReturned $deployment
+        ThenDeploymentShouldBeReturned $deployment2
+        ThenDeploymentShouldNetBeReturned $deployment3
+        ThenTotalDeploymentsReturned 1
+    }
+
+    It 'should get by multiple parameters' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        $deployment = GivenDeployment $build
+        $deployment2 = GivenDeployment $build -Stage 'Testing'
+        $deployment3 = GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseAll -PipelineStageName 'Testing'
+        ThenShouldNotThrowErrors
+        ThenDeploymentShouldNotBeReturned $deployment
+        ThenDeploymentShouldBeReturned $deployment2
+        ThenDeploymentShouldNetBeReturned $deployment3
+        ThenTotalDeploymentsReturned 1
+    }
+
+    It 'should find no deployments' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        $deployment = GivenDeployment $build
+        $deployment2 = GivenDeployment $build -Stage 'Testing'
+        $deployment3 = GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseAll -PipelineStageName 'Testing' -Application $script:app
         ThenShouldNotThrowErrors
         ThenDeploymentShouldNotBeReturned $deployment
         ThenDeploymentShouldBeReturned $deployment2

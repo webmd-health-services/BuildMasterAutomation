@@ -159,7 +159,6 @@ function Invoke-BMRestMethod
     {
         if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($Uri,$Method) )
         {
-            Write-Debug "$($webRequestParam.ToString())"
             Invoke-RestMethod -Method $Method -Uri $uri @webRequestParam -Headers $headers |
                 ForEach-Object { $_ } |
                 Where-Object { $_ }
