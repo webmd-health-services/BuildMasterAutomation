@@ -22,6 +22,8 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `Application` parameter.
 
+    To get an OtterScript vector as a PowerShell array, use the `AsList` switch along with the `ValueOnly` switch.
+
     This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
     API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
     native API.
@@ -123,7 +125,10 @@ function Get-BMVariable
         [Object] $ServerRole,
 
         # Return the variable's value, not an object representing the variable.
-        [switch] $ValueOnly
+        [switch] $ValueOnly,
+
+        # Return the variable's value as an list. This flag must be used with the `ValueOnly` flag.
+        [switch] $AsList
     )
 
     process
@@ -143,11 +148,26 @@ function Get-BMVariable
                                   -EntityTypeName $PSCmdlet.ParameterSetName `
                                   -BoundParameter $PSBoundParameters |
             ForEach-Object {
-                if ($ValueOnly)
+                if ($ValueOnly -and -not $AsList)
                 {
                     return $_.Value
                 }
-                return $_
+                if (-not $AsList)
+                {
+                    return $_
+                }
+                if (-not $ValueOnly)
+                {
+                    Write-Warning 'You must use the `AsList` flag along with the `ValueOnly` flag.'
+                }
+                if (-not ($_.Value.StartsWith('@(') -and $_.Value.EndsWith(')')))
+                {
+                    $msg = "The $($_.Name) variable is not an OtterScript vector, returning the variable as a value instead of a list."
+                    Write-Warning $msg
+                    return $_.Value
+                }
+                $vect = $_.Value.Replace('@(', '').Replace(')', '').Split(',') | ForEach-Object { $_.Trim() }
+                return $vect
             } |
             Write-Output
 

@@ -12,7 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
     }
 
     function GivenApplicationGroup
@@ -153,6 +153,7 @@ BeforeAll {
         param(
             [string]$Named,
             [Switch]$ValueOnly,
+            [Switch]$AsList,
             [string]$ForApplication,
             [string]$ForApplicationGroup,
             [string]$ForEnvironment,
@@ -170,6 +171,11 @@ BeforeAll {
         if( $ValueOnly )
         {
             $optionalParams['ValueOnly'] = $true
+        }
+
+        if ( $AsList )
+        {
+            $optionalParams['AsList'] = $true
         }
 
         if( $ForApplication )
@@ -198,6 +204,29 @@ BeforeAll {
         }
 
         $script:result = Get-BMVariable -Session $script:session @optionalParams
+    }
+
+    function GivenVectorVariable
+    {
+        param(
+            [string] $Name,
+            [string[]] $List,
+            [int] $Id
+        )
+
+        $otterScriptVect = "@($($List -join ', '))"
+        $bytes = [Text.Encoding]::UTF8.GetBytes($otterScriptVect)
+        $base64Val = [Convert]::ToBase64String($bytes)
+
+        Invoke-BMNativeApiMethod -Session $script:session `
+                                 -Name 'Variables_CreateOrUpdateVariable' `
+                                 -Method Post `
+                                 -Parameter @{
+                                    Variable_Name = $name
+                                    Variable_Value = $base64Val
+                                    ValueType_Code = 'V'
+                                    Application_Id = $Id
+                                 }
     }
 }
 
@@ -260,6 +289,21 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should return as value if variable is not OtterScript vector' {
+        GivenVariable 'Fubar' -WithValue 'Snafu'
+        WhenGettingVariable -AsList -ValueOnly
+        ThenVariableValuesReturned @( 'Snafu' )
+        ThenNoErrorWritten
+    }
+
+    It 'should return item as an array' {
+        $app = GivenApplication
+        GivenVectorVariable -Name 'ArrItem' -List @( 'hello', 'world' ) -Id $app.Application_Id
+        WhenGettingVariable -AsList -ValueOnly -ForApplication $app.Application_Name
+        ThenVariableValuesReturned @( 'hello', 'world' )
+        ThenNoErrorWritten
+    }
+
     It 'should return specific variable''s value' {
         GivenVariable 'Fubar' -WithValue 'Snafu'
         GivenVariable 'Snafu' -WithValue 'Fubar'
@@ -267,7 +311,6 @@ Describe 'Get-BMVariable' {
         ThenVariableValuesReturned 'Fubar'
     }
 
-    # Doesn't currently work in BuildMaster.
     It 'should return the variables for an application' {
         $app = GivenApplication
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
