@@ -299,13 +299,17 @@ if ($waited)
     Write-Host ''
 }
 
-Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
-Get-BMPipeline -Session $script:session  | Remove-BMPipeline -Session $script:session -PurgeHistory
+function ClearBM
+{
+    Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
+    Get-BMPipeline -Session $script:session  | Remove-BMPipeline -Session $script:session -PurgeHistory
 
-$script:defaultRaft = Set-BMRaft -Session $script:session -Raft 'BMAutomationDefaultTestRaft' -PassThru
-Get-BMRaft -Session $script:session |
-    Where-Object 'Raft_Name' -NE 'Default' |
-    Where-Object 'Raft_Id' -NE $script:defaultRaft.Raft_Id |
-    Remove-BMRaft -Session $script:session
+    $script:defaultRaft = Set-BMRaft -Session $script:session -Raft 'BMAutomationDefaultTestRaft' -PassThru
+    Get-BMRaft -Session $script:session |
+        Where-Object 'Raft_Name' -NE 'Default' |
+        Where-Object 'Raft_Id' -NE $script:defaultRaft.Raft_Id |
+        Remove-BMRaft -Session $script:session
+}
+ClearBM
 
 Export-ModuleMember -Function '*' -Variable 'BMTestSession'

@@ -129,6 +129,7 @@ function Get-BMDeployment
         Invoke-BMRestMethod -Session $Session -Name 'releases/builds/deployments' -Parameter $parameter -Method Post |
             Tee-Object -Variable 'deployments' |
             Write-Output
+
         if (-not $deployments)
         {
             if ($PSCmdlet.ParameterSetName -eq 'ById')
