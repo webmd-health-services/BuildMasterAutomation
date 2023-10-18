@@ -12,7 +12,9 @@ BeforeAll {
 
     function GivenApplication
     {
+        write-information 'given app'
         New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
+        write-information 'app was given '
     }
 
     function GivenApplicationGroup
@@ -153,12 +155,12 @@ BeforeAll {
         param(
             [string]$Named,
             [Switch]$ValueOnly,
-            [Switch]$AsList,
             [string]$ForApplication,
             [string]$ForApplicationGroup,
             [string]$ForEnvironment,
             [string]$ForServer,
-            [string]$ForServerRole
+            [string]$ForServerRole,
+            [switch]$Raw
         )
 
         $optionalParams = @{ }
@@ -173,9 +175,9 @@ BeforeAll {
             $optionalParams['ValueOnly'] = $true
         }
 
-        if ( $AsList )
+        if ( $Raw )
         {
-            $optionalParams['AsList'] = $true
+            $optionalParams['Raw'] = $true
         }
 
         if( $ForApplication )
@@ -290,8 +292,9 @@ Describe 'Get-BMVariable' {
     }
 
     It 'should return as value if variable is not OtterScript vector' {
+        write-information 'return item as not otterscript'
         GivenVariable 'Fubar' -WithValue 'Snafu'
-        WhenGettingVariable -AsList -ValueOnly
+        WhenGettingVariable -ValueOnly
         ThenVariableValuesReturned @( 'Snafu' )
         ThenNoErrorWritten
     }
@@ -299,8 +302,16 @@ Describe 'Get-BMVariable' {
     It 'should return item as an array' {
         $app = GivenApplication
         GivenVectorVariable -Name 'ArrItem' -List @( 'hello', 'world' ) -Id $app.Application_Id
-        WhenGettingVariable -AsList -ValueOnly -ForApplication $app.Application_Name
+        WhenGettingVariable -ValueOnly -ForApplication $app.Application_Name
         ThenVariableValuesReturned @( 'hello', 'world' )
+        ThenNoErrorWritten
+    }
+
+    It 'should return item as a string' {
+        $app = GivenApplication
+        GivenVectorVariable -Name 'ArrItem' -List @( 'hello', 'world' ) -Id $app.Application_Id
+        WhenGettingVariable -ValueOnly -ForApplication $app.Application_Name -Raw
+        ThenVariableValuesReturned '@(hello, world)'
         ThenNoErrorWritten
     }
 

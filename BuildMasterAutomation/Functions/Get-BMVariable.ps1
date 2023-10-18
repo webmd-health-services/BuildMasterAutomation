@@ -22,7 +22,7 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `Application` parameter.
 
-    To get an OtterScript vector as a PowerShell array, use the `AsList` switch along with the `ValueOnly` switch.
+    To get an OtterScript vector or map as a string, use the `Raw` switch.
 
     This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
     API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
@@ -87,6 +87,11 @@ function Get-BMVariable
     Get-BMVariable -Session $session -Variable 'Var' -Application 'www'
 
     Demonstrates how to get a specific variable from an application.
+
+    .EXAMPLE
+    Get-BMVariable -Session $session -Variable 'Var' -Application 'www' -Raw
+
+    Demonstrates how to get a specific variable from an application as a string.
     #>
     [CmdletBinding(DefaultParameterSetName='global')]
     param(
@@ -127,8 +132,8 @@ function Get-BMVariable
         # Return the variable's value, not an object representing the variable.
         [switch] $ValueOnly,
 
-        # Return the variable's value as an list. This flag must be used with the `ValueOnly` flag.
-        [switch] $AsList
+        # Return the variable's value as a string rather than converting to a PowerShell object.
+        [switch] $Raw
     )
 
     process
@@ -148,26 +153,23 @@ function Get-BMVariable
                                   -EntityTypeName $PSCmdlet.ParameterSetName `
                                   -BoundParameter $PSBoundParameters |
             ForEach-Object {
-                if ($ValueOnly -and -not $AsList)
+                if ($ValueOnly -and $Raw)
                 {
                     return $_.Value
                 }
-                if (-not $AsList)
+
+                if ($ValueOnly)
+                {
+                    return ConvertFrom-BMOtterScriptExpression $_.Value
+                }
+
+                if ($Raw)
                 {
                     return $_
                 }
-                if (-not $ValueOnly)
-                {
-                    Write-Warning 'You must use the `AsList` flag along with the `ValueOnly` flag.'
-                }
-                if (-not ($_.Value.StartsWith('@(') -and $_.Value.EndsWith(')')))
-                {
-                    $msg = "The $($_.Name) variable is not an OtterScript vector, returning the variable as a value instead of a list."
-                    Write-Warning $msg
-                    return $_.Value
-                }
-                $vect = $_.Value.Replace('@(', '').Replace(')', '').Split(',') | ForEach-Object { $_.Trim() }
-                return $vect
+
+                $_.Value = ConvertFrom-BMOtterScriptExpression $_.Value
+                return $_
             } |
             Write-Output
 
