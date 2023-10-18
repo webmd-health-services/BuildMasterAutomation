@@ -52,7 +52,7 @@ function ConvertTo-BMOtterScriptExpression
             return "@($($Value -join ', '))"
         }
 
-        if (-not $Value -is [hashtable])
+        if (-not ($Value -is [hashtable]))
         {
             return $Value
         }
