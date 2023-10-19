@@ -19,7 +19,7 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named
+            [string] $Named
         )
 
         Invoke-BMNativeApiMethod -Session $script:session -Name 'ApplicationGroups_CreateOrUpdateApplicationGroup' -Method Post -Parameter @{ 'ApplicationGroup_Name' = $Named }
@@ -29,7 +29,7 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named
+            [string] $Named
         )
 
         New-BMEnvironment -Session $script:session -Name $Named -ErrorAction Ignore
@@ -41,7 +41,7 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named
+            [string] $Named
         )
 
         $Named | Get-BMServer -Session $script:session -ErrorAction Ignore | Remove-BMServer -Session $script:session
@@ -52,7 +52,7 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named
+            [string] $Named
         )
 
         $Named |
@@ -65,46 +65,53 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
             [Parameter(Mandatory)]
-            [string]$WithValue,
+            [string] $WithValue,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [switch] $Raw
         )
 
         $optionalParams = @{ }
-        if( $ForApplication )
+        if ($ForApplication)
         {
             $optionalParams['Application'] = $ForApplication
         }
 
-        if( $ForApplicationGroup )
+        if ($ForApplicationGroup)
         {
             $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
-        if( $ForEnvironment )
+        if ($ForEnvironment)
         {
             $optionalParams['Environment'] = $ForEnvironment
         }
 
-        if( $ForServer )
+        if ($ForServer)
         {
             $optionalParams['Server'] = $ForServer
         }
 
-        if( $ForServerRole )
+        if ($ForServerRole)
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($Raw)
+        {
+            $optionalParams['Raw'] = $true
         }
 
         Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
@@ -114,47 +121,54 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
             [Parameter(Mandatory)]
-            [string]$To,
+            [string] $To,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [switch] $Raw
         )
 
         $optionalParams = @{ }
 
-        if( $ForApplication )
+        if ($ForApplication)
         {
             $optionalParams['Application'] = $ForApplication
         }
 
-        if( $ForApplicationGroup )
+        if ($ForApplicationGroup)
         {
             $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
-        if( $ForEnvironment )
+        if ($ForEnvironment)
         {
             $optionalParams['Environment'] = $ForEnvironment
         }
 
-        if( $ForServer )
+        if ($ForServer)
         {
             $optionalParams['Server'] = $ForServer
         }
 
-        if( $ForServerRole )
+        if ($ForServerRole)
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($Raw)
+        {
+            $optionalParams['Raw'] = $true
         }
 
         $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ValueOnly
@@ -167,45 +181,45 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [String] $Named,
             [Parameter(Mandatory)]
-            [string]$WithValue,
-            [string]$ForApplication,
-            [string]$ForApplicationGroup,
-            [string]$ForEnvironment,
-            [string]$ForServer,
-            [string]$ForServerRole,
-            [Switch]$WhatIf
+            [Object] $WithValue,
+            [String] $ForApplication,
+            [String] $ForApplicationGroup,
+            [String] $ForEnvironment,
+            [String] $ForServer,
+            [String] $ForServerRole,
+            [Switch] $WhatIf
         )
 
         $optionalParams = @{ }
 
-        if( $ForApplication )
+        if ($ForApplication)
         {
             $optionalParams['Application'] = $ForApplication
         }
 
-        if( $ForApplicationGroup )
+        if ($ForApplicationGroup)
         {
             $optionalParams['ApplicationGroup'] = $ForApplicationGroup
         }
 
-        if( $ForEnvironment )
+        if ($ForEnvironment)
         {
             $optionalParams['Environment'] = $ForEnvironment
         }
 
-        if( $ForServer )
+        if ($ForServer)
         {
             $optionalParams['Server'] = $ForServer
         }
 
-        if( $ForServerRole )
+        if ($ForServerRole)
         {
             $optionalParams['ServerRole'] = $ForServerRole
         }
 
-        if( $WhatIf )
+        if ($WhatIf)
         {
             $optionalParams['WhatIf'] = $true
         }
@@ -283,6 +297,16 @@ Describe 'Set-BMVariable' {
         WhenSettingVariable 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'SetBMVariable'
         ThenVariableSet 'ServerRoleVar' -To 'ServerRoleValue' -ForServerRole 'SetBMVariable'
         ThenNoErrorWritten
+    }
+
+    It 'should convert map to OtterScript map' {
+        WhenSettingVariable 'GlobalVar' -WithValue @{ 'hello' = 'world' }
+        ThenVariableSet 'GlobalVar' -To '%(hello: world)' -Raw
+    }
+
+    It 'should convert array to OtterScript vector' {
+        WhenSettingVariable 'GlobalVar' -WithValue @('some', 'vector')
+        ThenVariableSet 'GlobalVar' -To '@(some, vector)' -Raw
     }
 
     It 'should support WhatIf when creating variable' {
