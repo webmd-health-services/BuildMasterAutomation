@@ -58,7 +58,8 @@ function ConvertTo-BMOtterScriptExpression
         }
 
         $mapExpression = '%('
-        foreach ($key in $Value.Keys)
+        $sortedKeys = $Value.Keys | Sort-Object -Descending
+        foreach ($key in $sortedKeys)
         {
             if ($Value[$key] -is [hashtable] -or $Value[$key] -is [array])
             {

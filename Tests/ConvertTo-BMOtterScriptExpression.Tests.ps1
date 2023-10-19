@@ -77,7 +77,7 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         GivenValue @{ 1 = 'hi'; 1.1 = 'bye' }
         WhenConverting
         ThenIsMap
-        ThenEquals '%(1: hi, 1.1: bye)'
+        ThenEquals '%(1.1: bye, 1: hi)'
     }
 
     It 'should return a vector' {
