@@ -5,7 +5,7 @@
 
 ## 3.2.0
 
-> Released 17 Oct 2023
+> Released 18 Oct 2023
 
 ### Changes
 
