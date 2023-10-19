@@ -3,6 +3,29 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.0.0
+
+> Released 19 Oct 2023
+
+### Upgrade Instructions
+
+***This release contains breaking changes. Please read these upgrade instructions carefully before upgrading.***
+
+* Add the `Raw` switch to all usages of `Get-BMVariable`.
+* Add the `Raw` switch to all usages of `Set-BMVariable`.
+
+### Added
+
+* `ConvertFrom-BMOtterScriptExpression` converts OtterScript expressions into their equivalent PowerShell objects.
+* `ConvertTo-BMOtterScriptExpression` converts PowerShell objects into their equivalent OtterScript expressions.
+
+### Changed
+
+* `Get-BMVariable` by default now converts all OtterScript variables to PowerShell objects before returning them. Use
+  the `Raw` flag to return the OtterScript variable as a string.
+* `Set-BMVariable` by default now converts all provided PowerShell objects into OtterScript objects before setting the
+  variable in the BuildMaster server. Use the `Raw` flag to submit the string without attempting to convert first.
+
 ## 3.2.0
 
 > Released 18 Oct 2023
