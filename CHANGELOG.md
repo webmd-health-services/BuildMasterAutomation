@@ -3,6 +3,15 @@
 
 # BuildMasterAutomation Changelog
 
+## 3.2.0
+
+> Released 18 Oct 2023
+
+### Changes
+
+* Added parameters to `Get-BMDeployment` to filter for deployments by `Application`, `Release`, `Build`, `Environment`,
+`Pipeline`, `Stage`, and `Status`.
+
 ## 3.1.0
 
 > Released 21 Jul 2023

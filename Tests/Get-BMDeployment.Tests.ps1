@@ -7,51 +7,56 @@ BeforeAll {
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
-    $script:session = New-BMTestSession
+    function Init
+    {
+        $script:session = New-BMTestSession
+        ClearBM
 
-    $defaultObjectName = New-BMTestObjectName
+        $defaultObjectName = New-BMTestObjectName
 
-    $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
+        $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
 
-    $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
+        $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
 
-    $stages = & {
-        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Integration' -AllServers |
-            New-BMPipelineStageObject -Name 'Integration' |
-            Write-Output
+        $stages = & {
+            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Integration' -AllServers |
+                New-BMPipelineStageObject -Name 'Integration' |
+                Write-Output
 
-        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Testing' -AllServers |
-            New-BMPipelineStageObject -Name 'Testing' |
-            Write-Output
+            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Testing' -AllServers |
+                New-BMPipelineStageObject -Name 'Testing' |
+                Write-Output
 
-        New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Production' -AllServers |
-            New-BMPipelineStageObject -Name 'Production' |
-            Write-Output
-    }
+            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Production' -AllServers |
+                New-BMPipelineStageObject -Name 'Production' |
+                Write-Output
+        }
 
-    $pipeline = Set-BMPipeline -Session $script:session `
-                               -Name $defaultObjectName `
-                               -Application $script:app `
-                               -Color '#ffffff' `
-                               -Stage $stages `
-                               -PassThru `
-                               -ErrorAction Stop
+        $script:pipeline = Set-BMPipeline -Session $script:session `
+                                -Name $defaultObjectName `
+                                -Application $script:app `
+                                -Color '#ffffff' `
+                                -Stage $stages `
+                                -PassThru `
+                                -ErrorAction Stop
 
-    $script:releaseAll = New-BMRelease -Session $script:session `
-                                       -Application $script:app `
-                                       -Pipeline $pipeline `
-                                       -Number '1.0' `
-                                       -Name 'releaseAll'
-    $script:releaseRelease = New-BMRelease -Session $script:session `
-                                           -Application $script:app `
-                                           -Pipeline $pipeline `
-                                           -Number '2.0' `
-                                           -Name 'releaseBuild'
-    $script:releaseRelease2 = New-BMRelease -Session $script:session `
+        $script:releaseAll = New-BMRelease -Session $script:session `
+                                        -Application $script:app `
+                                        -Pipeline $script:pipeline `
+                                        -Number '1.0' `
+                                        -Name 'releaseAll'
+        $script:releaseRelease = New-BMRelease -Session $script:session `
                                             -Application $script:app `
-                                            -Pipeline $pipeline `
-                                            -Number '3.0' `
-                                            -Name 'releaseRelease'
+                                            -Pipeline $script:pipeline `
+                                            -Number '2.0' `
+                                            -Name 'releaseBuild'
+        $script:releaseRelease2 = New-BMRelease -Session $script:session `
+                                                -Application $script:app `
+                                                -Pipeline $script:pipeline `
+                                                -Number '3.0' `
+                                                -Name 'releaseRelease'
+        Start-Sleep -Seconds 2
+    }
 
     function GivenReleaseBuild
     {
@@ -76,6 +81,7 @@ BeforeAll {
 
     function WhenGettingBMDeployment
     {
+        [CmdletBinding()]
         param(
             [Object] $Deployment,
 
@@ -83,52 +89,40 @@ BeforeAll {
 
             [Object] $Release,
 
-            [Object] $Application
+            [Object] $Application,
+
+            [Object] $Environment,
+
+            [String] $BuildNumber,
+
+            [String] $Pipeline,
+
+            [String] $Stage,
+
+            [String] $Status,
+
+            [switch] $ShouldError
         )
 
-        $Global:Error.Clear()
+        $parameters = $PSBoundParameters
+        $parameters.Remove('ShouldError')
 
-        # It can take several seconds
-        do
-        {
+        $Global:Error.Clear()
+        $timer = [System.Diagnostics.Stopwatch]::StartNew()
+        do {
+            Start-Sleep -Milliseconds 500
             $script:result = & {
-                if( $Deployment )
-                {
-                    Write-Debug "Getting by Deployment $($Deployment)"
-                    @(Get-BMDeployment -Session $script:session -Deployment $Deployment)
-                }
-                elseif( $Build )
-                {
-                    Write-Debug "Getting by Build $($Build)."
-                    @(Get-BMDeployment -Session $script:session -Build $Build)
-                }
-                elseif( $Release )
-                {
-                    Write-Debug "Getting by release $($Release)."
-                    @(Get-BMDeployment -Session $script:session -Release $Release)
-                }
-                elseif( $Application )
-                {
-                    Write-Debug "Getting by app $($Application)."
-                    @(Get-BMDeployment -Session $script:session -Application $Application)
-                }
-                else
-                {
-                    Write-Debug "Getting all."
-                    @(Get-BMDeployment -Session $script:session)
-                }
+                @(Get-BMDeployment -Session $script:session @parameters -ErrorAction 'SilentlyContinue')
             }
 
             if ($script:result)
             {
+                $Global:Error.Clear()
                 break
             }
+        } while ($timer.elapsed.totalseconds -lt 10)
 
-            Start-Sleep -Milliseconds 100
-        }
-        while ($timer.Elapsed.TotalSeconds -lt 10)
-
-        $script:result | ft -auto | out-string | write-debug
+        $script:result | Format-Table -Auto | Out-String | Write-Debug
 
         Write-Debug "Found $(($script:result | Measure-Object).Count) deployments."
     }
@@ -141,6 +135,14 @@ BeforeAll {
         $Global:Error | Should -BeNullOrEmpty
     }
 
+    function ThenShouldThrowError
+    {
+        param(
+        )
+
+        $Global:Error | Should -Not -BeNullOrEmpty
+    }
+
     function ThenDeploymentShouldBeReturned
     {
         param(
@@ -150,6 +152,7 @@ BeforeAll {
         $script:result | ft -auto | out-string | write-debug
 
         $currentDeployment = $script:result | Where-Object { $_.id -eq $Deployment.id }
+        Write-Debug "Looking for deployment $($Deployment.ToString())"
         $currentDeployment | Should -Not -BeNullOrEmpty -Because "didn't return deployment $($Deployment.id)"
         $currentDeployment.buildNumber | Should -Match $Deployment.buildNumber
         $currentDeployment.applicationName | Should -Match $Deployment.applicationName
@@ -182,12 +185,65 @@ BeforeAll {
             $script:result | Should -HaveCount $Count
         }
     }
+
+    function ThenDeploymentMatches
+    {
+        param(
+            [Parameter(Mandatory)]
+            [Object] $Deploy,
+            [String] $Deployment,
+            [String] $Build,
+            [String] $Release,
+            [String] $Application,
+            [String] $Environment,
+            [String] $BuildNumber,
+            [String] $Stage,
+            [String] $Status
+        )
+
+        if ($Deployment)
+        {
+            $Deploy.id | Should -Be $Deployment
+        }
+
+        if ($BuildNumber)
+        {
+            $Deploy.buildNumber | Should -Be $BuildNumber
+        }
+
+        if ($Release)
+        {
+            $Deploy.releaseId | Should -Be $Release
+        }
+
+        if ($Application)
+        {
+            $Deploy.applicationName | Should -Be $Application
+        }
+
+        if ($Environment)
+        {
+            $Deploy.environmentName | Should -Be $Environment
+        }
+
+        if ($Stage)
+        {
+            $Deploy.pipelineStageName | Should -Be $Stage
+        }
+
+        if ($Status)
+        {
+            $Deploy.status | Should -Be $Status
+        }
+    }
 }
 
 Describe 'Get-BMDeployment' {
     BeforeEach {
         $script:result = @()
         $Global:Error.Clear()
+        Init
+        # $DebugPreference = 'Continue'
     }
 
     It 'should get a specific deployment by object' {
@@ -198,10 +254,10 @@ Describe 'Get-BMDeployment' {
         $deployment3 = GivenDeployment $build2
         WhenGettingBMDeployment -Deployment $deployment
         ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
         ThenDeploymentShouldBeReturned $deployment
         ThenDeploymentShouldNotBeReturned $deployment2
         ThenDeploymentShouldNotBeReturned $deployment3
-        ThenTotalDeploymentsReturned 1
     }
 
     It 'should get a specific deployment by id' {
@@ -212,9 +268,128 @@ Describe 'Get-BMDeployment' {
         $deployment3 = GivenDeployment $build2
         WhenGettingBMDeployment -Deployment $deployment.id
         ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
         ThenDeploymentShouldBeReturned $deployment
         ThenDeploymentShouldNotBeReturned $deployment2
         ThenDeploymentShouldNotBeReturned $deployment3
+    }
+
+    It 'should get a deployment by application name' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseAll
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Application $script:app.Application_Name
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 3
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Application $script:app.Application_Name }
+    }
+
+    It 'should get a deployment by application object' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseAll
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Application $script:app
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 3
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Application $script:app.Application_Name }
+    }
+
+    It 'should get a deployment by release object' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseRelease
+        ThenShouldNotThrowErrors
         ThenTotalDeploymentsReturned 1
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Release $script:releaseRelease.id }
+    }
+
+    It 'should get deployment by release id' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseRelease.id
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Release $script:releaseRelease.id }
+    }
+
+    It 'should get deployment by release name' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseRelease.name
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Release $script:releaseRelease.id }
+    }
+
+    It 'should get deployment by build object' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Build $build
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 2
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Build $build.id }
+    }
+
+    It 'should get deployment by build id' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Build $build.id
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 2
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Build $build.id }
+    }
+
+    It 'should get a deployment by pipeline stage name' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Stage 'Testing'
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Stage 'Testing' }
+    }
+
+    It 'should get by multiple parameters' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseAll -Stage 'Testing'
+        ThenShouldNotThrowErrors
+        ThenTotalDeploymentsReturned 1
+        $script:result | ForEach-Object { ThenDeploymentMatches $_ -Release $script:releaseAll.id -Pipeline 'Testing' }
+    }
+
+    It 'should find no deployments' {
+        $build = GivenReleaseBuild $script:releaseAll
+        $build2 = GivenReleaseBuild $script:releaseRelease
+        GivenDeployment $build
+        GivenDeployment $build -Stage 'Testing'
+        GivenDeployment $build2
+        WhenGettingBMDeployment -Release $script:releaseRelease.id -Stage 'Testing' -Application $script:app
+        ThenShouldThrowError
+        ThenTotalDeploymentsReturned 0
     }
 }
