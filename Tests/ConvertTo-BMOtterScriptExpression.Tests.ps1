@@ -70,14 +70,14 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         GivenValue @{ 'hello' = 'world'; 'goodbye' = 'world' }
         WhenConverting
         ThenIsMap
-        ThenEquals '%(hello: world, goodbye: world)'
+        ThenEquals '%(goodbye: world, hello: world)'
     }
 
     It 'should result in a map of mixed types' {
         GivenValue @{ 1 = 'hi'; 1.1 = 'bye' }
         WhenConverting
         ThenIsMap
-        ThenEquals '%(1.1: bye, 1: hi)'
+        ThenEquals '%(1: hi, 1.1: bye)'
     }
 
     It 'should return a vector' {
@@ -94,17 +94,17 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenEquals '@(1, hi, 2.2, there)'
     }
 
-    It 'should return json' {
+    It 'should return nested map' {
         GivenValue @{ '1' = 'hi'; '2' = @{ 'hello' = 'world'}; '3' = @(1, 2, 3) }
         WhenConverting
-        ThenIsJson
-        ThenWarn 'Unable to convert hashtable*'
+        ThenIsMap
+        ThenEquals '%(1: hi, 2: %(hello: world), 3: @(1, 2, 3))'
     }
 
-    It 'should return json' {
+    It 'should return nested vector' {
         GivenValue @(1, 2, 3, @(4, 5, 6))
         WhenConverting
-        ThenIsJson
-        ThenWarn 'Unable to convert array*'
+        ThenIsVector
+        ThenEquals '@(1, 2, 3, @(4, 5, 6))'
     }
 }

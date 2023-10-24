@@ -45,7 +45,8 @@ function ConvertTo-BMOtterScriptExpression
                 {
                     if ($item -is [hashtable] -or $item -is [array])
                     {
-                        ConvertTo-BMOtterScriptExpression -Value $item | Write-Output
+                        $item = ConvertTo-BMOtterScriptExpression -Value $item
+                        $item | Write-Output
                         continue
                     }
 
@@ -61,12 +62,12 @@ function ConvertTo-BMOtterScriptExpression
         }
 
         $mapExpression = '%('
-        $sortedKeys = $Value.Keys | Sort-Object -Descending
+        $sortedKeys = $Value.Keys | Sort-Object
         foreach ($key in $sortedKeys)
         {
             if ($Value[$key] -is [hashtable] -or $Value[$key] -is [array])
             {
-                $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $item
+                $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $Value[$key]
             }
             $mapExpression += "${key}: $($Value[$key]), "
         }
