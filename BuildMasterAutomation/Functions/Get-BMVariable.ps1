@@ -102,7 +102,7 @@ function Get-BMVariable
         # The variable to get. Pass a variable id, name, or object. If you pass a string, wildcards are supported, and
         # only variables whose name equal or match the string will be returned.
         [Parameter(ValueFromPipeline)]
-        [Object] $Variable,
+        [Object] $Name,
 
         # The application of the variable. Pass an application id, name, or object.
         [Parameter(Mandatory, ParameterSetName='application')]
@@ -143,9 +143,9 @@ function Get-BMVariable
         $WhatIfPreference = $false  # This function does not modify any data, but uses POST requests.
 
         $variableArg = @{}
-        if ($Variable)
+        if ($Name)
         {
-            $variableArg['Variable'] = $Variable
+            $variableArg['Variable'] = $Name
         }
 
         Invoke-BMVariableEndpoint -Session $session `

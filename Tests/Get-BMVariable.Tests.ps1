@@ -167,7 +167,7 @@ BeforeAll {
 
         if( $Named )
         {
-            $optionalParams['Variable'] = $Named
+            $optionalParams['Name'] = $Named
         }
 
         if( $ValueOnly )
