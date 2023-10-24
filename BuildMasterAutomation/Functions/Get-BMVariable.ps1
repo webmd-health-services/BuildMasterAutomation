@@ -34,7 +34,7 @@ function Get-BMVariable
     Demonstrates how to get all global variables.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var'
+    Get-BMVariable -Session $session -Name 'Var'
 
     Demonstrates how to get a specific global variable.
 
@@ -44,7 +44,7 @@ function Get-BMVariable
     Demonstrates how to all an environment's variables.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Environment 'Dev'
+    Get-BMVariable -Session $session -Name 'Var' -Environment 'Dev'
 
     Demonstrates how to get a specific variable in an environment.
 
@@ -54,7 +54,7 @@ function Get-BMVariable
     Demonstrates how to get all variables in a specific server role.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -ServerRole 'WebApp'
+    Get-BMVariable -Session $session -Name 'Var' -ServerRole 'WebApp'
 
     Demonstrates how to get a specific variable in a server role.
 
@@ -64,7 +64,7 @@ function Get-BMVariable
     Demonstrates how to get all variables for a specific server.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Server 'example.com'
+    Get-BMVariable -Session $session -Name 'Var' -Server 'example.com'
 
     Demonstrates how to get a specific variable in a server.
 
@@ -74,7 +74,7 @@ function Get-BMVariable
     Demonstrates how to get all variables from a specific application group.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -ApplicationGroup 'WebApps'
+    Get-BMVariable -Session $session -Name 'Var' -ApplicationGroup 'WebApps'
 
     Demonstrates how to get a specific variable from an application group.
 
@@ -84,12 +84,12 @@ function Get-BMVariable
     Demonstrates how to get all variables from a specific application.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Application 'www'
+    Get-BMVariable -Session $session -Name 'Var' -Application 'www'
 
     Demonstrates how to get a specific variable from an application.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Application 'www' -Raw
+    Get-BMVariable -Session $session -Name 'Var' -Application 'www' -Raw
 
     Demonstrates how to get a specific variable from an application as a string.
     #>
