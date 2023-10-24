@@ -11,7 +11,7 @@ function Set-BMVariable
 
     Pass the variable's name to the `Name` parameter. Pass the variable's value to the `Value` parameter. If the raw
     flag is used then the variable is passed as-is to buildmaster, otherwise it will be converted to an OtterScript
-    value. If the variable is a PowerShell hashtable then it will be converted to an OtterScript hashtable. If the
+    value. If the variable is a PowerShell hashtable then it will be converted to an OtterScript map. If the
     variable is a PowerShell array then it will be converted to an OtterScript vector. All other types will be left as
     their default string representation.
 
@@ -64,11 +64,6 @@ function Set-BMVariable
     Set-BMVariable -Session $session -Name 'var' -Value @('hi', 'there') -ApplicationName 'www'
 
     Demonstrates how to set the variable 'var' to an OtterScript vector.
-
-    .EXAMPLE
-    Set-BMVariable -Session $session -Name 'var' -Value '@("hello": "there")' -ApplicationName 'www' -Raw
-
-    Demonstrates how to set the variable 'var' to a raw string value.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='global')]
@@ -108,16 +103,13 @@ function Set-BMVariable
         # The name of the server role where the variable should be created. The default is to create a global variable.
         [Parameter(Mandatory,ParameterSetName='role')]
         [Alias('ServerRoleName')]
-        [Object] $ServerRole,
-
-        # If set to true, then the value is passed as-is, if false, then it is converted to OtterScript.
-        [switch] $Raw
+        [Object] $ServerRole
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    if (-not $Raw)
+    if ($Value -is [hashtable] -or $Value -is [array])
     {
         $Value = ConvertTo-BMOtterScriptExpression -Value $Value
     }
