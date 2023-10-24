@@ -12,9 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        write-information 'given app'
         New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
-        write-information 'app was given '
     }
 
     function GivenApplicationGroup
@@ -292,7 +290,6 @@ Describe 'Get-BMVariable' {
     }
 
     It 'should return as value if variable is not OtterScript vector' {
-        write-information 'return item as not otterscript'
         GivenVariable 'Fubar' -WithValue 'Snafu'
         WhenGettingVariable -ValueOnly
         ThenVariableValuesReturned @( 'Snafu' )

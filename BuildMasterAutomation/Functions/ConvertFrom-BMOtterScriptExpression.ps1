@@ -116,7 +116,6 @@ function ConvertFrom-BMOtterScriptExpression
                     $x = $_.Trim()
                     if ($nestedStore[$x])
                     {
-                        Write-Debug "$($nestedStore[$x] | ConvertTo-Json)"
                         return ,($nestedStore[$x])
                     }
                     return ConvertTo-Int $x
@@ -139,18 +138,3 @@ function ConvertFrom-BMOtterScriptExpression
         return $map
     }
 }
-
-# $result = ConvertFrom-BMOtterScript "@(1, 2, 3, 4)" | Write-Output
-# $result | ConvertTo-Json | Write-Output
-# #
-# $result = ConvertFrom-BMOtterScript "@(1, 2, @(3, 4), @(5, 6), @(7, 8))"
-# $result | ConvertTo-Json | Write-Output
-
-# $result = ConvertFrom-BMOtterScript "@(1, 2, @(3, 4, @(5, 6)))"
-# $result | ConvertTo-Json | Write-Output
-
-# $result = ConvertFrom-BMOtterScript "@(1, 2, @(3, 4, @(5, 6)), @(1, 2, @(3, 4)))"
-# $result | ConvertTo-Json | Write-Output
-
-# $result = ConvertFrom-BMOtterScript "@(1, 2, %(hello: world, hi: @(1, 2, 3, 4)))"
-# $result | ConvertTo-Json | Write-Output
