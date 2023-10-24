@@ -1,4 +1,3 @@
-#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
@@ -9,7 +8,7 @@ BeforeAll {
     function GivenValue
     {
         param(
-            $Value
+            [string] $Value
         )
 
         $script:value = $Value
@@ -17,90 +16,118 @@ BeforeAll {
 
     function WhenConverting
     {
-        $warnings = @()
-        $script:result = ConvertFrom-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings'
-        $script:warnings = $warnings
+        $script:result = ConvertFrom-BMOtterScriptExpression -Value $script:value
     }
 
-    function ThenIsString
-    {
-        $script:result | Should -BeOfType [string]
-    }
-
-    function ThenIsMap
-    {
-        $script:result | Should -BeOfType [hashtable]
-    }
-
-    function ThenIsVector
-    {
-        ,$script:result | Should -BeOfType [array]
-    }
-
-    function ThenEquals
+    function ThenEqual
     {
         param(
-            $Value
+            [Parameter(Mandatory)]
+            $Expected,
+            $Result
         )
 
-        $script:result | Should -Be $Value
-    }
-
-    function ThenMapEquals {
-        param(
-            [hashtable] $Value
-        )
-
-        foreach ($key in $script:result.Keys)
+        if (-not $Result)
         {
-            $script:result[$key] | Should -Be $Value[$key]
+            $Result = $script:result
         }
 
-        foreach ($key in $Value.Keys)
+        if ($Result -is [hashtable])
         {
-            $script:result[$key] | Should -Be $Value[$key]
+            foreach ($item in $Result.Keys)
+            {
+                $e = $Expected[$item]
+                if ($item -is [int64])
+                {
+                    $e = $Expected[[Convert]::ToInt32($item)]
+                }
+                $r = $Result[$item]
+                ThenEqual -Result $r -Expected $e
+            }
+        }
+        elseif ($Result -is [array])
+        {
+            for ($i = 0; $i -lt $Result.Length; $i++)
+            {
+                ThenEqual -Result $Result[$i] -Expected $Expected[$i]
+            }
+        }
+        else
+        {
+            $Result | Should -Be $Expected -Because "${Result} should be ${Expected}"
         }
     }
 }
 
 Describe 'ConvertFrom-BMOtterScriptExpression' {
     BeforeEach {
-        $script:value = $null
         $script:result = $null
+        $script:value = $null
     }
 
-    It 'should convert otterscript vector to array' {
-        GivenValue '@(hello, there, my friend)'
+    It 'should return an array' {
+        GivenValue '@(one, two, three)'
         WhenConverting
-        ThenIsVector
-        ThenEquals 'hello', 'there', 'my friend'
+        ThenEqual -Expected 'one', 'two', 'three'
     }
 
-    It 'should leave non-string values as strings' {
-        GivenValue '@(hello, 1, 2, 3, 4)'
+    It 'should return a map' {
+        GivenValue '%(hello: world, hi: there)'
         WhenConverting
-        ThenIsVector
-        ThenEquals 'hello', '1', '2', '3', '4'
+        ThenEqual -Expected @{'hello' = 'world'; 'hi' = 'there'}
     }
 
-    It 'should convert otterscript map to hashtable' {
-        GivenValue '%(one: two, three: four)'
+    It 'should support spaces inside of arrays' {
+        GivenValue '@(this is one entry, this is another one, two, three)'
         WhenConverting
-        ThenIsMap
-        ThenMapEquals @{ 'one' = 'two'; 'three' = 'four' }
+        ThenEqual -Expected 'this is one entry', 'this is another one', 'two', 'three'
     }
 
-    It 'should leave non-string values as strings' {
-        GivenValue '%(1: one, 2: two)'
+    It 'should support spaces inside of maps keys and values' {
+        GivenValue '%(hello: this is a value, goodbye world: just kidding)'
         WhenConverting
-        ThenIsMap
-        ThenMapEquals @{ '1' = 'one'; '2' = 'two' }
+        ThenEqual -Expected @{'hello' = 'this is a value'; 'goodbye world' = 'just kidding'}
     }
 
-    It 'should return string representation' {
-        GivenValue 'hi this is a string'
+    It 'should automatically convert numbers in maps' {
+        GivenValue '%(1: two, three: 4)'
         WhenConverting
-        ThenIsString
-        ThenEquals 'hi this is a string'
+        ThenEqual -Expected @{1 = 'two'; 'three' = 4}
+    }
+
+    It 'should automatically convert numbers in vectors' {
+        GivenValue '@(1, 2, 3, 4, 5, 6)'
+        WhenConverting
+        ThenEqual -Expected 1, 2, 3, 4, 5, 6
+    }
+
+    It 'should support nested vectors' {
+        GivenValue '@(1, 2, 3, @(4, @(5, 6), @(7, 8)))'
+        WhenConverting
+        ThenEqual @(1, 2, 3, @(4, @(5, 6), @(7, 8)))
+    }
+
+    It 'should support nested maps' {
+        GivenValue '%(first: %(second: %(third: %(fourth: level))))'
+        WhenConverting
+        ThenEqual @{'first' = @{'second' = @{'third' = @{'fourth' = 'level'}}}}
+    }
+
+    It 'should support maps inside of vectors and vice versa' {
+        GivenValue '@(one, %(hello: @(two, three, four)), five)'
+        WhenConverting
+        ThenEqual @('one', @{'hello' = @('two', 'three', 'four')}, 'five')
+    }
+
+    It 'should return as a string if not valid syntax' {
+        GivenValue '@(one, two'
+        WhenConverting
+        ThenEqual '@(one, two'
+        GivenValue 'three'
+        WhenConverting
+        ThenEqual 'three'
+        GivenValue '%(five, six'
+        WhenConverting
+        ThenEqual '%(five, six'
     }
 }
