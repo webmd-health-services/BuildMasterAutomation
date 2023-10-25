@@ -17,7 +17,7 @@ PowerShell functions
 
 Install from the PowerShell Gallery:
 
-     Install-Module BuildMasterAutomation
+    Install-Module BuildMasterAutomation
 
 You can save the module to a prviate location with `Save-Module`:
 
@@ -30,11 +30,11 @@ You can download a ZIP file of the module from
 
 First, import the BuildMaster Automation module:
 
-    Import-Module 'Path\To\BuildMasterAutomation'
+    >Import-Module 'Path\To\BuildMasterAutomation'
 
 If you put it in one of your `PSModulePath` directories, you can omit the path:
 
-    Import-Module 'BuildMasterAutomation'
+    > Import-Module 'BuildMasterAutomation'
 
 Next, create a connection object to the instance of BuildMaster you want to use along with the API key to use.
 
@@ -42,28 +42,28 @@ Next, create a connection object to the instance of BuildMaster you want to use 
 visible to anyone listening on your network. Make sure your instance of BuildMaster is protected with SSL, otherwise
 malicous users will be able to see your API key and will be able to access your instance of BuildMaster.***
 
-    $session = New-BMSession -Url 'https://buildmaster.example.com' -ApiKey $apiKey
+    > $session = New-BMSession -Url 'https://buildmaster.example.com' -ApiKey $apiKey
 
 Now, you can create applications:
 
-    New-BMApplication -Session $session -Name 'BuildMaster Automation'
+    > New-BMApplication -Session $session -Name 'BuildMaster Automation'
 
 You can create releases:
 
-    New-BMRelease -Session $session -Application 'BuildMaster Automation' -Number '0.0' -Pipeline 'PowerShell Module'
+    > New-BMRelease -Session $session -Application 'BuildMaster Automation' -Number '0.0' -Pipeline 'PowerShell Module'
 
 To see a full list of available commands:
 
-    Get-Command -Module 'BuildMasterAutomation'
+    > Get-Command -Module 'BuildMasterAutomation'
 
 If there isn't a PowerShell function a BuildMaster API endpoint, use the `Invoke-BMRestMethod` to call that API
 endpoint.
 
-    Invoke-BMRestMethod -Session $session -Name 'release'
+    > Invoke-BMRestMethod -Session $session -Name 'release'
 
 Use `Invoke-BMNativeApiMethod` to call a native API endpoint:
 
-    Invoke-BMNativeApiMethod -Session $session -Name 'Applications_GetApplications'
+    > Invoke-BMNativeApiMethod -Session $session -Name 'Applications_GetApplications'
 
 # Commands
 
@@ -115,7 +115,9 @@ Use `Invoke-BMNativeApiMethod` to call a native API endpoint:
 * Add-BMObjectParameter
 * Add-BMParameter
 * ConvertFrom-BMNativeApiByteValue
+* ConvertFrom-BMOtterScriptExpression
 * ConvertTo-BMNativeApiByteValue
+* ConvertTo-BMOtterScriptExpression
 * Get-BMObjectName
 * New-BMPipelinePostDeploymentOptionsObject
 * New-BMPipelineStageObject
