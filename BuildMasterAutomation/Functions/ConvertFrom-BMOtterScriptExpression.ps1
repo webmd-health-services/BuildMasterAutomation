@@ -40,10 +40,9 @@ function ConvertFrom-BMOtterScriptExpression
     #>
     [CmdletBinding()]
     param(
-        # The string to parse into a PowerShell expression
+        # The OtterScript expression to convert to a PowerShell object.
         [Parameter(Mandatory, ValueFromPipeline)]
-        [String] $Value,
-        [int] $Depth = 0
+        [String] $Value
     )
 
     begin {
@@ -54,87 +53,117 @@ function ConvertFrom-BMOtterScriptExpression
         {
             param(
                 [Parameter(Mandatory)]
-                [String] $Current
+                [String] $Item
             )
 
-            $current = $Current.Trim()
             $maybeInt = 0
-            if (([Int64]::TryParse($current, [ref] $maybeInt)))
+            if (([Int64]::TryParse($Item, [ref] $maybeInt)))
             {
                 return $maybeInt
             }
 
-            return $current
+            return $Item
         }
     }
 
     process {
         $isMap = $Value.StartsWith('%(') -and $Value.EndsWith(')')
         $isVector = $Value.StartsWith('@(') -and $Value.EndsWith(')')
+        $originalValue = $Value
 
         if (-not $isMap -and -not $isVector)
         {
-            return $Value
+            return ConvertTo-Int -Item $Value.Trim()
         }
 
-        $Value = $Value -replace '^@\(' -replace '^%\(' -replace '\)$'
-        $index = 0
-        $stack = [System.Collections.Stack]::New()
-        $nestedStore = @{}
-        while ($index -lt $Value.Length)
+        if ($isMap)
         {
-            if (($Value[$index] -eq '@' -or $Value[$index] -eq '%')-and $Value[$index + 1] -eq '(')
-            {
-                $stack.Push($index)
-                $index++
-            }
+            $Value = $Value -replace '^%\('
+        }
+        else
+        {
+            $Value = $Value -replace '^@\('
+        }
 
-            if ($Value[$index] -ne ')')
-            {
-                $index++
-                continue
-            }
+        $Value = $Value -replace '\)$'
 
-            $lastItem = $stack.Pop()
-            if ($stack.Count -ne 0)
+        $closesNeeded = 0
+        # Splitting up array or map by comma and collecting into array.
+        $parsedItems = &{
+            $start = 0
+            $end = 0
+            foreach ($i in 0..($Value.Length - 1))
             {
-                $index++
-                continue
-            }
+                $char = $Value[$i]
 
-            $keyName = "PLACEHOLDER_$($nestedStore.Count)"
-            $nestedStore[$keyName] = ConvertFrom-BMOtterScriptExpression -Value ($Value.Substring($lastItem, $index - $lastItem + 1)) -Depth ($Depth + 1)
-            $Value = $Value.Remove($lastItem, $index - $lastItem + 1)
-            $Value = $Value.Insert($lastItem, $keyName)
-            $Index = $lastItem + $keyName.Length
-            $index++
+                if ($char -eq '(' -and ($Value[$i - 1] -eq '@' -or $Value[$i - 1] -eq '%'))
+                {
+                    $closesNeeded++
+                    continue
+                }
+
+                if ($char -eq ')' -and $closesNeeded)
+                {
+                    $closesNeeded--
+                    if ($i -ne ($Value.Length - 1))
+                    {
+                        continue
+                    }
+                }
+
+                if ($closesNeeded)
+                {
+                    continue
+                }
+
+                if ($char -ne ',' -and $i -ne ($Value.Length - 1))
+                {
+                    continue
+                }
+
+                $end = $i
+                $lengthOfSubstring = $end - $start
+
+                if ($i -eq ($Value.Length - 1))
+                {
+                    $lengthOfSubstring++
+                }
+
+                $entry = $Value.Substring($start, $lengthOfSubstring).Trim()
+                $entry | Write-Output
+                $start = $i + 1
+            }
+        }
+
+        if ($closesNeeded)
+        {
+            return $originalValue
         }
 
         if ($isVector)
         {
-            $arr = $Value -split ',' | ForEach-Object {
-                    $x = $_.Trim()
-                    if ($nestedStore[$x])
-                    {
-                        return ,($nestedStore[$x])
-                    }
-                    return ConvertTo-Int $x
-                }
-            return $arr
+            $parsedItems = $parsedItems | ForEach-Object { ConvertFrom-BMOtterScriptExpression -Value $_ }
+            return ,$parsedItems
         }
 
         $map = @{}
+
+        # Splitting each item by ':' to determine keys and values
         foreach ($kvpair in $Value -split ',')
         {
-            $kv = $kvpair -split ':' | ForEach-Object { $_.Trim() }
-            $key = ConvertTo-Int $kv[0]
-            $value = $kv[1]
-            $map[$key] = ConvertTo-Int $value
-            if ($nestedStore[$value])
+            $substringLength = 0
+            foreach ($i in 0..($kvpair.Length - 1))
             {
-                $map[$key] = $nestedStore[$value]
+                if ($kvpair[$i] -eq ':')
+                {
+                    $substringLength = $i
+                    break
+                }
             }
+            $key = ConvertTo-Int -Item $kvpair.Substring(0, $substringLength).Trim()
+            $value = ConvertFrom-BMOtterScriptExpression -Value ($kvpair.Substring($substringLength + 1).Trim())
+            $map[$key] = $value
         }
-        return $map
+        return ,$map
     }
 }
