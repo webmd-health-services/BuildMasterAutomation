@@ -76,7 +76,8 @@ function Set-BMVariable
         [Parameter(Mandatory)]
         [String] $Name,
 
-        # The variable's value. If the Raw flag is used, this is passed to BuildMaster as-is.
+        # The variable's value. If a PowerShell array or hashtable is passed in it will be converted to the equivalent
+        # OtterScript expression.
         [Parameter(Mandatory)]
         [Object] $Value,
 
