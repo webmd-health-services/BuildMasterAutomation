@@ -42,6 +42,7 @@ BeforeAll {
                     $e = $Expected[[Convert]::ToInt32($item)]
                 }
                 $r = $Result[$item]
+
                 ThenEqual -Result $r -Expected $e
             }
         }
@@ -129,5 +130,20 @@ Describe 'ConvertFrom-BMOtterScriptExpression' {
         GivenValue '%(five, six'
         WhenConverting
         ThenEqual '%(five, six'
+        GivenValue '%(seven, eight))'
+        WhenConverting
+        ThenEqual '%(seven, eight))'
+    }
+
+    It 'should convert if map is first element in vector' {
+        GivenValue '@(%(one: 1), two)'
+        WhenConverting
+        ThenEqual @( @{ 'one' = 1 }, 'two')
+    }
+
+    It 'should allow for strings that are surrounded by parens' {
+        GivenValue '(this is a string)'
+        WhenConverting
+        ThenEqual '(this is a string)'
     }
 }

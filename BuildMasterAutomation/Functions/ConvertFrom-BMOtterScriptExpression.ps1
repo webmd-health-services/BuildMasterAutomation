@@ -24,7 +24,7 @@ function ConvertFrom-BMOtterScriptExpression
     Demonstrates converting an OtterScript map into a PowerShell hashtable.
 
     .EXAMPLE
-    "%(hello: %(hi: world))" | ConvertFrom-BMOtterSCriptExpression
+    "%(hello: %(hi: world))" | ConvertFrom-BMOtterScriptExpression
 
     Demonstrates converting nested OtterScript maps into nested PowerShell hashtables.
 
@@ -53,7 +53,7 @@ function ConvertFrom-BMOtterScriptExpression
         {
             param(
                 [Parameter(Mandatory)]
-                [String] $Item
+                [Object] $Item
             )
 
             $maybeInt = 0
@@ -88,6 +88,7 @@ function ConvertFrom-BMOtterScriptExpression
         $Value = $Value -replace '\)$'
 
         $closesNeeded = 0
+        $failingSyntax = $false
         # Splitting up array or map by comma and collecting into array.
         $parsedItems = &{
             $start = 0
@@ -111,12 +112,7 @@ function ConvertFrom-BMOtterScriptExpression
                     }
                 }
 
-                if ($closesNeeded)
-                {
-                    continue
-                }
-
-                if ($char -ne ',' -and $i -ne ($Value.Length - 1))
+                if ($closesNeeded -or ($char -ne ',' -and $i -ne ($Value.Length - 1)))
                 {
                     continue
                 }
@@ -130,40 +126,64 @@ function ConvertFrom-BMOtterScriptExpression
                 }
 
                 $entry = $Value.Substring($start, $lengthOfSubstring).Trim()
-                $entry | Write-Output
+                $start = $i + 1
+
+                if ($isVector)
+                {
+                    $converted = ConvertFrom-BMOtterScriptExpression -Value $entry
+
+                    if ($converted -is [array])
+                    {
+                        # PowerShell Array flattening is the bane of my existence...
+                        @{ 'Item' = $converted } | Write-Output
+                        continue
+                    }
+                    $converted | Write-Output
+                    continue
+                }
+
+                $firstColonIndex = $entry.IndexOf(':')
+                if ($firstColonIndex -lt 0)
+                {
+                    $failingSyntax = $true
+                    break
+                }
+
+                @{
+                    'Key' = ConvertTo-Int -Item $entry.Substring(0, $firstColonIndex).Trim()
+                    'Value' = ConvertFrom-BMOtterScriptExpression -Value $entry.Substring($firstColonIndex + 1).Trim()
+                } | Write-Output
+
                 $start = $i + 1
             }
         }
 
-        if ($closesNeeded)
+        if ($closesNeeded -or $failingSyntax)
         {
             return $originalValue
         }
 
         if ($isVector)
         {
-            $parsedItems = $parsedItems | ForEach-Object { ConvertFrom-BMOtterScriptExpression -Value $_ }
-            return ,$parsedItems
+            # More copium for dealing with array flattening :((
+            $parsedItems =
+                $parsedItems |
+                ForEach-Object {
+                    if ($_ -isnot [hashtable] -or -not $_.ContainsKey('Item'))
+                    {
+                        return $_
+                    }
+                    return ,$_['Item']
+                }
+            return $parsedItems
         }
 
         $map = @{}
 
-        # Splitting each item by ':' to determine keys and values
-        foreach ($kvpair in $Value -split ',')
+        foreach ($kvpair in $parsedItems)
         {
-            $substringLength = 0
-            foreach ($i in 0..($kvpair.Length - 1))
-            {
-                if ($kvpair[$i] -eq ':')
-                {
-                    $substringLength = $i
-                    break
-                }
-            }
-            $key = ConvertTo-Int -Item $kvpair.Substring(0, $substringLength).Trim()
-            $value = ConvertFrom-BMOtterScriptExpression -Value ($kvpair.Substring($substringLength + 1).Trim())
-            $map[$key] = $value
+            $map[$kvpair['Key']] = $kvpair['Value']
         }
-        return ,$map
+        return $map
     }
 }
