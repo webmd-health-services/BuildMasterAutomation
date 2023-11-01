@@ -7,8 +7,8 @@ function ConvertTo-BMOtterScriptExpression
 
     .DESCRIPTION
     The `ConvertTo-BMOtterScriptExpression` function takes a PowerShell object as an input and returns a representation
-    of the object in OtterScript. This function converts PowerShell arrays and hashtables to OtterScript vector and map
-    types respectively.
+    of the object in OtterScript. This function converts .NET IEnumerable and IDictionary  objects to OtterScript vector
+    and map types respectively.
 
     .LINK
     https://docs.inedo.com/docs/executionengine-otterscript-strings-and-literals
@@ -16,13 +16,13 @@ function ConvertTo-BMOtterScriptExpression
     .EXAMPLE
     ,@(1, 2, 3, 4) | ConvertTo-BMOtterScriptExpression
 
-    Demonstrates turning an array of PowerShell integers into an array of OtterScript integers. Output will be
+    Demonstrates turning an IEnumerable of PowerShell integers into an array of OtterScript integers. Output will be
     `@(1, 2, 3, 4)`
 
     .EXAMPLE
     @{ 'hello' = 'world'; 'goodbye' = 'world' } | ConvertTo-BMOtterScriptExpression
 
-    Demonstrates turning a PowerShell hashtable into an OtterScript map. Output will be `%(hello: world, goodbye: world)`
+    Demonstrates turning a PowerShell IDictionary into an OtterScript map. Output will be `%(hello: world, goodbye: world)`
     #>
     [CmdletBinding()]
     param(
@@ -37,13 +37,18 @@ function ConvertTo-BMOtterScriptExpression
 
     process {
 
-        if ($Value -is [array])
+        if ($Value -isnot [System.Collections.IEnumerable] -and $Value -isnot [System.Collections.IDictionary])
+        {
+            return $Value
+        }
+
+        if ($Value -is [System.Collections.IEnumerable])
         {
 
             $Value = & {
                 foreach ($item in $Value)
                 {
-                    if ($item -is [hashtable] -or $item -is [array])
+                    if ($item -is [System.Collections.IDictionary] -or $item -is [System.Collections.IEnumerable])
                     {
                         $item = ConvertTo-BMOtterScriptExpression -Value $item
                         $item | Write-Output
@@ -56,16 +61,11 @@ function ConvertTo-BMOtterScriptExpression
             return "@($($Value -join ', '))"
         }
 
-        if (-not ($Value -is [hashtable]))
-        {
-            return $Value
-        }
-
         $mapExpression = '%('
         $sortedKeys = $Value.Keys | Sort-Object
         foreach ($key in $sortedKeys)
         {
-            if ($Value[$key] -is [hashtable] -or $Value[$key] -is [array])
+            if ($Value[$key] -is [System.Collections.IDictionary] -or $Value[$key] -is [System.Collections.IEnumerable])
             {
                 $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $Value[$key]
             }

@@ -107,4 +107,11 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenIsVector
         ThenEquals '@(1, 2, 3, @(4, 5, 6))'
     }
+
+    It 'should return original value' {
+        $value = [pscustomobject]@{ Custom = 'Object' }
+        GivenValue $value
+        WhenConverting
+        $script:result | Should -Be $value
+    }
 }
