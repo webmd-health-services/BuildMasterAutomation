@@ -36,44 +36,45 @@ function ConvertTo-BMOtterScriptExpression
     }
 
     process {
+        $isDict = $Value -is [System.Collections.IDictionary]
+        $isList = $Value -is [System.Collections.IEnumerable] -and $Value -is [System.Collections.ICollection]
 
-        if ($Value -isnot [System.Collections.IEnumerable] -and $Value -isnot [System.Collections.IDictionary])
+        if (-not $isDict -and -not $isList)
         {
             return $Value
         }
 
-        if ($Value -is [System.Collections.IEnumerable])
+        if ($isDict)
         {
-
-            $Value = & {
-                foreach ($item in $Value)
-                {
-                    if ($item -is [System.Collections.IDictionary] -or $item -is [System.Collections.IEnumerable])
-                    {
-                        $item = ConvertTo-BMOtterScriptExpression -Value $item
-                        $item | Write-Output
-                        continue
-                    }
-
-                    $item | Write-Output
-                }
-            }
-            return "@($($Value -join ', '))"
-        }
-
-        $mapExpression = '%('
-        $sortedKeys = $Value.Keys | Sort-Object
-        foreach ($key in $sortedKeys)
-        {
-            if ($Value[$key] -is [System.Collections.IDictionary] -or $Value[$key] -is [System.Collections.IEnumerable])
+            $mapExpression = '%('
+            $sortedKeys = $Value.Keys | Sort-Object
+            foreach ($key in $sortedKeys)
             {
-                $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $Value[$key]
+                if ($Value[$key] -is [System.Collections.ICollection])
+                {
+                    $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $Value[$key]
+                }
+                $mapExpression += "${key}: $($Value[$key]), "
             }
-            $mapExpression += "${key}: $($Value[$key]), "
+
+            $mapExpression = $mapExpression -replace ', $'
+            $mapExpression += ')'
+            return $mapExpression
         }
 
-        $mapExpression = $mapExpression -replace ', $'
-        $mapExpression += ')'
-        return $mapExpression
+        $result = & {
+            foreach ($item in $Value)
+            {
+                if ($item -is [System.Collections.ICollection])
+                {
+                    $item = ConvertTo-BMOtterScriptExpression -Value $item
+                    $item | Write-Output
+                    continue
+                }
+
+                $item | Write-Output
+            }
+        }
+        return "@($($result -join ', '))"
     }
 }
