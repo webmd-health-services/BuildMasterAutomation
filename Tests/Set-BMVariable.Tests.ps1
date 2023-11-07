@@ -224,7 +224,7 @@ BeforeAll {
             $optionalParams['WhatIf'] = $true
         }
 
-        $script:result = Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
+        $script:result = Set-BMVariable -Session $script:session -Name $Named -Value $WithValue -ErrorAction 'SilentlyContinue' @optionalParams
         $script:result | Should -BeNullOrEmpty
     }
 }
@@ -307,6 +307,12 @@ Describe 'Set-BMVariable' {
     It 'should convert array to OtterScript vector' {
         WhenSettingVariable 'GlobalVar' -WithValue @('some', 'vector')
         ThenVariableSet 'GlobalVar' -To '@(some, vector)' -Raw
+    }
+
+    It 'should fail to set variable' {
+        $value = [System.Collections.DictionaryEntry]::new('hello', 'world')
+        WhenSettingVariable 'GlobalVar' -WithValue $value
+        ThenError -MatchesPattern 'Unable to convert*'
     }
 
     It 'should support WhatIf when creating variable' {

@@ -39,9 +39,18 @@ function ConvertTo-BMOtterScriptExpression
         $isDict = $Value -is [System.Collections.IDictionary]
         $isList = $Value -is [System.Collections.IEnumerable] -and $Value -is [System.Collections.ICollection]
 
+        if ($Value -is [String] -or $Value -is [Int])
+        {
+            return $Value.ToString()
+        }
+
         if (-not $isDict -and -not $isList)
         {
-            return $Value
+            $valueType = ($Value | Get-Member).TypeName | Select-Object -Unique
+            $msg = "Unable to convert '${valueType}' to OtterScript expression. All values must either inherit " +
+                   'the IDictionary or the IEnumarable interface or be of type String or Int.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
         }
 
         if ($isDict)

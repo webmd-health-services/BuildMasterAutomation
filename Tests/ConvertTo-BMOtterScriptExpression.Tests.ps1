@@ -17,7 +17,7 @@ BeforeAll {
     function WhenConverting
     {
         $warnings = @()
-        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings'
+        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings' -ErrorAction SilentlyContinue
         $script:warnings = $warnings
     }
 
@@ -108,10 +108,11 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenEquals '@(1, 2, 3, @(4, 5, 6))'
     }
 
-    It 'should return original value' {
-        $value = [pscustomobject]@{ Custom = 'Object' }
+    It 'should throw error' {
+        $value = [System.Collections.DictionaryEntry]::new('hi', 'there')
         GivenValue $value
         WhenConverting
-        $script:result | Should -Be $value
+        $script:result | Should -Be $null
+        ThenError -MatchesPattern 'Unable to convert*'
     }
 }

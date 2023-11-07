@@ -78,6 +78,12 @@ function ConvertFrom-BMOtterScriptExpression
 
         if ($isScalar)
         {
+            if ($Value.StartsWith('@(') -or $Value.StartsWith('%('))
+            {
+                $msg = "Unable to convert '${originalValue}' to a PowerShell Object because of invalid syntax. " +
+                       'Returning original value.'
+                Write-Warning -Message $msg
+            }
             return $Value | Edit-Output
         }
 
@@ -159,10 +165,10 @@ function ConvertFrom-BMOtterScriptExpression
 
         if ($invalidSyntax)
         {
-            $msg = "Unable to convert '${originalValue}' ts an OtterScript expression because of invalid syntax. " +
+            $msg = "Unable to convert '${originalValue}' to a PowerShell Object because of invalid syntax. " +
                    'Returning original value.'
             Write-Warning -Message $msg
-            return $originalValue
+            return $originalValue | Edit-Output
         }
 
         if ($isVector)

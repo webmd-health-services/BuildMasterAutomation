@@ -110,9 +110,10 @@ function Set-BMVariable
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    if ($Value -is [hashtable] -or $Value -is [array])
+    $Value = ConvertTo-BMOtterScriptExpression -Value $Value
+    if (-not $Value)
     {
-        $Value = ConvertTo-BMOtterScriptExpression -Value $Value
+        return
     }
 
     Invoke-BMVariableEndpoint -Session $Session `
