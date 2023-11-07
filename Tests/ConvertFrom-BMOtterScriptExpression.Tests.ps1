@@ -50,6 +50,11 @@ BeforeAll {
         {
             for ($i = 0; $i -lt $Result.Length; $i++)
             {
+                if (($Result[$i] -is [hashtable] -and $Result[$i].Count -eq 0) -or
+                    ($Result[$i] -is [array] -and $Result[$i].Length -eq 0))
+                {
+                    continue
+                }
                 ThenEqual -Result $Result[$i] -Expected $Expected[$i]
             }
         }
@@ -145,5 +150,14 @@ Describe 'ConvertFrom-BMOtterScriptExpression' {
         GivenValue '(this is a string)'
         WhenConverting
         ThenEqual '(this is a string)'
+    }
+
+    It 'should support empty objects' {
+        GivenValue '@(@(), @())'
+        WhenConverting
+        ThenEqual @(@(), @())
+        GivenValue '@(%(), %())'
+        WhenConverting
+        ThenEqual @(@{}, @{})
     }
 }
