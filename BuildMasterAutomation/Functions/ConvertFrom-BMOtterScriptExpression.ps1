@@ -49,46 +49,59 @@ function ConvertFrom-BMOtterScriptExpression
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        function ConvertTo-Int
+        function Edit-Output
         {
             param(
-                [Parameter(Mandatory)]
-                [Object] $Item
+                [Parameter(Mandatory, ValueFromPipeline)]
+                $InputObject
             )
 
+            $InputObject = $InputObject.Trim()
+
             $maybeInt = 0
-            if (([Int64]::TryParse($Item, [ref] $maybeInt)))
+            if (([Int64]::TryParse($InputObject, [ref] $maybeInt)))
             {
                 return $maybeInt
             }
 
-            return $Item
+            return $InputObject
         }
     }
 
     process {
+        $originalValue = $Value
+        $Value = $Value.Trim()
+
         $isMap = $Value.StartsWith('%(') -and $Value.EndsWith(')')
         $isVector = $Value.StartsWith('@(') -and $Value.EndsWith(')')
-        $originalValue = $Value
+        $isScalar = -not $isMap -and -not $isVector
 
-        if (-not $isMap -and -not $isVector)
+        if ($isScalar)
         {
-            return ConvertTo-Int -Item $Value.Trim()
-        }
-
-        if ($isMap)
-        {
-            $Value = $Value -replace '^%\('
-        }
-        else
-        {
-            $Value = $Value -replace '^@\('
+            return $Value | Edit-Output
         }
 
         $Value = $Value -replace '\)$'
 
+        if ($isMap)
+        {
+            $Value = $Value -replace '^%\('
+            if (-not $Value)
+            {
+                return @{}
+            }
+        }
+        else
+        {
+            $Value = $Value -replace '^@\('
+            if (-not $Value)
+            {
+                return ,@()
+            }
+        }
+
         $closesNeeded = 0
-        $failingSyntax = $false
+
         # Splitting up array or map by comma and collecting into array.
         $parsedItems = &{
             $start = 0
@@ -125,65 +138,49 @@ function ConvertFrom-BMOtterScriptExpression
                     $lengthOfSubstring++
                 }
 
-                $entry = $Value.Substring($start, $lengthOfSubstring).Trim()
-                $start = $i + 1
-
-                if ($isVector)
-                {
-                    $converted = ConvertFrom-BMOtterScriptExpression -Value $entry
-
-                    if ($converted -is [array])
-                    {
-                        # PowerShell Array flattening is the bane of my existence...
-                        @{ 'Item' = $converted } | Write-Output
-                        continue
-                    }
-                    $converted | Write-Output
-                    continue
-                }
-
-                $firstColonIndex = $entry.IndexOf(':')
-                if ($firstColonIndex -lt 0)
-                {
-                    $failingSyntax = $true
-                    break
-                }
-
-                @{
-                    'Key' = ConvertTo-Int -Item $entry.Substring(0, $firstColonIndex).Trim()
-                    'Value' = ConvertFrom-BMOtterScriptExpression -Value $entry.Substring($firstColonIndex + 1).Trim()
-                } | Write-Output
-
+                $Value.Substring($start, $lengthOfSubstring).Trim() | Write-Output
                 $start = $i + 1
             }
         }
 
-        if ($closesNeeded -or $failingSyntax)
+        $invalidSyntax = $closesNeeded -gt 0
+
+        if ($isMap)
         {
+            foreach ($mapItem in $parsedItems)
+            {
+                if  ($mapItem -notmatch '^[\w\d\s\-]+:')
+                {
+                    $invalidSyntax = $true
+                    break
+                }
+            }
+        }
+
+        if ($invalidSyntax)
+        {
+            $msg = "Unable to convert '${originalValue}' ts an OtterScript expression because of invalid syntax. " +
+                   'Returning original value.'
+            Write-Warning -Message $msg
             return $originalValue
         }
 
         if ($isVector)
         {
-            # More copium for dealing with array flattening :((
-            $parsedItems =
-                $parsedItems |
-                ForEach-Object {
-                    if ($_ -isnot [hashtable] -or -not $_.ContainsKey('Item'))
-                    {
-                        return $_
-                    }
-                    return ,$_['Item']
-                }
-            return $parsedItems
+            return ,@($parsedItems | ConvertFrom-BMOtterScriptExpression)
         }
 
-        $map = @{}
+        $hashtable = @{}
 
         foreach ($kvpair in $parsedItems)
         {
-            $map[$kvpair['Key']] = $kvpair['Value']
+            $colonIndex = $kvpair.IndexOf(':')
+            $mapKey = $kvpair.Substring(0, $colonIndex) | Edit-Output
+            $mapValue = $kvpair.Substring($colonIndex + 1) | ConvertFrom-BMOtterScriptExpression
+
+            $hashtable[$mapKey] = $mapValue
         }
-        return $map
+
+        return $hashtable
     }
 }
