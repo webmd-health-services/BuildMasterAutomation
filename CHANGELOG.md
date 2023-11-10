@@ -5,7 +5,7 @@
 
 ## 4.0.0
 
-> Released 19 Oct 2023
+> Released 10 Nov 2023
 
 ### Upgrade Instructions
 

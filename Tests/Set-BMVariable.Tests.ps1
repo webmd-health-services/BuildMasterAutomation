@@ -302,11 +302,25 @@ Describe 'Set-BMVariable' {
     It 'should convert map to OtterScript map' {
         WhenSettingVariable 'GlobalVar' -WithValue @{ 'hello' = 'world' }
         ThenVariableSet 'GlobalVar' -To '%(hello: world)' -Raw
+        ThenNoErrorWritten
     }
 
     It 'should convert array to OtterScript vector' {
         WhenSettingVariable 'GlobalVar' -WithValue @('some', 'vector')
         ThenVariableSet 'GlobalVar' -To '@(some, vector)' -Raw
+        ThenNoErrorWritten
+    }
+
+    It 'should support an empty PowerShell array' {
+        WhenSettingVariable 'GlobalVar' -WithValue @()
+        ThenVariableSet 'GlobalVar' -To '@()' -Raw
+        ThenNoErrorWritten
+    }
+
+    It 'should support an empty PowerShell hashtable' {
+        WhenSettingVariable 'GlobalVar' -WithValue @{}
+        ThenVariableSet 'GlobalVar' -To '%()' -Raw
+        ThenNoErrorWritten
     }
 
     It 'should fail to set variable' {

@@ -111,7 +111,8 @@ function Set-BMVariable
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
     $Value = ConvertTo-BMOtterScriptExpression -Value $Value
-    if (-not $Value)
+
+    if ($Value -eq $null)
     {
         return
     }

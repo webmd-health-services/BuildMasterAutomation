@@ -292,7 +292,7 @@ Describe 'Get-BMVariable' {
     It 'should return as value if variable is not OtterScript vector' {
         GivenVariable 'Fubar' -WithValue 'Snafu'
         WhenGettingVariable -ValueOnly
-        ThenVariableValuesReturned @( 'Snafu' )
+        ThenVariableValuesReturned 'Snafu'
         ThenNoErrorWritten
     }
 
