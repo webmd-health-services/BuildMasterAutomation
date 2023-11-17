@@ -12,7 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
     }
 
     function GivenApplicationGroup
@@ -157,19 +157,25 @@ BeforeAll {
             [string]$ForApplicationGroup,
             [string]$ForEnvironment,
             [string]$ForServer,
-            [string]$ForServerRole
+            [string]$ForServerRole,
+            [switch]$Raw
         )
 
         $optionalParams = @{ }
 
         if( $Named )
         {
-            $optionalParams['Variable'] = $Named
+            $optionalParams['Name'] = $Named
         }
 
         if( $ValueOnly )
         {
             $optionalParams['ValueOnly'] = $true
+        }
+
+        if ( $Raw )
+        {
+            $optionalParams['Raw'] = $true
         }
 
         if( $ForApplication )
@@ -198,6 +204,29 @@ BeforeAll {
         }
 
         $script:result = Get-BMVariable -Session $script:session @optionalParams
+    }
+
+    function GivenVectorVariable
+    {
+        param(
+            [string] $Name,
+            [string[]] $List,
+            [int] $Id
+        )
+
+        $otterScriptVect = "@($($List -join ', '))"
+        $bytes = [Text.Encoding]::UTF8.GetBytes($otterScriptVect)
+        $base64Val = [Convert]::ToBase64String($bytes)
+
+        Invoke-BMNativeApiMethod -Session $script:session `
+                                 -Name 'Variables_CreateOrUpdateVariable' `
+                                 -Method Post `
+                                 -Parameter @{
+                                    Variable_Name = $name
+                                    Variable_Value = $base64Val
+                                    ValueType_Code = 'V'
+                                    Application_Id = $Id
+                                 }
     }
 }
 
@@ -260,6 +289,29 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should return as value if variable is not OtterScript vector' {
+        GivenVariable 'Fubar' -WithValue 'Snafu'
+        WhenGettingVariable -ValueOnly
+        ThenVariableValuesReturned 'Snafu'
+        ThenNoErrorWritten
+    }
+
+    It 'should return item as an array' {
+        $app = GivenApplication
+        GivenVectorVariable -Name 'ArrItem' -List @( 'hello', 'world' ) -Id $app.Application_Id
+        WhenGettingVariable -ValueOnly -ForApplication $app.Application_Name
+        ThenVariableValuesReturned @( 'hello', 'world' )
+        ThenNoErrorWritten
+    }
+
+    It 'should return item as a string' {
+        $app = GivenApplication
+        GivenVectorVariable -Name 'ArrItem' -List @( 'hello', 'world' ) -Id $app.Application_Id
+        WhenGettingVariable -ValueOnly -ForApplication $app.Application_Name -Raw
+        ThenVariableValuesReturned '@(hello, world)'
+        ThenNoErrorWritten
+    }
+
     It 'should return specific variable''s value' {
         GivenVariable 'Fubar' -WithValue 'Snafu'
         GivenVariable 'Snafu' -WithValue 'Fubar'
@@ -267,7 +319,6 @@ Describe 'Get-BMVariable' {
         ThenVariableValuesReturned 'Fubar'
     }
 
-    # Doesn't currently work in BuildMaster.
     It 'should return the variables for an application' {
         $app = GivenApplication
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'

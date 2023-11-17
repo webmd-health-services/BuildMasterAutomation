@@ -22,6 +22,8 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `Application` parameter.
 
+    To get an OtterScript vector or map as a string, use the `Raw` switch.
+
     This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
     API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
     native API.
@@ -32,7 +34,7 @@ function Get-BMVariable
     Demonstrates how to get all global variables.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var'
+    Get-BMVariable -Session $session -Name 'Var'
 
     Demonstrates how to get a specific global variable.
 
@@ -42,7 +44,7 @@ function Get-BMVariable
     Demonstrates how to all an environment's variables.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Environment 'Dev'
+    Get-BMVariable -Session $session -Name 'Var' -Environment 'Dev'
 
     Demonstrates how to get a specific variable in an environment.
 
@@ -52,7 +54,7 @@ function Get-BMVariable
     Demonstrates how to get all variables in a specific server role.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -ServerRole 'WebApp'
+    Get-BMVariable -Session $session -Name 'Var' -ServerRole 'WebApp'
 
     Demonstrates how to get a specific variable in a server role.
 
@@ -62,7 +64,7 @@ function Get-BMVariable
     Demonstrates how to get all variables for a specific server.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Server 'example.com'
+    Get-BMVariable -Session $session -Name 'Var' -Server 'example.com'
 
     Demonstrates how to get a specific variable in a server.
 
@@ -72,7 +74,7 @@ function Get-BMVariable
     Demonstrates how to get all variables from a specific application group.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -ApplicationGroup 'WebApps'
+    Get-BMVariable -Session $session -Name 'Var' -ApplicationGroup 'WebApps'
 
     Demonstrates how to get a specific variable from an application group.
 
@@ -82,9 +84,14 @@ function Get-BMVariable
     Demonstrates how to get all variables from a specific application.
 
     .EXAMPLE
-    Get-BMVariable -Session $session -Variable 'Var' -Application 'www'
+    Get-BMVariable -Session $session -Name 'Var' -Application 'www'
 
     Demonstrates how to get a specific variable from an application.
+
+    .EXAMPLE
+    Get-BMVariable -Session $session -Name 'Var' -Application 'www' -Raw
+
+    Demonstrates how to get a specific variable from an application as a string.
     #>
     [CmdletBinding(DefaultParameterSetName='global')]
     param(
@@ -95,7 +102,7 @@ function Get-BMVariable
         # The variable to get. Pass a variable id, name, or object. If you pass a string, wildcards are supported, and
         # only variables whose name equal or match the string will be returned.
         [Parameter(ValueFromPipeline)]
-        [Object] $Variable,
+        [Object] $Name,
 
         # The application of the variable. Pass an application id, name, or object.
         [Parameter(Mandatory, ParameterSetName='application')]
@@ -123,7 +130,10 @@ function Get-BMVariable
         [Object] $ServerRole,
 
         # Return the variable's value, not an object representing the variable.
-        [switch] $ValueOnly
+        [switch] $ValueOnly,
+
+        # Return the variable's value as a string rather than converting to a PowerShell object.
+        [switch] $Raw
     )
 
     process
@@ -133,9 +143,9 @@ function Get-BMVariable
         $WhatIfPreference = $false  # This function does not modify any data, but uses POST requests.
 
         $variableArg = @{}
-        if ($Variable)
+        if ($Name)
         {
-            $variableArg['Variable'] = $Variable
+            $variableArg['Variable'] = $Name
         }
 
         Invoke-BMVariableEndpoint -Session $session `
@@ -143,10 +153,22 @@ function Get-BMVariable
                                   -EntityTypeName $PSCmdlet.ParameterSetName `
                                   -BoundParameter $PSBoundParameters |
             ForEach-Object {
-                if ($ValueOnly)
+                if ($ValueOnly -and $Raw)
                 {
                     return $_.Value
                 }
+
+                if ($ValueOnly)
+                {
+                    return ConvertFrom-BMOtterScriptExpression $_.Value
+                }
+
+                if ($Raw)
+                {
+                    return $_
+                }
+
+                $_.Value = ConvertFrom-BMOtterScriptExpression $_.Value
                 return $_
             } |
             Write-Output

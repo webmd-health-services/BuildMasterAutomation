@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '3.2.0'
+    ModuleVersion = '4.0.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -79,7 +79,9 @@ take the pain out of creating the proper web requests.
         'Add-BMObjectParameter',
         'Add-BMParameter',
         'ConvertFrom-BMNativeApiByteValue',
+        'ConvertFrom-BMOtterScriptExpression',
         'ConvertTo-BMNativeApiByteValue',
+        'ConvertTo-BMOtterScriptExpression',
         'Disable-BMApplication',
         'Get-BMApplication',
         'Get-BMApplicationGroup',

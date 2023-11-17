@@ -6,9 +6,14 @@ function Set-BMVariable
     Create or set a BuildMaster variable.
 
     .DESCRIPTION
-    The `Set-BMVariable` function creates or sets the value of a BuildMaster variable. By default, it creates/sets global variables. It can also set environment, server, server role, application group, and application variables.
+    The `Set-BMVariable` function creates or sets the value of a BuildMaster variable. By default, it creates/sets
+    global variables. It can also set environment, server, server role, application group, and application variables.
 
-    Pass the variable's name to the `Name` parameter. Pass the variable's value to the `Value` parameter. The value is passed as-is to BuildMaster.
+    Pass the variable's name to the `Name` parameter. Pass the variable's value to the `Value` parameter. If the raw
+    flag is used then the variable is passed as-is to buildmaster, otherwise it will be converted to an OtterScript
+    value. If the variable is a PowerShell hashtable then it will be converted to an OtterScript map. If the
+    variable is a PowerShell array then it will be converted to an OtterScript vector. All other types will be left as
+    their default string representation.
 
     To set an environment's variable, pass the environment's name to the `EnvironmentName` parameter.
 
@@ -20,7 +25,8 @@ function Set-BMVariable
 
     To set an application's variable, pass the application's name to the `ApplicationName` parameter.
 
-    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use `New-BMSession` to create a session object.
+    Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
+    `New-BMSession` to create a session object.
 
     This function uses BuildMaster's variables API.
 
@@ -53,6 +59,11 @@ function Set-BMVariable
     Set-BMVariable -Session $session -Name 'Var' -Value 'Value' -ApplicationName 'www'
 
     Demonstrates how to create or set a variable for an application.
+
+    .EXAMPLE
+    Set-BMVariable -Session $session -Name 'var' -Value @('hi', 'there') -ApplicationName 'www'
+
+    Demonstrates how to set the variable 'var' to an OtterScript vector.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='global')]
@@ -65,9 +76,10 @@ function Set-BMVariable
         [Parameter(Mandatory)]
         [String] $Name,
 
-        # The variable's value. Passed to BuildMaster as-is.
+        # The variable's value. If a PowerShell array or hashtable is passed in it will be converted to the equivalent
+        # OtterScript expression.
         [Parameter(Mandatory)]
-        [String] $Value,
+        [Object] $Value,
 
         # The name of the application where the variable should be created. The default is to create a global variable.
         [Parameter(Mandatory,ParameterSetName='application')]
@@ -97,6 +109,13 @@ function Set-BMVariable
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+    $Value = ConvertTo-BMOtterScriptExpression -Value $Value
+
+    if ($Value -eq $null)
+    {
+        return
+    }
 
     Invoke-BMVariableEndpoint -Session $Session `
                               -Variable $Name `

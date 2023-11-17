@@ -3,6 +3,33 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.0.0
+
+> Released 10 Nov 2023
+
+### Upgrade Instructions
+
+***This release contains breaking changes. Please read these upgrade instructions carefully before upgrading.***
+
+* The `Get-BMVariable` function now converts OtterScript vector and map expressions to native PowerShell array and
+  hashtable types respectively. Use the new `-Raw` switch to retain the previous behavior where variable values are
+  always returned as a string in their OtterScript expression form.
+* The `Get-BMVariable` function's `Variable` parameter has been renamed to `Name`. Replace all usages of `Variable`
+  with `Name`.
+
+### Added
+
+* `ConvertFrom-BMOtterScriptExpression` converts OtterScript expressions into their equivalent PowerShell objects.
+* `ConvertTo-BMOtterScriptExpression` converts PowerShell objects into their equivalent OtterScript expressions.
+
+### Changes
+
+* The `Get-BMVariable` function by default now converts all OtterScript variables to PowerShell objects before returning
+  them. Use the `Raw` flag to return the OtterScript variable as a string.
+* The `Get-BMVariable` function's `Variable` parameter has been renamed to `Name`.
+* The `Set-BMVariable` function now converts all provided arrays and hashtables to their respective OtterScript
+  equivalents.
+
 ## 3.2.0
 
 > Released 18 Oct 2023
