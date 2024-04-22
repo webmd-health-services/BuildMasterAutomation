@@ -11,7 +11,7 @@ function Get-BMServer
     parameter). If the server doesn't exist, the function writes an error.
 
     The BuildMaster API returns plaintext versions of a server's API key (if it is using AES encryption). This function
-    converts those keys into `SecureString`s to make it harder to accidentally view/save them.
+    converts those keys into `SecureString` objects to make it harder to accidentally view/save them.
 
     This function uses BuildMaster's infrastructure management API.
 

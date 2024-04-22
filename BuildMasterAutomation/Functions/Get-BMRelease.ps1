@@ -26,7 +26,7 @@ function Get-BMRelease
     Get-BMRelease -Session $session -Application $app
 
     Demonstrates how to get all the releases for an application by passing an application object to the `Application`
-    parameter. The application object must have a`Application_Id`, `id`, `Application_Name`, or `name` properties.
+    parameter. The application object must have a `Application_Id`, `id`, `Application_Name`, or `name` properties.
 
     .EXAMPLE
     Get-BMRelease -Session $session -Application 34
