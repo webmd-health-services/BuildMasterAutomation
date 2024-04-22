@@ -9,6 +9,10 @@
 
 Some files contained character sequences that cause anti-virus software, Cortex XDR, to crash PowerShell.
 
+### Changed
+
+* Tested against BuildMaster 2023.14.
+
 
 ## 4.0.0
 

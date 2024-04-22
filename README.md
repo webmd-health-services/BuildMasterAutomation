@@ -11,7 +11,7 @@ PowerShell functions
 # System Requirements
 
 * Windows PowerShell 5.1, PowerShell 6, and PowerShell 7
-* BuildMaster 7.0 (some functions may work on older/newer versions)
+* BuildMaster 2023.14 (some functions may work on older/newer versions)
 
 # Installation
 
