@@ -3,6 +3,13 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.0.1
+
+### Fixed
+
+Some files contained character sequences that cause anti-virus software, Cortex XDR, to crash PowerShell.
+
+
 ## 4.0.0
 
 > Released 10 Nov 2023
