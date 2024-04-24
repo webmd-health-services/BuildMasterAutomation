@@ -50,6 +50,11 @@ for:
         $ProgressPreference = 'SilentlyContinue'
         iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
         .\build.ps1
+        if ($env:ENABLE_RDP -eq 'True')
+        {
+          $nonat = $false
+          $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+        }
 
 - matrix:
     only:
