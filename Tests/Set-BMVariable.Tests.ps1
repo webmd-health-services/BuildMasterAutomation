@@ -195,62 +195,39 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [String] $Named,
+            [Alias('Named')]
+            [String] $Name,
+
             [Parameter(Mandatory)]
-            [Object] $WithValue,
-            [String] $ForApplication,
-            [String] $ForApplicationGroup,
-            [String] $ForEnvironment,
-            [String] $ForServer,
-            [String] $ForServerRole,
-            [Object] $ForRelease,
-            [Object] $ForBuild,
+            [Alias('WithValue')]
+            [Object] $Value,
+
+            [Alias('ForApplication')]
+            [String] $Application,
+
+            [Alias('ForApplicationGroup')]
+            [String] $ApplicationGroup,
+
+            [Alias('ForEnvironment')]
+            [String] $Environment,
+
+            [Alias('ForServer')]
+            [String] $Server,
+
+            [Alias('ForServerRole')]
+            [String] $ServerRole,
+
+            [Alias('ForRelease')]
+            [Object] $Release,
+
+            [Alias('ForBuild')]
+            [Object] $Build,
+
+            [switch] $Raw,
             [Switch] $WhatIf
         )
 
-        $optionalParams = @{ }
-
-        if ($ForApplication)
-        {
-            $optionalParams['Application'] = $ForApplication
-        }
-
-        if ($ForApplicationGroup)
-        {
-            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
-        }
-
-        if ($ForEnvironment)
-        {
-            $optionalParams['Environment'] = $ForEnvironment
-        }
-
-        if ($ForServer)
-        {
-            $optionalParams['Server'] = $ForServer
-        }
-
-        if ($ForServerRole)
-        {
-            $optionalParams['ServerRole'] = $ForServerRole
-        }
-
-        if ($ForRelease)
-        {
-            $optionalParams['Release'] = $ForRelease
-        }
-
-        if ($ForBuild)
-        {
-            $optionalParams['Build'] = $ForBuild
-        }
-
-        if ($WhatIf)
-        {
-            $optionalParams['WhatIf'] = $true
-        }
-
-        $script:result = Set-BMVariable -Session $script:session -Name $Named -Value $WithValue -ErrorAction 'SilentlyContinue' @optionalParams
+        $script:result = Set-BMVariable -Session $script:session @PSBoundParameters
         $script:result | Should -BeNullOrEmpty
     }
 }
@@ -291,7 +268,7 @@ Describe 'Set-BMVariable' {
     }
 
     It 'should create application variable' {
-        $app = GivenApplication
+        $app = GivenAnApplication -Name 'Set-BMVariable'
         WhenSettingVariable 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
         ThenVariableSet 'AppFubar' -To 'AppValue' -ForApplication $app.Application_Name
         ThenNoErrorWritten
@@ -368,9 +345,17 @@ Describe 'Set-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should not convert value when using Raw' {
+        Mock -CommandName 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
+        WhenSettingVariable 'RawVar' -WithValue '@(one, two, three)' -Raw
+        Should -Not -Invoke 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
+        ThenVariableSet 'RawVar' -To '@(one, two, three)' -Raw
+        ThenNoErrorWritten
+    }
+
     It 'should fail to set variable' {
         $value = [System.Collections.DictionaryEntry]::new('hello', 'world')
-        WhenSettingVariable 'GlobalVar' -WithValue $value
+        WhenSettingVariable 'GlobalVar' -WithValue $value -ErrorAction SilentlyContinue
         ThenError -MatchesPattern 'Unable to convert*'
     }
 

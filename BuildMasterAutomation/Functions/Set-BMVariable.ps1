@@ -131,17 +131,23 @@ function Set-BMVariable
 
         # Specific build where the variable will be created. Must be a Build object returned from the `Get-BMBuild` function.
         [Parameter(Mandatory, ParameterSetName='builds')]
-        [Object] $Build
+        [Object] $Build,
+
+        # Pass the value as-is to BuildMaster, do not attempt to convert to OtterScript expression.
+        [switch] $Raw
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $Value = ConvertTo-BMOtterScriptExpression -Value $Value
-
-    if ($Value -eq $null)
+    if (-not $Raw)
     {
-        return
+        $Value = ConvertTo-BMOtterScriptExpression -Value $Value
+
+        if ($Value -eq $null)
+        {
+            return
+        }
     }
 
     Invoke-BMVariableEndpoint -Session $Session `
