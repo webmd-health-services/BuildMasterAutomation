@@ -165,4 +165,22 @@ Describe 'ConvertFrom-BMOtterScriptExpression' {
         WhenConverting
         ThenEqual ''
     }
+
+    It 'should remove empty items from vectors' {
+        GivenValue '@(one, )'
+        WhenConverting
+        ThenEqual @('one')
+
+        GivenValue '@(, two)'
+        WhenConverting
+        ThenEqual @('two')
+
+        GivenValue '@(, three, )'
+        WhenConverting
+        ThenEqual @('three')
+
+        GivenValue '@(, , , , , )'
+        WhenConverting
+        ThenEqual @()
+    }
 }

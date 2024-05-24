@@ -174,7 +174,7 @@ function ConvertFrom-BMOtterScriptExpression
 
         if ($isVector)
         {
-            return ,@($parsedItems | ConvertFrom-BMOtterScriptExpression)
+            return ,@($parsedItems | Where-Object { $_ } | ConvertFrom-BMOtterScriptExpression)
         }
 
         $hashtable = @{}
