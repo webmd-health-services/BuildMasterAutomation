@@ -67,20 +67,24 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
             [Parameter(Mandatory)]
-            [string]$WithValue,
+            [string] $WithValue,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [Object] $ForRelease,
+
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -107,6 +111,16 @@ BeforeAll {
         if( $ForServerRole )
         {
             $optionalParams['ServerRoleName'] = $ForServerRole
+        }
+
+        if( $ForRelease )
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if( $ForBuild )
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
@@ -158,6 +172,8 @@ BeforeAll {
             [string]$ForEnvironment,
             [string]$ForServer,
             [string]$ForServerRole,
+            [object]$ForRelease,
+            [object]$ForBuild,
             [switch]$Raw
         )
 
@@ -201,6 +217,16 @@ BeforeAll {
         if( $ForServerRole )
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         $script:result = Get-BMVariable -Session $script:session @optionalParams
@@ -375,6 +401,27 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should return a release variable' {
+        $application = GivenAnApplication -Name 'Get-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Get-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Get-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        GivenVariable 'ReleaseVar' -WithValue 'ReleaseValue' -ForRelease $release
+        WhenGettingVariable 'ReleaseVar' -ForRelease $release -ValueOnly
+        ThenVariableValuesReturned 'ReleaseValue'
+        ThenNoErrorWritten
+    }
+
+    It 'should return a build variable' {
+        $application = GivenAnApplication -Name 'Get-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Get-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Get-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        GivenVariable 'BuildVar' -WithValue 'BuildValue' -ForBuild $build
+        WhenGettingVariable 'BuildVar' -ForBuild $build -ValueOnly
+        ThenVariableValuesReturned 'BuildValue'
+        ThenNoErrorWritten
+    }
+
     It 'should URL-encode variable names' {
         Mock -CommandName 'Invoke-BMRestMethod' -ModuleName 'BuildMasterAutomation' -MockWith {
             [pscustomobject]@{
@@ -419,6 +466,18 @@ Describe 'Get-BMVariable' {
     It 'should write an error when application group does not exist' {
         WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction SilentlyContinue
         ThenError ([regex]::Escape('application group "Nope" does not exist'))
+        ThenNothingReturned
+    }
+
+    It 'should write an error when the Release parameter is not an object' {
+        WhenGettingVariable -Named 'Nope' -ForRelease 'somerelease' -ErrorAction SilentlyContinue
+        ThenError ([regex]::Escape('must be a Release object'))
+        ThenNothingReturned
+    }
+
+    It 'should write an error when the Build parameter is not an object' {
+        WhenGettingVariable -Named 'Nope' -ForBuild 123 -ErrorAction SilentlyContinue
+        ThenError ([regex]::Escape('must be a Build object'))
         ThenNothingReturned
     }
 

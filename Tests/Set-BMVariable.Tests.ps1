@@ -136,6 +136,10 @@ BeforeAll {
 
             [string] $ForServerRole,
 
+            [Object] $ForRelease,
+
+            [Object] $ForBuild,
+
             [switch] $Raw
         )
 
@@ -166,6 +170,16 @@ BeforeAll {
             $optionalParams['ServerRole'] = $ForServerRole
         }
 
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
+        }
+
         if ($Raw)
         {
             $optionalParams['Raw'] = $true
@@ -189,6 +203,8 @@ BeforeAll {
             [String] $ForEnvironment,
             [String] $ForServer,
             [String] $ForServerRole,
+            [Object] $ForRelease,
+            [Object] $ForBuild,
             [Switch] $WhatIf
         )
 
@@ -217,6 +233,16 @@ BeforeAll {
         if ($ForServerRole)
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         if ($WhatIf)
@@ -296,6 +322,25 @@ Describe 'Set-BMVariable' {
         GivenServerRole 'SetBMVariable'
         WhenSettingVariable 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'SetBMVariable'
         ThenVariableSet 'ServerRoleVar' -To 'ServerRoleValue' -ForServerRole 'SetBMVariable'
+        ThenNoErrorWritten
+    }
+
+    It 'should create release variable' {
+        $application = GivenAnApplication -Name 'Set-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Set-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Set-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        WhenSettingVariable 'ReleaseVar' -WithValue 'ReleaseVarValue' -ForRelease $release
+        ThenVariableSet 'ReleaseVar' -To 'ReleaseVarValue' -ForRelease $release
+        ThenNoErrorWritten
+    }
+
+    It 'should create build variable' {
+        $application = GivenAnApplication -Name 'Set-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Set-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Set-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        WhenSettingVariable 'BuildVar' -WithValue 'BuildVarValue' -ForBuild $build
+        ThenVariableSet 'BuildVar' -To 'BuildVarValue' -ForBuild $build
         ThenNoErrorWritten
     }
 

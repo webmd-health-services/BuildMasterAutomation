@@ -15,7 +15,7 @@ function Invoke-BMVariableEndpoint
         [String] $Value,
 
         [Parameter(Mandatory)]
-        [ValidateSet('application', 'application-group', 'environment', 'global', 'server', 'role')]
+        [ValidateSet('application', 'application-group', 'environment', 'global', 'server', 'role', 'releases', 'builds')]
         [String] $EntityTypeName,
 
         [Parameter(Mandatory)]
@@ -58,21 +58,25 @@ function Invoke-BMVariableEndpoint
     if ($EntityTypeName -ne 'global')
     {
         $entityTypeDescriptions = @{
-            'application' = 'application';
+            'application'       = 'application';
             'application-group' = 'application group';
-            'environment' = 'environment';
-            'server' = 'server';
-            'role' = 'server role'
+            'environment'       = 'environment';
+            'server'            = 'server';
+            'role'              = 'server role';
+            'releases'          = 'release';
+            'builds'            = 'build';
         }
         $entityDesc = $entityTypeDescriptions[$EntityTypeName]
         $entityDescCapitalized = [char]::ToUpperInvariant($entityDesc[0]) + $entityDesc.Substring(1)
 
         $entityToParamNameMap = @{
-            'application' = 'Application';
+            'application'       = 'Application';
             'application-group' = 'ApplicationGroup';
-            'environment' = 'Environment';
-            'server' = 'Server';
-            'role' = 'ServerRole';
+            'environment'       = 'Environment';
+            'server'            = 'Server';
+            'role'              = 'ServerRole';
+            'releases'          = 'Release';
+            'builds'            = 'Build';
         }
 
         # What parameter has the variable's entity?
@@ -84,31 +88,55 @@ function Invoke-BMVariableEndpoint
         $getEntityArg = @{
             $paramName = $entity;
         }
-        # Check if the entity exists in BuildMaster.
-        $bmEntity = & "Get-BM$($paramName)" -Session $Session @getEntityArg -ErrorAction Ignore
-        if (-not $bmEntity)
+
+        if ($EntityTypeName -in @('releases', 'builds'))
         {
-            $entityName = $entity | Get-BMObjectName
-            $msg = "$($entityDescCapitalized) ""$($entityName)"" does not exist."
-            if ($deleting)
+            if ($entity.GetType().Name -ne 'PSCustomObject')
             {
-                $msg = "Unable to delete variable ""$($variableName)"" because the $($entityDesc) " +
-                       """$($entityName)"" does not exist."
+                $msg = "The ${paramName} parameter must be a ${paramName} object from the Get-BM${paramName} " +
+                       "function, but it was a $($entity.GetType().Name) ""${entity}""."
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
             }
-            elseif ($updating)
+
+            # It's required to pass in an object for variables on Releases and Builds, therefore we know those already
+            # exists and can use the objects directly.
+            $entityPathSegment = "${EntityTypeName}/$([Uri]::EscapeDataString($entity.applicationName))/$([Uri]::EscapeDataString($entity.releaseNumber))"
+
+            if ($EntityTypeName -eq 'builds')
             {
-                $msg = "Unable to set variable ""$($variableName)"" because the $($entityDesc) ""$($entityName)"" " +
-                       'does not exist.'
+                $entityPathSegment = "${entityPathSegment}/$([Uri]::EscapeDataString($entity.buildNumber))"
             }
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-            return
+
+            $entityPathSegment = "${entityPathSegment}${variablePathSegment}"
         }
+        else
+        {
+            # Check if the entity exists in BuildMaster.
+            $bmEntity = & "Get-BM$($paramName)" -Session $Session @getEntityArg -ErrorAction Ignore
+            if (-not $bmEntity)
+            {
+                $entityName = $entity | Get-BMObjectName
+                $msg = "$($entityDescCapitalized) ""$($entityName)"" does not exist."
+                if ($deleting)
+                {
+                    $msg = "Unable to delete variable ""$($variableName)"" because $($entityDesc) " +
+                        """$($entityName)"" does not exist."
+                }
+                elseif ($updating)
+                {
+                    $msg = "Unable to set variable ""$($variableName)"" because $($entityDesc) ""$($entityName)"" " +
+                        'does not exist.'
+                }
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
 
-        # Get the entity's name.
-        $entityName = $bmEntity | Get-BMOBjectName -Strict -ObjectTypeName $paramName
+            $entityName = $bmEntity | Get-BMOBjectName -Strict -ObjectTypeName $paramName
 
-        # Create the entity-specific endpoint path.
-        $entityPathSegment = "$($entityTypeName)/$([Uri]::EscapeDataString($entityName))$($variablePathSegment)"
+            # Create the entity-specific endpoint path.
+            $entityPathSegment = "$($EntityTypeName)/$([Uri]::EscapeDataString($entityName))$($variablePathSegment)"
+        }
     }
 
     $endpointPath = "variables/$($entityPathSegment)"

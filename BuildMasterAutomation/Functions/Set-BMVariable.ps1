@@ -7,13 +7,16 @@ function Set-BMVariable
 
     .DESCRIPTION
     The `Set-BMVariable` function creates or sets the value of a BuildMaster variable. By default, it creates/sets
-    global variables. It can also set environment, server, server role, application group, and application variables.
+    global variables. It can also set variables for a specific environment, server, server role, application group,
+    application, release, and build.
 
-    Pass the variable's name to the `Name` parameter. Pass the variable's value to the `Value` parameter. If the raw
-    flag is used then the variable is passed as-is to buildmaster, otherwise it will be converted to an OtterScript
-    value. If the variable is a PowerShell hashtable then it will be converted to an OtterScript map. If the
-    variable is a PowerShell array then it will be converted to an OtterScript vector. All other types will be left as
-    their default string representation.
+    Pass the variable's name to the `Name` parameter and pass the variable's value to the `Value` parameter.
+
+    The function takes variable values as PowerShell data structures and converts them to OtterScript expressions before
+    they're passed to BuildMaster. A PowerShell hashtable is converted to an OtterScript map, a PowerShell array is
+    converted to an OtterScript vector, and any other types are passed as their default string representation.
+
+    Use the `Raw` switch to pass the variable value as-is to BuildMaster, i.e. no type conversion.
 
     To set an environment's variable, pass the environment's name to the `EnvironmentName` parameter.
 
@@ -24,6 +27,12 @@ function Set-BMVariable
     To set an application group's variable, pass the application group's name to the `ApplicationGroupName` parameter.
 
     To set an application's variable, pass the application's name to the `ApplicationName` parameter.
+
+    To set a release's variable, pass the release object to the `Release` parameter. Use the `Get-BMRelease` function to
+    get a release object.
+
+    To set a build's variable, pass the build object to the `Build` parameter. Use the `Get-BMBuild` function to get a
+    build object.
 
     Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
     `New-BMSession` to create a session object.
@@ -59,6 +68,16 @@ function Set-BMVariable
     Set-BMVariable -Session $session -Name 'Var' -Value 'Value' -ApplicationName 'www'
 
     Demonstrates how to create or set a variable for an application.
+
+    .EXAMPLE
+    Set-BMVariable -Session $session -Name 'Var' -Value 'Value' -Release (Get-BMRelease -Session $session -Release 'gitflow' -Application 'WebApp')
+
+    Demonstrates how to set a variable for a release.
+
+    .EXAMPLE
+    Set-BMVariable -Session $session -Name 'Var' -Value 'Value' -Build (Get-BMBuild -Session $session -Build 123)
+
+    Demonstrates how to set a variable for a build.
 
     .EXAMPLE
     Set-BMVariable -Session $session -Name 'var' -Value @('hi', 'there') -ApplicationName 'www'
@@ -104,7 +123,15 @@ function Set-BMVariable
         # The name of the server role where the variable should be created. The default is to create a global variable.
         [Parameter(Mandatory,ParameterSetName='role')]
         [Alias('ServerRoleName')]
-        [Object] $ServerRole
+        [Object] $ServerRole,
+
+        # Specific release where the variable will be created. Must be a Release object returned from the `Get-BMRelease` function.
+        [Parameter(Mandatory, ParameterSetName='releases')]
+        [Object] $Release,
+
+        # Specific build where the variable will be created. Must be a Build object returned from the `Get-BMBuild` function.
+        [Parameter(Mandatory, ParameterSetName='builds')]
+        [Object] $Build
     )
 
     Set-StrictMode -Version 'Latest'

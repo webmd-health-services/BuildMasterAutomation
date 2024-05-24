@@ -79,20 +79,24 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
             [Parameter(Mandatory)]
-            [string]$WithValue,
+            [string] $WithValue,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [Object] $ForRelease,
+
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -121,6 +125,16 @@ BeforeAll {
             $optionalParams['ServerRoleName'] = $ForServerRole
         }
 
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
+        }
+
         Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
     }
 
@@ -128,17 +142,21 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [Object] $ForRelease,
+
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -168,6 +186,16 @@ BeforeAll {
             $optionalParams['ServerRole'] = $ForServerRole
         }
 
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
+        }
+
         $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ErrorAction Ignore
         $actualValue | Should -BeNullOrEmpty
     }
@@ -188,6 +216,10 @@ BeforeAll {
             [String] $ForServer,
 
             [String] $ForServerRole,
+
+            [Object] $ForRelease,
+
+            [Object] $ForBuild,
 
             [switch] $WhatIf,
 
@@ -219,6 +251,16 @@ BeforeAll {
         if( $ForServerRole )
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         if( $WhatIf )
@@ -330,7 +372,7 @@ Describe 'Remove-BMVariable' {
 
     It 'should reject removing variable from non-existent environment' {
         WhenRemovingVariable 'EnvironmentFubar' -ForEnvironment 'EnvThatDoesNotExist' -ErrorAction SilentlyContinue
-        $msg = 'delete variable "EnvironmentFubar" because the environment "EnvThatDoesNotExist" does not exist'
+        $msg = 'Unable to delete variable "EnvironmentFubar" because environment "EnvThatDoesNotExist" does not exist.'
         ThenError ([regex]::Escape($msg))
     }
 
@@ -352,6 +394,27 @@ Describe 'Remove-BMVariable' {
         GivenVariable -Named 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'RemoveBMVariable'
         WhenRemovingVariable 'ServerRoleVar' -ForServerRole 'RemoveBMVariable'
         ThenVariableRemoved 'ServerRoleVar' -ForServerRole 'RemoveBMVariable'
+        ThenNoErrorWritten
+    }
+
+    It 'should remove release variable' {
+        $application = GivenAnApplication -Name 'Remove-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Remove-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Remove-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        GivenVariable 'ReleaseVar' -WithValue 'ReleaseValue' -ForRelease $release
+        WhenRemovingVariable 'ReleaseVar' -ForRelease $release
+        ThenVariableRemoved 'ReleaseVar' -ForRelease $release
+        ThenNoErrorWritten
+    }
+
+    It 'should remove build variable' {
+        $application = GivenAnApplication -Name 'Remove-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Remove-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Remove-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        GivenVariable 'BuildVar' -WithValue 'BuildValue' -ForBuild $build
+        WhenRemovingVariable 'BuildVar' -ForBuild $build
+        ThenVariableRemoved 'BuildVar' -ForBuild $build
         ThenNoErrorWritten
     }
 

@@ -7,7 +7,8 @@ function Remove-BMVariable
 
     .DESCRIPTION
     The `Remove-BMVariable` function deletes BuildMaster variables. By default, it deletes global variables. It can also
-    delete variables for a specific environment, server, server role, application group, and application variables.
+    delete variables for a specific environment, server, server role, application group, application, release, and
+    build.
 
     Pass the name of the variable to delete to the `Name` parameter. If no variable exists to delete, you'll get an
     error.
@@ -21,6 +22,12 @@ function Remove-BMVariable
     To delete an application group's variables, pass the application group's name to the `ApplicationGroupName` parameter.
 
     To delete an application's variables, pass the application's name to the `ApplicationName` parameter.
+
+    To delete a release's variables, pass the release object to the `Release` parameter. Use the `Get-BMRelease`
+    function to get a release object.
+
+    To delete a build's variables, pass the build object to the `Build` parameter. Use the `Get-BMBuild` function to get
+    a build object.
 
     Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
     `New-BMSession` to create a session object.
@@ -56,6 +63,16 @@ function Remove-BMVariable
     Demonstrates how to delete a variable from an application group.
 
     .EXAMPLE
+    Remove-BMVariable -Session $session -Name 'Var' -Release (Get-BMRelease -Session $session -Release 'gitflow' -Application 'WebApp')
+
+    Demonstrates how to delete a variable from a release.
+
+    .EXAMPLE
+    Remove-BMVariable -Session $session -Name 'Var' -Build (Get-BMBuild -Session $session -Build 123)
+
+    Demonstrates how to delete a variable from a build.
+
+    .EXAMPLE
     Remove-BMVariable -Session $session -Name 'Var' -ApplicationName 'www'
 
     Demonstrates how to delete a variable from an application.
@@ -89,7 +106,15 @@ function Remove-BMVariable
 
         # The server role of the variable to delete. Pass a server role id, name, or object.
         [Parameter(Mandatory, ParameterSetName='role')]
-        [Object] $ServerRole
+        [Object] $ServerRole,
+
+        # Specific release of the variable to delete. Must be a Release object returned from the `Get-BMRelease` function.
+        [Parameter(Mandatory, ParameterSetName='releases')]
+        [Object] $Release,
+
+        # Specific build of the variable to delete. Must be a Build object returned from the `Get-BMBuild` function.
+        [Parameter(Mandatory, ParameterSetName='builds')]
+        [Object] $Build
     )
 
     process
@@ -103,5 +128,4 @@ function Remove-BMVariable
                                   -BoundParameter $PSBoundParameters `
                                   -ForDelete
     }
-
 }
