@@ -82,6 +82,7 @@ BeforeAll {
             [string] $Named,
 
             [Parameter(Mandatory)]
+            [AllowEmptyString()]
             [string] $WithValue,
 
             [string] $ForApplication,
@@ -294,6 +295,32 @@ Describe 'Remove-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should remove global variable when it is empty' {
+        GivenVariable 'EmptyGlobalVar' -WithValue ''
+        WhenRemovingVariable 'EmptyGlobalVar'
+        ThenVariableRemoved 'EmptyGlobalVar'
+        ThenNoErrorWritten
+    }
+
+    It 'should remove application variable when it is empty' {
+        $app = GivenApplication
+        GivenVariable -Named 'EmptyAppVar' -WithValue '' -ForApplication $app.Application_Name
+        WhenRemovingVariable 'EmptyAppVar' -ForApplication $app.Application_Name
+        ThenVariableRemoved 'EmptyAppVar' -ForApplication $app.Application_Name
+        ThenNoErrorWritten
+    }
+
+    It 'should remove build variable when it is empty' {
+        $application = GivenAnApplication -Name 'Remove-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Remove-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Remove-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        GivenVariable 'EmptyBuildVar' -WithValue '' -ForBuild $build
+        WhenRemovingVariable 'EmptyBuildVar' -ForBuild $build
+        ThenVariableRemoved 'EmptyBuildVar' -ForBuild $build
+        ThenNoErrorWritten
+    }
+
     It 'should ignore variable that does not exist' {
         WhenRemovingVariable 'GlobalVar' -ErrorAction Ignore
         ThenNoErrorWritten
@@ -324,7 +351,6 @@ Describe 'Remove-BMVariable' {
                           -ParameterFilter { $Name -eq $expectedName }
     }
 
-    # BuildMaster's API doesn't work with application variables.
     It 'should remove application variable' {
         $app = GivenApplication
         GivenVariable -Named 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
@@ -343,7 +369,6 @@ Describe 'Remove-BMVariable' {
         ThenNoErrorWritten
     }
 
-    # BuildMaster's API doesn't work with application group variables.
     It 'should remove application group variable' {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable -Named 'AppGroupFubar' -WithValue 'AppGropuValue' -ForApplicationGroup 'fizzbuzz'

@@ -156,8 +156,13 @@ Describe 'ConvertFrom-BMOtterScriptExpression' {
         GivenValue '@(@(), @())'
         WhenConverting
         ThenEqual @(@(), @())
+
         GivenValue '@(%(), %())'
         WhenConverting
         ThenEqual @(@{}, @{})
+
+        GivenValue ''
+        WhenConverting
+        ThenEqual ''
     }
 }

@@ -124,6 +124,7 @@ BeforeAll {
             [string] $Named,
 
             [Parameter(Mandatory)]
+            [AllowEmptyString()]
             [string] $To,
 
             [string] $ForApplication,
@@ -138,9 +139,7 @@ BeforeAll {
 
             [Object] $ForRelease,
 
-            [Object] $ForBuild,
-
-            [switch] $Raw
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -180,13 +179,7 @@ BeforeAll {
             $optionalParams['Build'] = $ForBuild
         }
 
-        if ($Raw)
-        {
-            $optionalParams['Raw'] = $true
-        }
-
-        $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ValueOnly
-        $actualValue | Should -Not -BeNullOrEmpty
+        $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ValueOnly -Raw
         $actualValue | Should -Be $To
     }
 
@@ -323,25 +316,32 @@ Describe 'Set-BMVariable' {
 
     It 'should convert map to OtterScript map' {
         WhenSettingVariable 'GlobalVar' -WithValue @{ 'hello' = 'world' }
-        ThenVariableSet 'GlobalVar' -To '%(hello: world)' -Raw
+        ThenVariableSet 'GlobalVar' -To '%(hello: world)'
         ThenNoErrorWritten
     }
 
     It 'should convert array to OtterScript vector' {
         WhenSettingVariable 'GlobalVar' -WithValue @('some', 'vector')
-        ThenVariableSet 'GlobalVar' -To '@(some, vector)' -Raw
+        ThenVariableSet 'GlobalVar' -To '@(some, vector)'
+        ThenNoErrorWritten
+    }
+
+    It 'should support an empty variable' {
+        GivenVariable 'EmptyVar' -WithValue 'OldValue'
+        WhenSettingVariable 'EmptyVar' -WithValue ''
+        ThenVariableSet 'EmptyVar' -To ''
         ThenNoErrorWritten
     }
 
     It 'should support an empty PowerShell array' {
         WhenSettingVariable 'GlobalVar' -WithValue @()
-        ThenVariableSet 'GlobalVar' -To '@()' -Raw
+        ThenVariableSet 'GlobalVar' -To '@()'
         ThenNoErrorWritten
     }
 
     It 'should support an empty PowerShell hashtable' {
         WhenSettingVariable 'GlobalVar' -WithValue @{}
-        ThenVariableSet 'GlobalVar' -To '%()' -Raw
+        ThenVariableSet 'GlobalVar' -To '%()'
         ThenNoErrorWritten
     }
 
@@ -349,7 +349,7 @@ Describe 'Set-BMVariable' {
         Mock -CommandName 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
         WhenSettingVariable 'RawVar' -WithValue '@(one, two, three)' -Raw
         Should -Not -Invoke 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
-        ThenVariableSet 'RawVar' -To '@(one, two, three)' -Raw
+        ThenVariableSet 'RawVar' -To '@(one, two, three)'
         ThenNoErrorWritten
     }
 

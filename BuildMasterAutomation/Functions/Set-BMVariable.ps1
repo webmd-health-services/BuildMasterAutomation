@@ -143,11 +143,6 @@ function Set-BMVariable
     if (-not $Raw)
     {
         $Value = ConvertTo-BMOtterScriptExpression -Value $Value
-
-        if ($Value -eq $null)
-        {
-            return
-        }
     }
 
     Invoke-BMVariableEndpoint -Session $Session `

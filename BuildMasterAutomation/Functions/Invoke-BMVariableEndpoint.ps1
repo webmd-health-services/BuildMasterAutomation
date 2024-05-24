@@ -12,6 +12,7 @@ function Invoke-BMVariableEndpoint
         [Object] $Variable,
 
         [Parameter(Mandatory, ParameterSetName='Set')]
+        [AllowEmptyString()]
         [String] $Value,
 
         [Parameter(Mandatory)]
@@ -155,8 +156,10 @@ function Invoke-BMVariableEndpoint
         $nativeApiEntityIdParam['ApplicationGroup_Id'] = $bmEntity.ApplicationGroup_Id
     }
 
-    if (-not $updating)
+    if ($getting -or $deleting)
     {
+        $variableExists = $false
+
         if ($useNativeApi)
         {
             $nativeVariables = Invoke-BMNativeApiMethod -Session $Session `
@@ -166,6 +169,7 @@ function Invoke-BMVariableEndpoint
 
             foreach ($nativeVar in $nativeVariables)
             {
+                $variableExists = $true
                 $bytes = [Convert]::FromBase64String($nativeVar.Variable_Value)
                 $variables[$nativeVar.Variable_Name] = [Text.Encoding]::UTF8.GetString($bytes)
             }
@@ -173,30 +177,39 @@ function Invoke-BMVariableEndpoint
         }
         else
         {
-            $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath
-        }
-    }
-
-    if ($Variable -and -not $searching -and -not $variables -and -not $updating)
-    {
-        $msg = "Variable ""$($variableName)"" does not exist."
-        if ($bmEntity)
-        {
-            $msg = "$($entityDescCapitalized) ""$($entityName)"" variable ""$($variableName)"" does not exist."
-        }
-
-        if ($ForDelete)
-        {
-            $msg = "Unable to delete variable ""$($variableName)"" because it does not exist."
-            if ($bmEntity)
+            try
             {
-                $msg = "Unable to delete $($entityDesc) ""$($entityName)"" variable ""$($variableName)"" because the " +
-                       "variable does not exist."
+                $variables = Invoke-BMRestMethod -Session $session -Name $endpointPath -ErrorAction Stop
+                $variableExists = $true
+            }
+            catch
+            {
+                $Global:Error.RemoveAt(0)
+                Write-Error -ErrorRecord $_ -ErrorAction $ErrorActionPreference
             }
         }
 
-        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-        return
+        if (-not $searching -and -not $variableExists)
+        {
+            $msg = "Variable ""$($variableName)"" does not exist."
+            if ($bmEntity)
+            {
+                $msg = "$($entityDescCapitalized) ""$($entityName)"" variable ""$($variableName)"" does not exist."
+            }
+
+            if ($deleting)
+            {
+                $msg = "Unable to delete variable ""$($variableName)"" because it does not exist."
+                if ($bmEntity)
+                {
+                    $msg = "Unable to delete $($entityDesc) ""$($entityName)"" variable ""$($variableName)"" because the " +
+                        "variable does not exist."
+                }
+            }
+
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
     }
 
     if ($deleting)
@@ -217,6 +230,11 @@ function Invoke-BMVariableEndpoint
     {
         Invoke-BMRestMethod -Session $session -Name $endpointPath -Body $Value -Method Post
         return
+    }
+
+    if ($variables -eq $null)
+    {
+        $variables = ''
     }
 
     if ($variables.GetType().Name -ne 'PSCustomObject')

@@ -70,6 +70,7 @@ BeforeAll {
             [string] $Named,
 
             [Parameter(Mandatory)]
+            [AllowEmptyString()]
             [string] $WithValue,
 
             [string] $ForApplication,
@@ -153,12 +154,12 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string[]]$Value
+            [AllowEmptyString()]
+            [string[]]$ExpectedValue
         )
 
-        $script:result | Should -Not -BeNullOrEmpty
-        $script:result | Should -HaveCount $Value.Count
-        $script:result | Should -Be $Value
+        $script:result | Should -HaveCount $ExpectedValue.Count
+        $script:result | Should -Be $ExpectedValue
     }
 
     function WhenGettingVariable
@@ -345,6 +346,12 @@ Describe 'Get-BMVariable' {
         ThenVariableValuesReturned 'Fubar'
     }
 
+    It 'should return an empty string when variable is empty' {
+        GivenVariable 'EmptyVar' -WithValue ''
+        WhenGettingVariable 'EmptyVar' -ValueOnly
+        ThenVariableValuesReturned ''
+    }
+
     It 'should return the variables for an application' {
         $app = GivenApplication
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
@@ -364,7 +371,6 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
-    # Doesn't currently work in BuildMaster.
     It 'should return application group''s variable' {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'

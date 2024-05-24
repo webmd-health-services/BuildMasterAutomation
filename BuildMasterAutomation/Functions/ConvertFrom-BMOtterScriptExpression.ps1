@@ -42,6 +42,7 @@ function ConvertFrom-BMOtterScriptExpression
     param(
         # The OtterScript expression to convert to a PowerShell object.
         [Parameter(Mandatory, ValueFromPipeline)]
+        [AllowEmptyString()]
         [String] $Value
     )
 

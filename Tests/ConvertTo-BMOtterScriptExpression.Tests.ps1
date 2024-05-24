@@ -16,8 +16,11 @@ BeforeAll {
 
     function WhenConverting
     {
+        [CmdletBinding()]
+        param()
+
         $warnings = @()
-        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings' -ErrorAction SilentlyContinue
+        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings'
         $script:warnings = $warnings
     }
 
@@ -108,11 +111,29 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenEquals '@(1, 2, 3, @(4, 5, 6))'
     }
 
-    It 'should throw error' {
-        $value = [System.Collections.DictionaryEntry]::new('hi', 'there')
-        GivenValue $value
+    It 'should support empty strings' {
+        GivenValue ''
         WhenConverting
+        ThenEquals ''
+    }
+
+    It 'should support empty arrays' {
+        GivenValue @()
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@()'
+    }
+
+    It 'should support empty hashtables' {
+        GivenValue @{}
+        WhenConverting
+        ThenIsMap
+        ThenEquals '%()'
+    }
+
+    It 'should throw error' {
+        GivenValue ([System.Exception]::new())
+        { WhenConverting -ErrorAction Stop } | Should -Throw 'Unable to convert *'
         $script:result | Should -Be $null
-        ThenError -MatchesPattern 'Unable to convert*'
     }
 }
