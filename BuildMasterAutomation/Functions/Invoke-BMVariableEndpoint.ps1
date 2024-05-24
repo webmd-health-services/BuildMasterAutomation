@@ -191,7 +191,7 @@ function Invoke-BMVariableEndpoint
         return
     }
 
-    if ($variables -is [String])
+    if ($variables.GetType().Name -ne 'PSCustomObject')
     {
         return [pscustomobject]@{
             Name = $variableName;
