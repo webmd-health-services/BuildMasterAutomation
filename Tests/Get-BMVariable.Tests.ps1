@@ -12,7 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
+        GivenAnApplication -Name $PSCommandPath
     }
 
     function GivenApplicationGroup

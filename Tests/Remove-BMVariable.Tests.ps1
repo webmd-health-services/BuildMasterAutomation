@@ -12,21 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        param(
-            [String] $Named
-        )
-
-        $optionalArgs = @{}
-        if ($Named)
-        {
-            $optionalArgs['Name'] = $Named
-        }
-        else
-        {
-            $optionalArgs['CommandPath'] = $PSCommandPath
-        }
-
-        New-BMTestApplication -Session $script:session @optionalArgs
+        GivenAnApplication -Name $PSCommandPath
     }
 
     function GivenApplicationGroup
