@@ -124,11 +124,40 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenEquals '@()'
     }
 
+    It 'should support arrays with empty string items' {
+        GivenValue @('first', '', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@(first, "", "")'
+
+        GivenValue @('', 'middle', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", middle, "")'
+
+        GivenValue @('', '', 'last')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", "", last)'
+
+        GivenValue @('', '', '', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", "", "", "")'
+    }
+
     It 'should support empty hashtables' {
         GivenValue @{}
         WhenConverting
         ThenIsMap
         ThenEquals '%()'
+    }
+
+    It 'should support hashtables with empty string values' {
+        GivenValue @{ 1 = ''; 2 = 'two'; 3 = ''}
+        WhenConverting
+        ThenIsMap
+        ThenEquals '%(1: "", 2: two, 3: "")'
     }
 
     It 'should throw error' {

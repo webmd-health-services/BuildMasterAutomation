@@ -27,7 +27,7 @@ BeforeAll {
             $Result
         )
 
-        if (-not $Result)
+        if (-not $PSBoundParameters.Keys.Contains('Result'))
         {
             $Result = $script:result
         }
@@ -166,21 +166,21 @@ Describe 'ConvertFrom-BMOtterScriptExpression' {
         ThenEqual ''
     }
 
-    It 'should remove empty items from vectors' {
+    It 'should not remove empty items from vectors' {
         GivenValue '@(one, )'
         WhenConverting
-        ThenEqual @('one')
+        ThenEqual @('one', '')
 
         GivenValue '@(, two)'
         WhenConverting
-        ThenEqual @('two')
+        ThenEqual @('', 'two')
 
         GivenValue '@(, three, )'
         WhenConverting
-        ThenEqual @('three')
+        ThenEqual @('', 'three', '')
 
         GivenValue '@(, , , , , )'
         WhenConverting
-        ThenEqual @()
+        ThenEqual @('', '', '', '', '', '')
     }
 }
