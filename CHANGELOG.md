@@ -3,16 +3,28 @@
 
 # BuildMasterAutomation Changelog
 
-## 4.0.1
+## 4.1.0
 
-### Fixed
+> Released 28 May 2024
 
-Some files contained character sequences that cause anti-virus software, Cortex XDR, to crash PowerShell.
+### Added
+
+* Added support for `Release` and `Build` variables to the `Get-BMVariable`, `Set-BMVariable`, and `Remove-BMVariale`
+  functions.
 
 ### Changed
 
-* Tested against BuildMaster 2023.14.
+* Tested against BuildMaster 2023.15.
 
+### Fixed
+
+* Some files contained character sequences that cause anti-virus software, Cortex XDR, to crash PowerShell.
+* `Get-BMVariable` doesn't return anything when using `-ValueOnly` and that value is an integer.
+* `Get-BMVariable` fails to find variables if the variable's value is an empty string.
+* `Get-BMVariable` fails to get vector variables that contain empty items.
+* `Set-BMVariable`'s `-Raw` parameter was documented but never implemented.
+* `Set-BMVariables` fails to set a variable to an empty string value.
+* `Remove-BMVariable` fails to remove a variable with an empty string value.
 
 ## 4.0.0
 

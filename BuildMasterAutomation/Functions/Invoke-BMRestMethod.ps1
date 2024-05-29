@@ -43,6 +43,7 @@ function Invoke-BMRestMethod
 
         # The body to send.
         [Parameter(Mandatory, ParameterSetName='CustomBody')]
+        [AllowEmptyString()]
         [String] $Body,
 
         # The content type of the web request.

@@ -7,7 +7,7 @@ function Get-BMVariable
 
     .DESCRIPTION
     The `Get-BMVariable` function gets BuildMaster variables. By default, it gets all global variables. It can also get
-    all variables for a specific environment, server, server role, application group, and application variables.
+    all variables for a specific environment, server, server role, application group, application, release, and build.
 
     To get a specific variable, pass the variable's id, name, or object `Variable` parameter. If the variable doesn't
     exist, the function writes an error. To search for a variable, pass a wildcard string to the `Variable` parameter.
@@ -22,7 +22,15 @@ function Get-BMVariable
 
     To get an application's variables, pass the application's name to the `Application` parameter.
 
-    To get an OtterScript vector or map as a string, use the `Raw` switch.
+    To get a release's variables, pass the release object to the `Release` parameter. Use the `Get-BMRelease` function
+    to get a release object.
+
+    To get a build's variables, pass the build object to the `Build` parameter. Use the `Get-BMBuild` function to get a
+    build object.
+
+    This function returns the variable value as a PowerShell data structure. If the variable is an OtterScript vector,
+    it converts it to a PowerShell array; if it is an OtterScript map, it converts it to a PowerShell hashtable. To
+    return the variable value in its original OtterScript form as a PowerShell string, use the `Raw` switch.
 
     This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
     API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
@@ -89,9 +97,19 @@ function Get-BMVariable
     Demonstrates how to get a specific variable from an application.
 
     .EXAMPLE
+    Get-BMVariable -Session $session -Release (Get-BMRelease -Session $session -Release 'gitflow' -Application 'WebApp')
+
+    Demonstrates how to get all the variables for the "gitflow" release on the "WebApp" application.
+
+    .EXAMPLE
+    Get-BMVariable -Session $session -Build (Get-BMBuild -Session $session -Build 123)
+
+    Demonstrates how to get all the variables for build id 123.
+
+    .EXAMPLE
     Get-BMVariable -Session $session -Name 'Var' -Application 'www' -Raw
 
-    Demonstrates how to get a specific variable from an application as a string.
+    Demonstrates how to get a specific variable from an application as a string in its OtterScript expression form.
     #>
     [CmdletBinding(DefaultParameterSetName='global')]
     param(
@@ -128,6 +146,14 @@ function Get-BMVariable
         [Parameter(Mandatory, ParameterSetName='role')]
         [Alias('ServerRoleName')]
         [Object] $ServerRole,
+
+        # Specific release of the variable. Must be a Release object returned from the `Get-BMRelease` function.
+        [Parameter(Mandatory, ParameterSetName='releases')]
+        [Object] $Release,
+
+        # Specific build of the variable. Must be a Build object returned from the `Get-BMBuild` function.
+        [Parameter(Mandatory, ParameterSetName='builds')]
+        [Object] $Build,
 
         # Return the variable's value, not an object representing the variable.
         [switch] $ValueOnly,

@@ -12,7 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath
+        GivenAnApplication -Name $PSCommandPath
     }
 
     function GivenApplicationGroup
@@ -124,6 +124,7 @@ BeforeAll {
             [string] $Named,
 
             [Parameter(Mandatory)]
+            [AllowEmptyString()]
             [string] $To,
 
             [string] $ForApplication,
@@ -136,7 +137,9 @@ BeforeAll {
 
             [string] $ForServerRole,
 
-            [switch] $Raw
+            [Object] $ForRelease,
+
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -166,13 +169,17 @@ BeforeAll {
             $optionalParams['ServerRole'] = $ForServerRole
         }
 
-        if ($Raw)
+        if ($ForRelease)
         {
-            $optionalParams['Raw'] = $true
+            $optionalParams['Release'] = $ForRelease
         }
 
-        $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ValueOnly
-        $actualValue | Should -Not -BeNullOrEmpty
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
+        }
+
+        $actualValue = $Named | Get-BMVariable -Session $script:session @optionalParams -ValueOnly -Raw
         $actualValue | Should -Be $To
     }
 
@@ -181,50 +188,39 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [String] $Named,
+            [Alias('Named')]
+            [String] $Name,
+
             [Parameter(Mandatory)]
-            [Object] $WithValue,
-            [String] $ForApplication,
-            [String] $ForApplicationGroup,
-            [String] $ForEnvironment,
-            [String] $ForServer,
-            [String] $ForServerRole,
+            [Alias('WithValue')]
+            [Object] $Value,
+
+            [Alias('ForApplication')]
+            [String] $Application,
+
+            [Alias('ForApplicationGroup')]
+            [String] $ApplicationGroup,
+
+            [Alias('ForEnvironment')]
+            [String] $Environment,
+
+            [Alias('ForServer')]
+            [String] $Server,
+
+            [Alias('ForServerRole')]
+            [String] $ServerRole,
+
+            [Alias('ForRelease')]
+            [Object] $Release,
+
+            [Alias('ForBuild')]
+            [Object] $Build,
+
+            [switch] $Raw,
             [Switch] $WhatIf
         )
 
-        $optionalParams = @{ }
-
-        if ($ForApplication)
-        {
-            $optionalParams['Application'] = $ForApplication
-        }
-
-        if ($ForApplicationGroup)
-        {
-            $optionalParams['ApplicationGroup'] = $ForApplicationGroup
-        }
-
-        if ($ForEnvironment)
-        {
-            $optionalParams['Environment'] = $ForEnvironment
-        }
-
-        if ($ForServer)
-        {
-            $optionalParams['Server'] = $ForServer
-        }
-
-        if ($ForServerRole)
-        {
-            $optionalParams['ServerRole'] = $ForServerRole
-        }
-
-        if ($WhatIf)
-        {
-            $optionalParams['WhatIf'] = $true
-        }
-
-        $script:result = Set-BMVariable -Session $script:session -Name $Named -Value $WithValue -ErrorAction 'SilentlyContinue' @optionalParams
+        $script:result = Set-BMVariable -Session $script:session @PSBoundParameters
         $script:result | Should -BeNullOrEmpty
     }
 }
@@ -265,7 +261,7 @@ Describe 'Set-BMVariable' {
     }
 
     It 'should create application variable' {
-        $app = GivenApplication
+        $app = GivenAnApplication -Name 'Set-BMVariable'
         WhenSettingVariable 'AppFubar' -WithValue 'AppValue' -ForApplication $app.Application_Name
         ThenVariableSet 'AppFubar' -To 'AppValue' -ForApplication $app.Application_Name
         ThenNoErrorWritten
@@ -299,33 +295,67 @@ Describe 'Set-BMVariable' {
         ThenNoErrorWritten
     }
 
+    It 'should create release variable' {
+        $application = GivenAnApplication -Name 'Set-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Set-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Set-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        WhenSettingVariable 'ReleaseVar' -WithValue 'ReleaseVarValue' -ForRelease $release
+        ThenVariableSet 'ReleaseVar' -To 'ReleaseVarValue' -ForRelease $release
+        ThenNoErrorWritten
+    }
+
+    It 'should create build variable' {
+        $application = GivenAnApplication -Name 'Set-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Set-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Set-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        WhenSettingVariable 'BuildVar' -WithValue 'BuildVarValue' -ForBuild $build
+        ThenVariableSet 'BuildVar' -To 'BuildVarValue' -ForBuild $build
+        ThenNoErrorWritten
+    }
+
     It 'should convert map to OtterScript map' {
         WhenSettingVariable 'GlobalVar' -WithValue @{ 'hello' = 'world' }
-        ThenVariableSet 'GlobalVar' -To '%(hello: world)' -Raw
+        ThenVariableSet 'GlobalVar' -To '%(hello: world)'
         ThenNoErrorWritten
     }
 
     It 'should convert array to OtterScript vector' {
         WhenSettingVariable 'GlobalVar' -WithValue @('some', 'vector')
-        ThenVariableSet 'GlobalVar' -To '@(some, vector)' -Raw
+        ThenVariableSet 'GlobalVar' -To '@(some, vector)'
+        ThenNoErrorWritten
+    }
+
+    It 'should support an empty variable' {
+        GivenVariable 'EmptyVar' -WithValue 'OldValue'
+        WhenSettingVariable 'EmptyVar' -WithValue ''
+        ThenVariableSet 'EmptyVar' -To ''
         ThenNoErrorWritten
     }
 
     It 'should support an empty PowerShell array' {
         WhenSettingVariable 'GlobalVar' -WithValue @()
-        ThenVariableSet 'GlobalVar' -To '@()' -Raw
+        ThenVariableSet 'GlobalVar' -To '@()'
         ThenNoErrorWritten
     }
 
     It 'should support an empty PowerShell hashtable' {
         WhenSettingVariable 'GlobalVar' -WithValue @{}
-        ThenVariableSet 'GlobalVar' -To '%()' -Raw
+        ThenVariableSet 'GlobalVar' -To '%()'
+        ThenNoErrorWritten
+    }
+
+    It 'should not convert value when using Raw' {
+        Mock -CommandName 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
+        WhenSettingVariable 'RawVar' -WithValue '@(one, two, three)' -Raw
+        Should -Not -Invoke 'ConvertTo-BMOtterScriptExpression' -ModuleName 'BuildMasterAutomation'
+        ThenVariableSet 'RawVar' -To '@(one, two, three)'
         ThenNoErrorWritten
     }
 
     It 'should fail to set variable' {
         $value = [System.Collections.DictionaryEntry]::new('hello', 'world')
-        WhenSettingVariable 'GlobalVar' -WithValue $value
+        WhenSettingVariable 'GlobalVar' -WithValue $value -ErrorAction SilentlyContinue
         ThenError -MatchesPattern 'Unable to convert*'
     }
 

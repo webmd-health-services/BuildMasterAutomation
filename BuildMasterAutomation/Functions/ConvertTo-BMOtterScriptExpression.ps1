@@ -59,11 +59,17 @@ function ConvertTo-BMOtterScriptExpression
             $sortedKeys = $Value.Keys | Sort-Object
             foreach ($key in $sortedKeys)
             {
-                if ($Value[$key] -is [System.Collections.ICollection])
+                $keyValue = $Value[$key]
+                if ($keyValue -is [System.Collections.ICollection])
                 {
-                    $Value[$key] = ConvertTo-BMOtterScriptExpression -Value $Value[$key]
+                    $keyValue = ConvertTo-BMOtterScriptExpression -Value $keyValue
                 }
-                $mapExpression += "${key}: $($Value[$key]), "
+
+                if ($keyValue -eq '')
+                {
+                    $keyValue = '""'
+                }
+                $mapExpression += "${key}: $($keyValue), "
             }
 
             $mapExpression = $mapExpression -replace ', $'
@@ -79,6 +85,11 @@ function ConvertTo-BMOtterScriptExpression
                     $item = ConvertTo-BMOtterScriptExpression -Value $item
                     $item | Write-Output
                     continue
+                }
+
+                if ($item -eq '')
+                {
+                    $item = '""'
                 }
 
                 $item | Write-Output

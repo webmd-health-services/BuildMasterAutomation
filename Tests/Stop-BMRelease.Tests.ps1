@@ -8,7 +8,7 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-Tests.ps1' -Resolve)
 
     $script:session = New-BMTestSession
-    $script:app = New-BMTestApplication -Session $session -CommandPath $PSCommandPath
+    $script:app = GivenAnApplication -Name $PSCommandPath
     $script:pipeline = GivenAPipeline $app.Application_Name -ForApplication $app
 
     function GivenARelease

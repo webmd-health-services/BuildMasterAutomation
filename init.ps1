@@ -25,17 +25,12 @@ Set-StrictMode -Version 'Latest'
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
-& {
-    $VerbosePreference = 'SilentlyContinue'
-    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon.Windows.Installer') -Force
-    Import-Module -Name 'Microsoft.PowerShell.Archive'
-}
-
-
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon.Windows.Installer') -Force -Verbose:$false
+Import-Module -Name 'Microsoft.PowerShell.Archive' -Verbose:$false
 
 # When updating the version, it's a good time to check if bugs in the API have been fixed. Search all the tests for
 # "-Skip", remove the "-Skip" flag and run tests.
-$version = '23.0.14'
+$version = '23.0.15'
 
 Write-Information -Message "Testing BuildMaster ${version}."
 

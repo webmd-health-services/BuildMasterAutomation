@@ -12,7 +12,7 @@ BeforeAll {
 
     function GivenApplication
     {
-        New-BMTestApplication -Session $script:session -CommandPath $PSCommandPath | Write-Output
+        GivenAnApplication -Name $PSCommandPath
     }
 
     function GivenApplicationGroup
@@ -67,20 +67,25 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string]$Named,
+            [string] $Named,
 
             [Parameter(Mandatory)]
-            [string]$WithValue,
+            [AllowEmptyString()]
+            [string] $WithValue,
 
-            [string]$ForApplication,
+            [string] $ForApplication,
 
-            [string]$ForApplicationGroup,
+            [string] $ForApplicationGroup,
 
-            [string]$ForEnvironment,
+            [string] $ForEnvironment,
 
-            [string]$ForServer,
+            [string] $ForServer,
 
-            [string]$ForServerRole
+            [string] $ForServerRole,
+
+            [Object] $ForRelease,
+
+            [Object] $ForBuild
         )
 
         $optionalParams = @{ }
@@ -107,6 +112,16 @@ BeforeAll {
         if( $ForServerRole )
         {
             $optionalParams['ServerRoleName'] = $ForServerRole
+        }
+
+        if( $ForRelease )
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if( $ForBuild )
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         Set-BMVariable -Session $script:session -Name $Named -Value $WithValue @optionalParams
@@ -139,12 +154,12 @@ BeforeAll {
     {
         param(
             [Parameter(Mandatory)]
-            [string[]]$Value
+            [AllowEmptyString()]
+            [string[]]$ExpectedValue
         )
 
-        $script:result | Should -Not -BeNullOrEmpty
-        $script:result | Should -HaveCount $Value.Count
-        $script:result | Should -Be $Value
+        $script:result | Should -HaveCount $ExpectedValue.Count
+        $script:result | Should -Be $ExpectedValue
     }
 
     function WhenGettingVariable
@@ -158,6 +173,8 @@ BeforeAll {
             [string]$ForEnvironment,
             [string]$ForServer,
             [string]$ForServerRole,
+            [object]$ForRelease,
+            [object]$ForBuild,
             [switch]$Raw
         )
 
@@ -201,6 +218,16 @@ BeforeAll {
         if( $ForServerRole )
         {
             $optionalParams['ServerRole'] = $ForServerRole
+        }
+
+        if ($ForRelease)
+        {
+            $optionalParams['Release'] = $ForRelease
+        }
+
+        if ($ForBuild)
+        {
+            $optionalParams['Build'] = $ForBuild
         }
 
         $script:result = Get-BMVariable -Session $script:session @optionalParams
@@ -319,6 +346,12 @@ Describe 'Get-BMVariable' {
         ThenVariableValuesReturned 'Fubar'
     }
 
+    It 'should return an empty string when variable is empty' {
+        GivenVariable 'EmptyVar' -WithValue ''
+        WhenGettingVariable 'EmptyVar' -ValueOnly
+        ThenVariableValuesReturned ''
+    }
+
     It 'should return the variables for an application' {
         $app = GivenApplication
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
@@ -338,7 +371,6 @@ Describe 'Get-BMVariable' {
         ThenNoErrorWritten
     }
 
-    # Doesn't currently work in BuildMaster.
     It 'should return application group''s variable' {
         GivenApplicationGroup 'fizzbuzz'
         GivenVariable 'GlobalVar' -WithValue 'GlobalSnafu'
@@ -372,6 +404,27 @@ Describe 'Get-BMVariable' {
         GivenVariable 'ServerRoleVar' -WithValue 'ServerRoleValue' -ForServerRole 'GetBMVariable'
         WhenGettingVariable 'ServerRoleVar' -ForServerRole 'GetBMVariable'
         ThenVariableReturned @{ 'ServerRoleVar' = 'ServerRoleValue' }
+        ThenNoErrorWritten
+    }
+
+    It 'should return a release variable' {
+        $application = GivenAnApplication -Name 'Get-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Get-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Get-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        GivenVariable 'ReleaseVar' -WithValue 'ReleaseValue' -ForRelease $release
+        WhenGettingVariable 'ReleaseVar' -ForRelease $release -ValueOnly
+        ThenVariableValuesReturned 'ReleaseValue'
+        ThenNoErrorWritten
+    }
+
+    It 'should return a build variable' {
+        $application = GivenAnApplication -Name 'Get-BMVariable'
+        $pipeline = GivenAPipeline -Named 'Get-BMVariable' -ForApplication $application
+        $release = GivenARelease -Named 'Get-BMVariable' -ForApplication $application -WithNumber '1.0' -UsingPipeline $pipeline
+        $build = GivenABuild -ForRelease $release
+        GivenVariable 'BuildVar' -WithValue 'BuildValue' -ForBuild $build
+        WhenGettingVariable 'BuildVar' -ForBuild $build -ValueOnly
+        ThenVariableValuesReturned 'BuildValue'
         ThenNoErrorWritten
     }
 
@@ -419,6 +472,18 @@ Describe 'Get-BMVariable' {
     It 'should write an error when application group does not exist' {
         WhenGettingVariable -Named 'Nope' -ForApplicationGroup 'Nope' -ErrorAction SilentlyContinue
         ThenError ([regex]::Escape('application group "Nope" does not exist'))
+        ThenNothingReturned
+    }
+
+    It 'should write an error when the Release parameter is not an object' {
+        WhenGettingVariable -Named 'Nope' -ForRelease 'somerelease' -ErrorAction SilentlyContinue
+        ThenError ([regex]::Escape('must be a Release object'))
+        ThenNothingReturned
+    }
+
+    It 'should write an error when the Build parameter is not an object' {
+        WhenGettingVariable -Named 'Nope' -ForBuild 123 -ErrorAction SilentlyContinue
+        ThenError ([regex]::Escape('must be a Build object'))
         ThenNothingReturned
     }
 

@@ -70,26 +70,6 @@ finally
     $conn.Close()
 }
 
-function New-BMTestApplication
-{
-    [CmdletBinding(DefaultParameterSetName='ByCommandPath')]
-    param(
-        [Object] $Session,
-
-        [Parameter(Mandatory, ParameterSetName='ByCommandPath')]
-        [String]$CommandPath,
-
-        [Parameter(Mandatory, ParameterSetName='ByName')]
-        [String] $Name
-    )
-
-    if (-not $Name)
-    {
-        $Name = New-BMTestObjectName
-    }
-
-    return New-BMApplication -Session $Session -Name $Name
-}
 
 $script:session = New-BMSession -Url $url -ApiKey $apiKey
 $script:objectNum = 0

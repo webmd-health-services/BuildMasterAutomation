@@ -16,8 +16,11 @@ BeforeAll {
 
     function WhenConverting
     {
+        [CmdletBinding()]
+        param()
+
         $warnings = @()
-        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings' -ErrorAction SilentlyContinue
+        $script:result = ConvertTo-BMOtterScriptExpression -Value $script:value -WarningVariable 'warnings'
         $script:warnings = $warnings
     }
 
@@ -108,11 +111,58 @@ Describe 'ConvertTo-BMOtterScriptExpression' {
         ThenEquals '@(1, 2, 3, @(4, 5, 6))'
     }
 
-    It 'should throw error' {
-        $value = [System.Collections.DictionaryEntry]::new('hi', 'there')
-        GivenValue $value
+    It 'should support empty strings' {
+        GivenValue ''
         WhenConverting
+        ThenEquals ''
+    }
+
+    It 'should support empty arrays' {
+        GivenValue @()
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@()'
+    }
+
+    It 'should support arrays with empty string items' {
+        GivenValue @('first', '', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@(first, "", "")'
+
+        GivenValue @('', 'middle', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", middle, "")'
+
+        GivenValue @('', '', 'last')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", "", last)'
+
+        GivenValue @('', '', '', '')
+        WhenConverting
+        ThenIsVector
+        ThenEquals '@("", "", "", "")'
+    }
+
+    It 'should support empty hashtables' {
+        GivenValue @{}
+        WhenConverting
+        ThenIsMap
+        ThenEquals '%()'
+    }
+
+    It 'should support hashtables with empty string values' {
+        GivenValue @{ 1 = ''; 2 = 'two'; 3 = ''}
+        WhenConverting
+        ThenIsMap
+        ThenEquals '%(1: "", 2: two, 3: "")'
+    }
+
+    It 'should throw error' {
+        GivenValue ([System.Exception]::new())
+        { WhenConverting -ErrorAction Stop } | Should -Throw 'Unable to convert *'
         $script:result | Should -Be $null
-        ThenError -MatchesPattern 'Unable to convert*'
     }
 }
