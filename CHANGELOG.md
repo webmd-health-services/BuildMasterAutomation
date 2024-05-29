@@ -5,6 +5,8 @@
 
 ## 4.1.0
 
+> Released 28 May 2024
+
 ### Added
 
 * Added support for `Release` and `Build` variables to the `Get-BMVariable`, `Set-BMVariable`, and `Remove-BMVariale`
