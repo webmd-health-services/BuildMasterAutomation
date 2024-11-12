@@ -30,7 +30,7 @@ Import-Module -Name 'Microsoft.PowerShell.Archive' -Verbose:$false
 
 # When updating the version, it's a good time to check if bugs in the API have been fixed. Search all the tests for
 # "-Skip", remove the "-Skip" flag and run tests.
-$version = '23.0.19'
+$version = '24.0.1'
 
 Write-Information -Message "Testing BuildMaster ${version}."
 
