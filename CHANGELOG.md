@@ -3,6 +3,10 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.1.1
+
+* Fixed: documentation for `Remove-BMVariable` was using incorrect parameter names and descriptions.
+
 ## 4.1.0
 
 > Released 28 May 2024
