@@ -13,15 +13,16 @@ function Remove-BMVariable
     Pass the name of the variable to delete to the `Name` parameter. If no variable exists to delete, you'll get an
     error.
 
-    To delete an environment's variables, pass the environment's name to the `EnvironmentName` parameter.
+    To delete an environment's variables, pass the environment's name, ID or object to the `Environment` parameter.
 
-    To delete a server role's variables, pass the server role's name to the `ServerRoleName` parameter.
+    To delete a server role's variables, pass the server role's name, ID, or object to the `ServerRole` parameter.
 
-    To delete a server's variables, pass the server's name to the `ServerName` parameter.
+    To delete a server's variables, pass the server's name, ID, or object to the `Server` parameter.
 
-    To delete an application group's variables, pass the application group's name to the `ApplicationGroupName` parameter.
+    To delete an application group's variables, pass the application group's name, ID, or object to the
+    `ApplicationGroup` parameter.
 
-    To delete an application's variables, pass the application's name to the `ApplicationName` parameter.
+    To delete an application's variables, pass the application's name, ID, or object to the `Application` parameter.
 
     To delete a release's variables, pass the release object to the `Release` parameter. Use the `Get-BMRelease`
     function to get a release object.
@@ -32,9 +33,9 @@ function Remove-BMVariable
     Pass a session object representing the instance of BuildMaster to use to the `Session` parameter. Use
     `New-BMSession` to create a session object.
 
-    This function uses BuildMaster's [Variables Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables)
-    API. Due to a bug in BuildMaster, when getting application or application group variables, it uses BuildMaster's
-    native API.
+    This function uses BuildMaster's [Variables
+    Management](https://docs.inedo.com/docs/buildmaster-reference-api-variables) API. Due to a bug in BuildMaster, when
+    getting application or application group variables, it uses BuildMaster's native API.
 
 
     .EXAMPLE
@@ -43,22 +44,22 @@ function Remove-BMVariable
     Demonstrates how to delete a global variable.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' -EnvironmentName 'Dev'
+    Remove-BMVariable -Session $session -Name 'Var' -Environment 'Dev'
 
     Demonstrates how to delete a variable in an environment.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' -ServerRoleName 'WebApp'
+    Remove-BMVariable -Session $session -Name 'Var' -ServerRole 'WebApp'
 
     Demonstrates how to delete a variable in a server role.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' -ServerName 'example.com'
+    Remove-BMVariable -Session $session -Name 'Var' -Server 'example.com'
 
     Demonstrates how to delete a variable in a server.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' -ApplicationGroupName 'WebApps'
+    Remove-BMVariable -Session $session -Name 'Var' -ApplicationGroup 'WebApps'
 
     Demonstrates how to delete a variable from an application group.
 
@@ -73,7 +74,7 @@ function Remove-BMVariable
     Demonstrates how to delete a variable from a build.
 
     .EXAMPLE
-    Remove-BMVariable -Session $session -Name 'Var' -ApplicationName 'www'
+    Remove-BMVariable -Session $session -Name 'Var' -Application 'www'
 
     Demonstrates how to delete a variable from an application.
     #>
@@ -88,23 +89,23 @@ function Remove-BMVariable
         [Parameter(Mandatory, ValueFromPipeline)]
         [Object] $Variable,
 
-        # The application of the variable to delete. Pass an application id, name, or object.
+        # The application of the variable to delete. Pass an application ID, name, or object.
         [Parameter(Mandatory, ParameterSetName='application')]
         [Object] $Application,
 
-        # The application group of the variable to delete. Pass an application group id, name, or object.
+        # The application group of the variable to delete. Pass an application group ID, name, or object.
         [Parameter(Mandatory, ParameterSetName='application-group')]
         [Object] $ApplicationGroup,
 
-        # The environment of the variable to delete. Pass an environment id, name, or object.
+        # The environment of the variable to delete. Pass an environment ID, name, or object.
         [Parameter(Mandatory, ParameterSetName='environment')]
         [Object] $Environment,
 
-        # The server of the variable to delete. Pass a server id, name, or object.
+        # The server of the variable to delete. Pass a server ID, name, or object.
         [Parameter(Mandatory, ParameterSetName='server')]
         [Object] $Server,
 
-        # The server role of the variable to delete. Pass a server role id, name, or object.
+        # The server role of the variable to delete. Pass a server role ID, name, or object.
         [Parameter(Mandatory, ParameterSetName='role')]
         [Object] $ServerRole,
 
