@@ -3,9 +3,13 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.2.0
+
+`New-BMBuild` can now create release-less builds for applications where releases are optional or not allowed.
+
 ## 4.1.1
 
-* Fixed: documentation for `Remove-BMVariable` was using incorrect parameter names and descriptions.
+Fixed: documentation for `Remove-BMVariable` was using incorrect parameter names and descriptions.
 
 ## 4.1.0
 
