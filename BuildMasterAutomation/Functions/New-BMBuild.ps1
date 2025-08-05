@@ -3,18 +3,26 @@ function New-BMBuild
 {
     <#
     .SYNOPSIS
-    Creates a new build for a release.
+    Creates a new build.
 
     .DESCRIPTION
-    The `New-BMBuild` creates a new version/build of an application. In order to deploy an application, the application
-    must have a release. Then you create builds in that release, and each build is then deployed using the release's
-    pipeline.
+    The `New-BMBuild` creates a new version/build of an application. In order to deploy the build, it must be assigned
+    to an application and a release or a pipeline. To assign the build to a release and the release's application, pass
+    the release ID or object to the `Release` parameter and `New-BMBuild` will determine the application based on the
+    release.
+
+    You can use the release number to assing a build to a release by passing it to the `ReleaseNumber` parameter. Since
+    release numbers can be duplicated between applications, you must also pass the application ID, name, or object to
+    the `Application` parameter.
+
+    To assign the build to an application without assigning it to a release, it must be assigned to a pipeline. Pass the
+    application ID, name or object to the `Application` parameter and the pipeline name to the `PipelineName` parameter.
 
     .EXAMPLE
     New-BMBuild -Session $session -Release $release
 
     Demonstrates how to create a new build in the `$release` release. BuildMaster detects what application based on the
-    release (since releases are always tied to applications). Verion numbers and build numbers are incremented and
+    release (since releases are always tied to applications). Version numbers and build numbers are incremented and
     handled based on the release settings.
 
     The `$release` parameter can be:
@@ -29,10 +37,15 @@ function New-BMBuild
     application, you must also specify the application via the `Application` parameter.
 
     .EXAMPLE
-    New-BMBuild -Session $session -Release $release -PacakgeName '56.develop' -Variable @{ ProGetPackageName = '17.1.54+developer.deadbee' }
+    New-BMBuild -Session $session -Release $release -BuildNumber '56.develop' -Variable @{ ProGetPackageName = '17.1.54+developer.deadbee' }
 
     Demonstrates how to create a release with a specific name, `56.develop`, and with a build-level variable,
     `ProGetPackageName`.
+
+    .EXAMPLE
+    New-BMBuild -Session $session -Application $app -PipelineName 'MyPipeline'
+
+    Demonstrates how to create a new build for an application without using releases.
     #>
     [CmdletBinding()]
     param(
@@ -54,16 +67,22 @@ function New-BMBuild
         [Parameter(Mandatory, ParameterSetName='ByReleaseNumber')]
         [String] $ReleaseNumber,
 
-        # The application where the release identified by the `ReleaseNumber` parameter can be found. Can be:
+        # The application where build should be created. Can be:
         #
         # * An application object with a `Application_Id`, `id`, `Application_Name`, or `name` properties.
         # * The application ID as an integer.
         # * The application name as a string.
         [Parameter(Mandatory, ParameterSetName='ByReleaseNumber')]
+        [Parameter(Mandatory, ParameterSetName='ByPipeline')]
         [Object] $Application,
 
-        # The build number/name. If not provided, BuildMaster generates one based on the release settings.
-        [string] $BuildNumber,
+        # The pipeline to assign the build to.
+        [Parameter(Mandatory, ParameterSetName='ByPipeline')]
+        [String] $PipelineName,
+
+        # The build number/name. If not provided, BuildMaster generates one based on the release or application
+        # settings.
+        [String] $BuildNumber,
 
         # Any build variables to set. Build variables are unique to each build.
         [hashtable] $Variable
@@ -74,14 +93,21 @@ function New-BMBuild
 
     $parameters = @{ }
 
-    if( $PSCmdlet.ParameterSetName -eq 'ByReleaseID' )
+    if ($PSCmdlet.ParameterSetName -eq 'ByReleaseID')
     {
         $parameters | Add-BMObjectParameter -Name 'release' -Value $Release
     }
     else
     {
-        $parameters['releaseNumber'] = $ReleaseNumber
         $parameters | Add-BMObjectParameter -Name 'application' -Value $Application
+        if ($PSCmdlet.ParameterSetName -eq 'ByReleaseNumber')
+        {
+            $parameters['releaseNumber'] = $ReleaseNumber
+        }
+        elseif ($PSCmdlet.ParameterSetName -eq 'ByPipeline')
+        {
+            $parameters['pipelineName'] = $PipelineName
+        }
     }
 
     if( $BuildNumber )

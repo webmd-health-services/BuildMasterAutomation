@@ -16,29 +16,54 @@ BeforeAll {
                                       -Application $app `
                                       -Color '#ffffff' `
                                       -PassThru
+
+    $script:globalPipeline =
+        Set-BMPipeline -Session $script:session -Name (New-BMTestObjectName) -Color '#fffffe' -Raft $raft -PassThru
+    $script:globalPipeline | Format-List | Out-STring | Write-Verbose
+
     $script:release =
         New-BMRelease -Session $script:session -Application $script:app -Number '1.0' -Pipeline $script:pipeline
 
     function Assert-Build
     {
         param(
-            [Parameter(ValueFromPipeline=$true)]
+            [Parameter(ValueFromPipeline)]
             $Build,
 
-            [object]
-            $HasNumber,
+            [Object] $HasNumber,
 
-            [hashtable]
-            $HasVariable
+            [hashtable] $HasVariable,
+
+            [switch] $HasNoRelease,
+
+            [String] $HasPipeline
         )
+
+        $Build | Format-List | Out-String | Write-Verbose
 
         $Build | Should -Not -BeNullOrEmpty
         $Build = Get-BMBuild -Session $script:session -Build $Build
         $Build | Should -Not -BeNullOrEmpty
         $Build.number | Should -Be $HasNumber
         $Build.applicationId | Should -Be $script:app.Application_Id
-        $Build.pipelineName | Should -Be $script:pipeline.Pipeline_Name
-        $Build.releaseId | Should -Be $script:release.id
+
+        $expectedPipelineName = $script:pipeline.Pipeline_Name
+        if ($HasPipeline)
+        {
+            $expectedPipelineName = $script:globalPipeline.Pipeline_Name
+        }
+        $Build.pipelineName | Should -Be $expectedPipelineName
+
+        if ($HasNoRelease)
+        {
+            $Build.releaseId | Should -BeNullOrEmpty
+            $Build.releaseNumber | Should -BeNullOrEmpty
+            $Build.releaseName | Should -BeNullOrEmpty
+        }
+        else
+        {
+            $Build.releaseId | Should -Be $script:release.id
+        }
 
         if( $HasVariable )
         {
@@ -86,5 +111,15 @@ Describe 'New-BMBuild' {
         New-BMPackage -Session $script:session -Release $script:release -WarningVariable 'warnings' |
             Assert-Build -HasNumber '5'
         $warnings | Should -Not -BeNullOrEmpty
+    }
+
+    It 'creates builds without releases' {
+        New-BMBuild -Session $script:session -Application $script:app -PipelineName $script:pipeline.Pipeline_Name |
+            Assert-Build -HasNumber '1' -HasNoRelease
+    }
+
+    It 'creates builds that uses global pipeline' {
+        New-BMBuild -Session $script:session -Application $script:app -PipelineName $script:globalPipeline.Pipeline_Name |
+            Assert-Build -HasNumber '2' -HasPipeline $script:globalPipeline.Pipeline_Name -HasNoRelease
     }
 }
