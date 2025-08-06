@@ -3,11 +3,19 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.2.1
+
+Fixed: builds not getting updated with version number.
+
 ## 4.2.0
+
+> Released 5 Aug 2025
 
 `New-BMBuild` can now create release-less builds for applications where releases are optional or not allowed.
 
 ## 4.1.1
+
+> Released 28 Jul 2025
 
 Fixed: documentation for `Remove-BMVariable` was using incorrect parameter names and descriptions.
 
