@@ -85,7 +85,7 @@ function New-BMTestObjectName
 
     if (-not (Test-Path -Path $script:wordsPath))
     {
-        $script:words = Invoke-RestMethod -Uri 'https://random-word-api.herokuapp.com/all'
+        $script:words = Invoke-RestMethod -Uri 'https://random-word-api.vercel.app/api?words=30'
         $script:words | Set-Content -Path $script:wordsPath
     }
 
