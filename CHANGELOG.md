@@ -3,6 +3,16 @@
 
 # BuildMasterAutomation Changelog
 
+## 4.3.0
+
+### Changed
+
+* Tested against BuildMaster 2024.10.
+
+### Fixed
+
+* DateTime offset value is in correct format when updating a raft item.
+
 ## 4.2.1
 
 Fixed: builds not getting updated with version number.

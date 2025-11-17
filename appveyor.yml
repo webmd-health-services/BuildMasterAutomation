@@ -12,9 +12,9 @@ test: false
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: Windows PowerShell 5.1/.NET 4.6.2
-    job_group: ps_sql2014
-    appveyor_build_worker_image: Visual Studio 2013
+  # - job_name: Windows PowerShell 5.1/.NET 4.6.2
+  #   job_group: ps_sql2014
+  #   appveyor_build_worker_image: Visual Studio 2013
 
   - job_name: Windows PowerShell 5.1/.NET 4.8
     job_group: ps_sql2019

@@ -102,7 +102,7 @@ function Set-BMRaftItem
         @{
             RaftItem_Name = ($RaftItem | Get-BMObjectName);
             RaftItemType_Code = $TypeCode;
-            ModifiedOn_Date = [DateTimeOffset]::Now;
+            ModifiedOn_Date = ([DateTimeOffset]::Now).ToString("yyyy-MM-ddTHH:mm:ss.fffK");
             ModifiedBy_User_Name = $UserName;
         } |
         Add-BMParameter -PassThru -Name 'ModifiedBy_User_Name' -Value $UserName |

@@ -16,8 +16,8 @@ Describe 'Invoke-BMNativeApiMethod' {
                         'Variable_Name' = 'Fubar';
                         'Variable_Value' = ('Snafu' | ConvertTo-BMNativeApiByteValue);
                         'ValueType_Code' = 'string';
-                        'Sensitive_Indicator' = 'False';
-                        'EvaluateVariables_Indicator' = 'False';
+                        'Sensitive_Indicator' = $false;
+                        'EvaluateVariables_Indicator' = $false;
                     }
         Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
         $result = Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_GetVariables' -WhatIf
@@ -30,8 +30,8 @@ Describe 'Invoke-BMNativeApiMethod' {
                         'Variable_Name' = 'Fubar';
                         'Variable_Value' = ('Snafu' | ConvertTo-BMNativeApiByteValue);
                         'ValueType_Code' = 'string';
-                        'Sensitive_Indicator' = 'False';
-                        'EvaluateVariables_Indicator' = 'False';
+                        'Sensitive_Indicator' = $false;
+                        'EvaluateVariables_Indicator' = $false;
                     }
         Invoke-BMNativeApiMethod -Session $script:session -Name 'Variables_CreateOrUpdateVariable' -Method Post -Parameter $variable
         $variable['Variable_Value'] = 'FizzBuzz'
