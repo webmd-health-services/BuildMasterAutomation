@@ -32,11 +32,8 @@ environment:
     job_group: pwsh_sql2019
     appveyor_build_worker_image: Visual Studio 2022
 
-
-
 artifacts:
 - path: .output\*
-
 
 for:
 - matrix:
@@ -46,10 +43,18 @@ for:
   environment:
     SQL_INSTANCE_NAME: SQL2014
   build_script:
-  - ps: &ps |
-        $ProgressPreference = 'SilentlyContinue'
-        iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
-        .\build.ps1
+  - ps: &build_ps1 |
+      $ProgressPreference = 'SilentlyContinue'
+      iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
+      .\build.ps1
+  on_finish:
+  - ps: &upload_test_results |
+      $jobID = $env:APPVEYOR_JOB_ID
+      $resultsXmlPaths = Resolve-Path -Path '.output\pester*.xml'
+      foreach ($resultsXmlPath in $resultsXmlPath)
+      {
+        [Net.WebClient]::New().UploadFile("https://ci.appveyor.com/api/testresults/nunit/${jobID}", $resultsXmlPath)
+      }
 
 - matrix:
     only:
@@ -59,7 +64,9 @@ for:
     SQL_INSTANCE_NAME: SQL2019
   init: net start mssql$sql2019
   build_script:
-  - ps: *ps
+  - ps: *build_ps1
+  on_finish:
+  - ps: *upload_test_results
 
 - matrix:
     only:
@@ -68,7 +75,9 @@ for:
   environment:
     SQL_INSTANCE_NAME: SQL2016
   build_script:
-  - pwsh: *ps
+  - pwsh: *build_ps1
+  on_finish:
+  - pwsh: *upload_test_results
 
 - matrix:
     only:
@@ -77,8 +86,9 @@ for:
   environment:
     SQL_INSTANCE_NAME: SQL2017
   build_script:
-  - pwsh: *ps
-
+  - pwsh: *build_ps1
+  on_finish:
+  - pwsh: *upload_test_results
 - matrix:
     only:
     - job_group: pwsh_sql2019
@@ -86,4 +96,6 @@ for:
     SQL_INSTANCE_NAME: SQL2019
   init: net start mssql$sql2019
   build_script:
-  - pwsh: *ps
+  - pwsh: *build_ps1
+  on_finish:
+  - pwsh: *upload_test_results

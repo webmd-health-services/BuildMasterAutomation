@@ -3,7 +3,25 @@
 
 # BuildMasterAutomation Changelog
 
+## 5.0.0
+
+### Upgrade Instructions
+
+The `Get-BMRaftItem` no longer returns all raft items in all applications. Inspect usages. To get all raft items in all
+applications, you must iterate through all applications and call `Get-BMRaftItem` for each appliction.
+
+### Added
+
+`Get-BMRaftItem` returns raft items by ID.
+
+### Changed
+
+`Get-BMRaftItem` no longer returns application raft items by default. To get a specific application's raft items, you
+must now use the `Application` parameter.
+
 ## 4.3.0
+
+> Released 17 Nov 2025
 
 ### Changed
 
