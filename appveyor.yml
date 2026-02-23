@@ -10,27 +10,40 @@ build:
 test: false
 
 environment:
-  WHISKEY_DISABLE_ERROR_FORMAT: True
+  SQL_INSTANCE_NAME: SQL2017
   matrix:
-  # - job_name: Windows PowerShell 5.1/.NET 4.6.2
-  #   job_group: ps_sql2014
-  #   appveyor_build_worker_image: Visual Studio 2013
+  # BuildMaster 2023
+  - job_name: BuildMaster 2023 / Windows PowerShell 5.1 / PowerShell 6 on Windows
+    job_group: ps_and_pwsh
+    appveyor_build_worker_image: Visual Studio 2017
+    BUILDMASTER_VERSION: &bm_2023_version 23.0.22
 
-  - job_name: Windows PowerShell 5.1/.NET 4.8
-    job_group: ps_sql2019
-    appveyor_build_worker_image: Visual Studio 2019
-
-  - job_name: PowerShell 6.2 on Windows
-    job_group: pwsh_sql2016
-    appveyor_build_worker_image: Visual Studio 2015
-
-  - job_name: PowerShell 7.1 on Windows
-    job_group: pwsh_sql2017
-    appveyor_build_worker_image: Visual Studio 2019
-
-  - job_name: PowerShell 7.2 on Windows
-    job_group: pwsh_sql2019
+  - job_name: BuildMaster 2023 / PowerShell 7 on Windows
+    job_group: pwsh
     appveyor_build_worker_image: Visual Studio 2022
+    BUILDMASTER_VERSION: *bm_2023_version
+
+  # BuildMaster 2024
+  - job_name: BuildMaster 2024 / Windows PowerShell 5.1 / PowerShell 6 on Windows
+    job_group: ps_and_pwsh
+    appveyor_build_worker_image: Visual Studio 2017
+    BUILDMASTER_VERSION: &bm_2024_version 24.0.10
+
+  - job_name: BuildMaster 2024 / PowerShell 7 on Windows
+    job_group: pwsh
+    appveyor_build_worker_image: Visual Studio 2022
+    BUILDMASTER_VERSION: *bm_2024_version
+
+  # BuildMaster 2025
+  - job_name: BuildMaster 2023 / Windows PowerShell 5.1 / PowerShell 6 on Windows
+    job_group: ps_and_pwsh
+    appveyor_build_worker_image: Visual Studio 2017
+    BUILDMASTER_VERSION: &bm_2025_version 25.0.8
+
+  - job_name: BuildMaster 2023 / PowerShell 7 on Windows
+    job_group: pwsh
+    appveyor_build_worker_image: Visual Studio 2022
+    BUILDMASTER_VERSION: *bm_2025_version
 
 artifacts:
 - path: .output\*
@@ -38,64 +51,47 @@ artifacts:
 for:
 - matrix:
     only:
-    - job_group: ps_sql2014
-  services: mssql2014
-  environment:
-    SQL_INSTANCE_NAME: SQL2014
-  build_script:
-  - ps: &build_ps1 |
+    - job_group: ps_and_pwsh
+  services: mssql2017
+  before_build:
+  # Run in separate process from rest of build to prevent old versions of PackageManagement/PowerShellGet from loading.
+  - ps: &enable_rdp |
+      if ((Test-Path -Path 'env:ENABLE_RDP') -and $env:ENABLE_RDP -eq 'True')
+      {
+        $blockRdp = (Test-Path -Path 'env:BLOCK_RDP') -and $env:BLOCK_RDP -eq 'True'
+        $nonat = $false
+        iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+      }
+  - ps: &before_build |
       $ProgressPreference = 'SilentlyContinue'
       iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 | iex | Format-Table
-      .\build.ps1
+  build_script:
+  - ps: &build_ps1 |
+      prism install | Format-Table
+      .\init.ps1 -Version $env:BUILDMASTER_VERSION
+      .\build.ps1 -PipelineName 'Build'
+  - ps: &test_ps1 |
+      $PSVersionTable | Format-Table
+      .\build.ps1 -PipelineName 'Test'
+  - pwsh: *test_ps1
   on_finish:
   - ps: &upload_test_results |
       $jobID = $env:APPVEYOR_JOB_ID
       $resultsXmlPaths = Resolve-Path -Path '.output\pester*.xml'
-      foreach ($resultsXmlPath in $resultsXmlPath)
+      foreach ($resultsXmlPath in $resultsXmlPaths)
       {
         [Net.WebClient]::New().UploadFile("https://ci.appveyor.com/api/testresults/nunit/${jobID}", $resultsXmlPath)
       }
 
 - matrix:
     only:
-    - job_group: ps_sql2019
-  services: mssql2019
-  environment:
-    SQL_INSTANCE_NAME: SQL2019
-  init: net start mssql$sql2019
-  build_script:
-  - ps: *build_ps1
-  on_finish:
-  - ps: *upload_test_results
-
-- matrix:
-    only:
-    - job_group: pwsh_sql2016
-  services: mssql2016
-  environment:
-    SQL_INSTANCE_NAME: SQL2016
-  build_script:
-  - pwsh: *build_ps1
-  on_finish:
-  - pwsh: *upload_test_results
-
-- matrix:
-    only:
-    - job_group: pwsh_sql2017
+    - job_group: pwsh
   services: mssql2017
-  environment:
-    SQL_INSTANCE_NAME: SQL2017
+  before_build:
+  - pwsh: *enable_rdp
+  - pwsh: *before_build
   build_script:
   - pwsh: *build_ps1
-  on_finish:
-  - pwsh: *upload_test_results
-- matrix:
-    only:
-    - job_group: pwsh_sql2019
-  environment:
-    SQL_INSTANCE_NAME: SQL2019
-  init: net start mssql$sql2019
-  build_script:
-  - pwsh: *build_ps1
+  - pwsh: *test_ps1
   on_finish:
   - pwsh: *upload_test_results

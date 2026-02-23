@@ -1,77 +1,8 @@
 
-$apiKey = 'HKgaAKWjjgB9YRrTbTpHzw=='
-
-$bmNotInstalledMsg = 'It looks like BuildMaster isn''t installed. Please run init.ps1 to install and configure a local BuildMaster instance so we can run automated tests against it.'
-$svcSharedConfigPath = Join-Path -Path $env:ProgramData -ChildPath 'Inedo\SharedConfig\BuildMaster.config' -Resolve
-if( -not $svcSharedConfigPath )
-{
-    throw $bmNotInstalledMsg
-}
-
-
-$svcConfig = [xml](Get-Content -Path $svcSharedConfigPath -Raw)
-if( -not $svcConfig )
-{
-    throw $bmNotInstalledMsg
-}
-
-$url = $svcConfig.SelectSingleNode('/InedoAppConfig/WebServer').Attributes['Urls'].Value
-$url = $url -replace '\*',$env:COMPUTERNAME
-$connString = $svcConfig.SelectSingleNode('/InedoAppConfig/ConnectionString').InnerText
-
-$conn = New-Object 'Data.SqlClient.SqlConnection'
-$conn.ConnectionString = $connString
-$conn.Open()
-
-try
-{
-    $cmd = New-Object 'Data.SqlClient.SqlCommand'
-    $cmd.Connection = $conn
-    $cmd.CommandText = '[dbo].[ApiKeys_GetApiKeyByName]'
-    $cmd.CommandType = [Data.CommandType]::StoredProcedure
-    $cmd.Parameters.AddWithValue('@ApiKey_Text', $apiKey)
-
-    $keyExists = $cmd.ExecuteScalar()
-    if( -not $keyExists )
-    {
-        $apiKeyDescription = 'BuildMasterAutomation API Key'
-        $apiKeyConfig = @'
-<Inedo.BuildMaster.ApiKeys.ApiKey Assembly="BuildMaster">
-    <Properties AllowNativeApi="True" CanViewInfrastructure="True" CanUpdateInfrastructure="True" AllowVariablesManagementApi="True" AllowReleaseAndPackageDeploymentApi="True" />
-</Inedo.BuildMaster.ApiKeys.ApiKey>
-'@
-        $cmd.Dispose()
-
-        $cmd = New-Object 'Data.SqlClient.SqlCommand'
-        $cmd.CommandText = "[dbo].[ApiKeys_CreateOrUpdateApiKey]"
-        $cmd.Connection = $conn
-        $cmd.CommandType = [Data.CommandType]::StoredProcedure
-
-        $parameters = @{
-                            '@ApiKey_Text' = $apiKey;
-                            '@ApiKey_Description' = $apiKeyDescription;
-                            '@ApiKey_Configuration' = $apiKeyConfig
-                        }
-        foreach( $name in $parameters.Keys )
-        {
-            $value = $parameters[$name]
-            if( -not $name.StartsWith( '@' ) )
-            {
-                $name = '@{0}' -f $name
-            }
-            Write-Verbose ('{0} = {1}' -f $name,$value)
-            [void] $cmd.Parameters.AddWithValue( $name, $value )
-        }
-        $cmd.ExecuteNonQuery();
-    }
-}
-finally
-{
-    $conn.Close()
-}
-
-
+$apiKey = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '..\..\.apikey' -Resolve) -ReadCount 1
+$url = "http://$([Environment]::MachineName):8622/"
 $script:session = New-BMSession -Url $url -ApiKey $apiKey
+
 $script:objectNum = 0
 $script:wordsPath = Join-Path -Path $PSScriptRoot -ChildPath '..\.words'
 $script:wordsPath = [IO.Path]::GetFullPath($script:wordsPath)
@@ -81,6 +12,7 @@ function New-BMTestObjectName
 {
     [CmdletBinding()]
     param(
+        [String] $Separator
     )
 
     if (-not (Test-Path -Path $script:wordsPath))
@@ -116,7 +48,13 @@ function New-BMTestObjectName
         Split-Path -Leaf |
         ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) } |
         ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) }
-    return "$($baseName).$($word)"
+
+    if (-not $Separator)
+    {
+        $Separator = '.'
+    }
+
+    return "${baseName}${Separator}${word}"
 }
 
 function New-BMTestSession
@@ -263,35 +201,10 @@ function ThenNoErrorWritten
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
 $BMTestSession = $script:session
 
-# Before BuildMaster is activated, the APIs return the licensing page HTML.
-$waited = $false
-do
-{
-    $result = Invoke-BMRestMethod -Session $script:session -Name 'infrastructure/servers/list'
-    if ($result -isnot [String])
-    {
-        break
-    }
-    $result | Out-String | Write-Debug
-    if (-not $waited)
-    {
-        Write-Host 'Waiting for BuildMaster activation' -NoNewline
-    }
-    Write-Host '.' -NoNewline
-    $waited = $true
-    Start-Sleep -Milliseconds 100
-}
-while ($true)
-
-if ($waited)
-{
-    Write-Host ''
-}
-
 function ClearBM
 {
     Get-BMApplication -Session $script:session | Remove-BMApplication -Session $script:session -Force
-    Get-BMPipeline -Session $script:session  | Remove-BMPipeline -Session $script:session -PurgeHistory
+    Get-BMPipeline -Session $script:session | Remove-BMPipeline -Session $script:session -PurgeHistory
 
     $script:defaultRaft = Set-BMRaft -Session $script:session -Raft 'BMAutomationDefaultTestRaft' -PassThru
     Get-BMRaft -Session $script:session |

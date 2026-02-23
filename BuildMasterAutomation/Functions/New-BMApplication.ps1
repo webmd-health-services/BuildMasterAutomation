@@ -110,9 +110,18 @@ function New-BMApplication
                                  -Method Post
     }
 
-    Invoke-BMNativeApiMethod -Session $Session `
-                             -Name 'Applications_GetApplication' `
-                             -Parameter @{ 'Application_Id' = $appID } `
-                             -Method Post |
-        Select-Object -ExpandProperty 'Applications_Extended'
+    $app = Invoke-BMNativeApiMethod -Session $Session `
+                                    -Name 'Applications_GetApplication' `
+                                    -Parameter @{ 'Application_Id' = $appID } `
+                                    -Method Post
+
+    if ($app)
+    {
+        if ($app | Get-Member -Name 'Applications_Extended')
+        {
+            return $app.Applications_Extended
+        }
+
+        return $app
+    }
 }

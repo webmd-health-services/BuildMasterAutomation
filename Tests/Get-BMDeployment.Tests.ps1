@@ -12,50 +12,66 @@ BeforeAll {
         $script:session = New-BMTestSession
         ClearBM
 
-        $defaultObjectName = New-BMTestObjectName
+        $defaultObjectName = New-BMTestObjectName -Separator '_'
+
+        $intEnvName = "${defaultObjectName}_Integration"
+        New-BMEnvironment -Session $script:session -Name $intEnvName
+
+        $testEnvName = "${defaultObjectName}_Testing"
+        New-BMEnvironment -Session $script:session -Name $testEnvName
+
+        $prodEnvName = "${defaultObjectName}_Production"
+        New-BMEnvironment -Session $script:session -Name $prodEnvName
+
+        New-BMServer -Session $script:session `
+                     -Name $defaultObjectName `
+                     -Environment $intEnvName, $testEnvName, $prodEnvName `
+                     -Local
 
         $raft = Set-BMRaft -Session $script:session -Raft $defaultObjectName -PassThru
 
         $script:app = New-BMApplication -Session $script:session -Name $defaultObjectName -Raft $raft
 
+        $planName = "${defaultObjectName}.ps1"
+        Set-BMRAftItem -Session $script:session -TypeCode Script -RaftItem $planName -Application $script:app
+
         $stages = & {
-            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Integration' -AllServers |
+            New-BMPipelineStageTargetObject -PlanName $planName -EnvironmentName $intEnvName -AllServers |
                 New-BMPipelineStageObject -Name 'Integration' |
                 Write-Output
 
-            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Testing' -AllServers |
+            New-BMPipelineStageTargetObject -PlanName $planName -EnvironmentName $testEnvName -AllServers |
                 New-BMPipelineStageObject -Name 'Testing' |
                 Write-Output
 
-            New-BMPipelineStageTargetObject -PlanName $raft.Raft_Name -EnvironmentName 'Production' -AllServers |
+            New-BMPipelineStageTargetObject -PlanName $planName -EnvironmentName $prodEnvName -AllServers |
                 New-BMPipelineStageObject -Name 'Production' |
                 Write-Output
         }
 
         $script:pipeline = Set-BMPipeline -Session $script:session `
-                                -Name $defaultObjectName `
-                                -Application $script:app `
-                                -Color '#ffffff' `
-                                -Stage $stages `
-                                -PassThru `
-                                -ErrorAction Stop
+                                          -Name $defaultObjectName `
+                                          -Application $script:app `
+                                          -Color '#ffffff' `
+                                          -Stage $stages `
+                                          -PassThru `
+                                          -ErrorAction Stop
 
         $script:releaseAll = New-BMRelease -Session $script:session `
-                                        -Application $script:app `
-                                        -Pipeline $script:pipeline `
-                                        -Number '1.0' `
-                                        -Name 'releaseAll'
+                                           -Application $script:app `
+                                           -Pipeline $script:pipeline `
+                                           -Number '1.0' `
+                                           -Name 'releaseAll'
         $script:releaseRelease = New-BMRelease -Session $script:session `
-                                            -Application $script:app `
-                                            -Pipeline $script:pipeline `
-                                            -Number '2.0' `
-                                            -Name 'releaseBuild'
+                                               -Application $script:app `
+                                               -Pipeline $script:pipeline `
+                                               -Number '2.0' `
+                                               -Name 'releaseBuild'
         $script:releaseRelease2 = New-BMRelease -Session $script:session `
                                                 -Application $script:app `
                                                 -Pipeline $script:pipeline `
                                                 -Number '3.0' `
                                                 -Name 'releaseRelease'
-        Start-Sleep -Seconds 2
     }
 
     function GivenReleaseBuild
@@ -76,7 +92,22 @@ BeforeAll {
             [String] $Stage
         )
 
-        return Publish-BMReleaseBuild -Session $script:session -Build $Build.id -Stage $Stage -Force
+        $deploy = Publish-BMReleaseBuild -Session $script:session -Build $Build.id -Stage $Stage -Force
+
+        # Wait for deploy to finish.
+        while ($true)
+        {
+            if ($deploy.ended -or $deploy.status -ne 'pending')
+            {
+                break
+            }
+
+            Start-Sleep -Milliseconds 100
+            $deploy = Get-BMDeployment -Session $script:session -Deployment $deploy
+            Write-Verbose $deploy.status
+        }
+
+        return $deploy
     }
 
     function WhenGettingBMDeployment
@@ -108,19 +139,8 @@ BeforeAll {
         $parameters.Remove('ShouldError')
 
         $Global:Error.Clear()
-        $timer = [System.Diagnostics.Stopwatch]::StartNew()
-        do {
-            Start-Sleep -Milliseconds 500
-            $script:result = & {
-                @(Get-BMDeployment -Session $script:session @parameters -ErrorAction 'SilentlyContinue')
-            }
 
-            if ($script:result)
-            {
-                $Global:Error.Clear()
-                break
-            }
-        } while ($timer.elapsed.totalseconds -lt 10)
+        $script:result = @(Get-BMDeployment -Session $script:session @parameters)
 
         $script:result | Format-Table -Auto | Out-String | Write-Debug
 

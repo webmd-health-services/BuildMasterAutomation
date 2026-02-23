@@ -25,7 +25,8 @@
 
 ### Fixed
 
-`New-BMRelease` fails to properly set to assign global pipelines to the release.
+* `New-BMRelease` fails to properly set to assign global pipelines to the release.
+* `New-BMApplication` fails to return the created application in BuildMaster 2024 and 2025.
 
 ## 4.3.0
 
