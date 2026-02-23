@@ -85,17 +85,26 @@ function New-BMTestObjectName
 
     if (-not (Test-Path -Path $script:wordsPath))
     {
-        $script:words = Invoke-RestMethod -Uri 'https://random-word-api.vercel.app/api?words=30'
-        $script:words | Set-Content -Path $script:wordsPath
+        $wordsUrl = 'https://raw.githubusercontent.com/first20hours/google-10000-english/refs/heads/master/google-10000-english-usa-no-swears-medium.txt'
+        $ProgressPreference = 'SilentlyContinue'
+        $rawWords = Invoke-WebRequest -Uri $wordsUrl -UseBasicParsing | Select-Object -ExpandProperty 'Content'
+        $rawWords.TrimEnd() | Set-Content -Path $script:wordsPath -NoNewLine
     }
 
     if (-not $script:words)
     {
-        $script:words = Get-Content -Path $script:wordsPath | Where-Object { $_ }
+        $script:words = Get-Content -Path $script:wordsPath
     }
 
     # Faster than piping.
-    $word = Get-Random -InputObject $script:words
+    $word = ''
+    do
+    {
+        $ceiling = $script:words.Count - 1
+        $wordIdx = Get-Random -Minimum 0 -Maximum $ceiling
+        $word = $script:words[$wordIdx]
+    }
+    while (-not $word)
 
     $script:objectNum += 1
     $filesToSkip = @( $PSCommandPath, (Get-Module -Name 'Pester').Path )
