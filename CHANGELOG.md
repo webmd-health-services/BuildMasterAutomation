@@ -7,8 +7,10 @@
 
 ### Upgrade Instructions
 
-The `Get-BMRaftItem` no longer returns all raft items in all applications. Inspect usages. To get all raft items in all
-applications, you must iterate through all applications and call `Get-BMRaftItem` for each appliction.
+* The `Get-BMRaftItem` no longer returns all raft items in all applications. Inspect usages. To get all raft items in
+  all applications, you must iterate through all applications and call `Get-BMRaftItem` for each appliction.
+* The `New-BMRelease` function now requires a pipeline object. Update usages to pass a pipeline ID, name, or object to
+  the `Pipeline` parameter.
 
 ### Added
 
@@ -16,8 +18,13 @@ applications, you must iterate through all applications and call `Get-BMRaftItem
 
 ### Changed
 
-`Get-BMRaftItem` no longer returns application raft items by default. To get a specific application's raft items, you
-must now use the `Application` parameter.
+* `Get-BMRaftItem` no longer returns application raft items by default. To get a specific application's raft items, you
+  must now use the `Application` parameter.
+* The `New-BMRelease` function's `Pipeline` parameter is now mandatoryl. Pass a pipeline ID, name, or object.
+
+### Fixed
+
+`New-BMRelease` fails to properly set to assign global pipelines to the release.
 
 ## 4.3.0
 
