@@ -21,6 +21,7 @@
 * `Get-BMRaftItem` no longer returns application raft items by default. To get a specific application's raft items, you
   must now use the `Application` parameter.
 * The `New-BMRelease` function's `Pipeline` parameter is now mandatoryl. Pass a pipeline ID, name, or object.
+* `Invoke-BMRestMethod` writes the request being made to PowerShell's verbose stream.
 
 ### Fixed
 

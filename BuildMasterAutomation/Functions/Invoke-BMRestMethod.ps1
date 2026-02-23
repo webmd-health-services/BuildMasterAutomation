@@ -17,6 +17,8 @@ function Invoke-BMRestMethod
     `Session` parameter. Use the `New-BMSession` function to create a session object.
 
     When using the `WhatIf` parameter, only web requests that use the `Get` HTTP method are made.
+
+    To see the requests being made to BuildMaster, use the `-Verbose` switch or turn on verbose output.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='NoBody')]
     param(
@@ -135,10 +137,10 @@ function Invoke-BMRestMethod
                 }
 
     # $DebugPreference = 'Continue'
-    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
+    Write-Verbose -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(),($uri -replace '\b(API_Key=)([^&]+)','$1********'))
     if( $ContentType )
     {
-        Write-Debug -Message ('Content-Type: {0}' -f $ContentType)
+        Write-Verbose -Message ('Content-Type: {0}' -f $ContentType)
     }
     foreach( $headerName in $headers.Keys )
     {
@@ -148,19 +150,21 @@ function Invoke-BMRestMethod
             $value = '*' * 8
         }
 
-        Write-Debug -Message ('{0}: {1}' -f $headerName,$value)
+        Write-Verbose -Message ('{0}: {1}' -f $headerName,$value)
     }
 
     if ($debugBody)
     {
-        ($debugBody -split ([regex]::Escape([Environment]::NewLine))) | Write-Debug
+        $debugBody -split ([regex]::Escape([Environment]::NewLine)) | Write-Verbose
     }
+
+    Write-Verbose ''
 
     try
     {
         if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($Uri,$Method) )
         {
-            Invoke-RestMethod -Method $Method -Uri $uri @webRequestParam -Headers $headers |
+            Invoke-RestMethod -Method $Method -Uri $uri @webRequestParam -Headers $headers -Verbose:$false |
                 ForEach-Object { $_ } |
                 Where-Object { $_ }
         }
