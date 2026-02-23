@@ -1,11 +1,12 @@
 
 Build:
-# The Version task sets the current build's version number. You should almost always
-# have one of these.
+# The Version task sets the current build's version number. You should almost always have one of these.
 - Version:
     Path: BuildMasterAutomation\BuildMasterAutomation.psd1
+    IncrementPrereleaseVersion: true
     Prerelease:
-    - prerelease: beta$(WHISKEY_BUILD_NUMBER)
+    - main: ""
+    - "*": rc0
 
 - Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
   .OnlyBy: BuildServer
