@@ -7,21 +7,19 @@ Build:
     Prerelease:
     - prerelease: beta$(WHISKEY_BUILD_NUMBER)
 
-- Exec:
-      OnlyBy: BuildServer
-      Path: appveyor
-      Argument: [ UpdateBuild, -Version, "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)" ]
+- Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
+  .OnlyBy: BuildServer
+
+- PowerShell: prism install | Format-Table -Auto
+  .ExceptDuring: Clean
+  .ExceptBy: BuildServer
 
 - PowerShell:
-    ExceptDuring: Clean
-    ScriptBlock: prism install | Format-Table -Auto
-
-- PowerShell:
-    OnlyDuring: Build
+    .OnlyDuring: Build
     Path: init.ps1
 
 - MergeFile:
-    OnlyBy: BuildServer
+    .OnlyBy: BuildServer
     Path: BuildMasterAutomation\Functions\*.ps1
     DestinationPath: BuildMasterAutomation\BuildMasterAutomation.psm1
     DeleteSourceFiles: true
@@ -38,15 +36,8 @@ Build:
 - PublishPowerShellModule:
     Path: BuildMasterAutomation
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
+- Exec: appveyor 'PushArtifact' '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
+  .OnlyBy: BuildServer
 
 - Delete:
     Path: $(WHISKEY_OUTPUT_DIRECTORY)\*.zip
@@ -56,15 +47,8 @@ Build:
     Path:
     - BuildMasterAutomation
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation-$(WHISKEY_SEMVER2).zip',
-        '-DeploymentName',
-        'GitHub'
-    ]
+- Exec: appveyor 'PushArtifact' '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation-$(WHISKEY_SEMVER2).zip' -DeploymentName 'GitHub'
+  .OnlyBy: BuildServer
 
 - Pester:
     Configuration:
