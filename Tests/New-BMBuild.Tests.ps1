@@ -106,13 +106,6 @@ Describe 'New-BMBuild' {
             Assert-Build -HasNumber '4'
     }
 
-    It 'should export obsolete New-BMPackage' {
-        $warnings = @()
-        New-BMPackage -Session $script:session -Release $script:release -WarningVariable 'warnings' |
-            Assert-Build -HasNumber '5'
-        $warnings | Should -Not -BeNullOrEmpty
-    }
-
     It 'creates builds without releases' {
         New-BMBuild -Session $script:session -Application $script:app -PipelineName $script:pipeline.Pipeline_Name |
             Assert-Build -HasNumber '1' -HasNoRelease

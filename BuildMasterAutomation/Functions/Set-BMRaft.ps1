@@ -46,10 +46,6 @@ function Set-BMRaft
         # The XML configuration for the raft.
         [String] $Configuration,
 
-        # ***OBSOLETE.*** Not used and has no affect.
-        [Parameter(DontShow)]
-        [Object] $Environment,
-
         # If set, the new/updated raft will be returned.
         [switch] $PassThru
     )
@@ -59,12 +55,6 @@ function Set-BMRaft
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $bmEnv = $null
-        if ($Environment)
-        {
-            $msg = 'The Set-BMRaft function''s "Environment" parameter is obsolete and usages should be removed.'
-            Write-Warning -Message $msg
-        }
 
         $raftID = $Raft | Get-BMObjectID -ObjectTypeName 'Raft' -ErrorAction Ignore
         $raftName = $Raft | Get-BMObjectName -ObjectTypeName 'Raft' -ErrorAction Ignore
@@ -91,8 +81,7 @@ function Set-BMRaft
             @{} |
             Add-BMObjectParameter -Name 'Raft' -Value $bmRaft -AsID -ForNativeApi -PassThru | `
             Add-BMObjectParameter -Name 'Raft' -Value $raftName -AsName -ForNativeApi -PassThru | `
-            Add-BMParameter -Name 'Raft_Configuration' -Value $PSBoundParameters['Configuration'] -PassThru | `
-            Add-BMObjectParameter -Name 'Environment' -Value $bmEnv -PassThru
+            Add-BMParameter -Name 'Raft_Configuration' -Value $PSBoundParameters['Configuration'] -PassThru
 
         $id = Invoke-BMNativeApiMethod -Session $Session `
                                        -Name 'Rafts_CreateOrUpdateRaft' `

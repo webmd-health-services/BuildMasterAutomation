@@ -11,6 +11,10 @@
   all applications, you must iterate through all applications and call `Get-BMRaftItem` for each appliction.
 * The `New-BMRelease` function now requires a pipeline object. Update usages to pass a pipeline ID, name, or object to
   the `Pipeline` parameter.
+* Replace usages of function `Get-BMPackage` with `Get-BMBuild`.
+* Replace usages of function `New-BMPackage`. Use `New-BMBuild` instead.
+* Replace usages of function `Publish-BMReleasePackage`. Use `Publish-BMReleaseBuild` instead.
+* Remove usages of `Set-BMRaft` function's `Environment` parameter.
 
 ### Added
 
@@ -27,6 +31,13 @@
 
 * `New-BMRelease` fails to properly set to assign global pipelines to the release.
 * `New-BMApplication` fails to return the created application in BuildMaster 2024 and 2025.
+
+### Removed
+
+* Function `Get-BMPackage`. Use `Get-BMBuild` instead.
+* Function `New-BMPackage`. Use `New-BMBuild` instead.
+* Function `Publish-BMReleasePackage`. Use `Publish-BMReleaseBuild` instead.
+* `Set-BMRaft` function's `Environment` parameter. Remove usages.
 
 ## 4.3.0
 
