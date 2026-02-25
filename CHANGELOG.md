@@ -3,7 +3,45 @@
 
 # BuildMasterAutomation Changelog
 
+## 5.0.0
+
+### Upgrade Instructions
+
+* The `Get-BMRaftItem` no longer returns all raft items in all applications. Inspect usages. To get all raft items in
+  all applications, you must iterate through all applications and call `Get-BMRaftItem` for each appliction.
+* The `New-BMRelease` function now requires a pipeline object. Update usages to pass a pipeline ID, name, or object to
+  the `Pipeline` parameter.
+* Replace usages of function `Get-BMPackage` with `Get-BMBuild`.
+* Replace usages of function `New-BMPackage`. Use `New-BMBuild` instead.
+* Replace usages of function `Publish-BMReleasePackage`. Use `Publish-BMReleaseBuild` instead.
+* Remove usages of `Set-BMRaft` function's `Environment` parameter.
+
+### Added
+
+`Get-BMRaftItem` returns raft items by ID.
+
+### Changed
+
+* `Get-BMRaftItem` no longer returns application raft items by default. To get a specific application's raft items, you
+  must now use the `Application` parameter.
+* The `New-BMRelease` function's `Pipeline` parameter is now mandatoryl. Pass a pipeline ID, name, or object.
+* `Invoke-BMRestMethod` writes the request being made to PowerShell's verbose stream.
+
+### Fixed
+
+* `New-BMRelease` fails to properly set to assign global pipelines to the release.
+* `New-BMApplication` fails to return the created application in BuildMaster 2024 and 2025.
+
+### Removed
+
+* Function `Get-BMPackage`. Use `Get-BMBuild` instead.
+* Function `New-BMPackage`. Use `New-BMBuild` instead.
+* Function `Publish-BMReleasePackage`. Use `Publish-BMReleaseBuild` instead.
+* `Set-BMRaft` function's `Environment` parameter. Remove usages.
+
 ## 4.3.0
+
+> Released 17 Nov 2025
 
 ### Changed
 

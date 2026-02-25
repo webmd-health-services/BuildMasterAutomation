@@ -9,6 +9,7 @@ BeforeAll {
 
     $script:session = New-BMTestSession
     $script:environments = $null
+    $script:testName = ''
 
     function GivenEnvironment
     {
@@ -19,7 +20,7 @@ BeforeAll {
             [Switch]$Disabled
         )
 
-        New-BMEnvironment -Session $script:session -Name $Name -ErrorAction Ignore
+        New-BMEnvironment -Session $script:session -Name "${script:testName}_${Name}" -ErrorAction Ignore
     }
 
     function ThenNoEnvironmentsReturned
@@ -42,11 +43,12 @@ BeforeAll {
         }
         else
         {
-            $script:environments | Should -HaveCount $Named.Count
+            ($script:environments | Measure-Object).Count | Should -BeGreaterOrEqual $Named.Count
         }
+
         foreach( $name in $Named )
         {
-            $script:environments | Where-Object { $_.Name -eq $name } | Should -Not -BeNullOrEmpty
+            $script:environments | Where-Object 'Name' -EQ "${script:testName}_${name}" | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -62,7 +64,7 @@ BeforeAll {
         $optionalParams = @{ }
         if( $Named )
         {
-            $optionalParams['Environment'] = $Named
+            $optionalParams['Environment'] = "${script:testName}_${Named}"
         }
 
         $originalWhatIf = $Global:WhatIfPreference
@@ -83,13 +85,9 @@ BeforeAll {
 
 Describe 'Get-BMEnvironment' {
     BeforeEach {
-        $Global:Error.Clear()
-        # Disable all existing environments.
-        $envs = Get-BMEnvironment -Session $script:session
-        # Delete child environments first.
-        $envs | Where-Object { $_ | Get-Member -Name 'parent*' } | Remove-BMEnvironment -Session $script:session
-        $envs | Where-Object { -not ($_ | Get-Member -Name 'parent*') } | Remove-BMEnvironment -Session $script:session
         $script:environments = $null
+        $script:testName = New-BMTestObjectName -Separator '_'
+        $Global:Error.Clear()
     }
 
     It 'should return all environments' {

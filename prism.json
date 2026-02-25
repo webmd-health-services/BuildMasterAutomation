@@ -11,6 +11,10 @@
 		{
 			"Name": "SqlServer",
 			"Version": "22.*"
+		},
+		{
+			"Name": "Yodel",
+			"Version": "*"
 		}
 	]
 }

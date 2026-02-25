@@ -1,27 +1,22 @@
 
 Build:
-# The Version task sets the current build's version number. You should almost always
-# have one of these.
+# The Version task sets the current build's version number. You should almost always have one of these.
 - Version:
     Path: BuildMasterAutomation\BuildMasterAutomation.psd1
+    IncrementPrereleaseVersion: true
     Prerelease:
-    - prerelease: beta$(WHISKEY_BUILD_NUMBER)
+    - main: ""
+    - "*": rc0
 
-- Exec:
-      OnlyBy: BuildServer
-      Path: appveyor
-      Argument: [ UpdateBuild, -Version, "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)" ]
+- Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
+  .OnlyBy: BuildServer
 
-- PowerShell:
-    ExceptDuring: Clean
-    ScriptBlock: prism install | Format-Table -Auto
-
-- PowerShell:
-    OnlyDuring: Build
-    Path: init.ps1
+- PowerShell: prism install | Format-Table -Auto
+  .ExceptDuring: Clean
+  .ExceptBy: BuildServer
 
 - MergeFile:
-    OnlyBy: BuildServer
+    .OnlyBy: BuildServer
     Path: BuildMasterAutomation\Functions\*.ps1
     DestinationPath: BuildMasterAutomation\BuildMasterAutomation.psm1
     DeleteSourceFiles: true
@@ -38,15 +33,8 @@ Build:
 - PublishPowerShellModule:
     Path: BuildMasterAutomation
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
+- Exec: appveyor 'PushArtifact' '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
+  .OnlyBy: BuildServer
 
 - Delete:
     Path: $(WHISKEY_OUTPUT_DIRECTORY)\*.zip
@@ -56,21 +44,15 @@ Build:
     Path:
     - BuildMasterAutomation
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation-$(WHISKEY_SEMVER2).zip',
-        '-DeploymentName',
-        'GitHub'
-    ]
+- Exec: appveyor 'PushArtifact' '$(WHISKEY_OUTPUT_DIRECTORY)/BuildMasterAutomation-$(WHISKEY_SEMVER2).zip' -DeploymentName 'GitHub'
+  .OnlyBy: BuildServer
 
+Test:
 - Pester:
     Configuration:
         TestResult:
             Enabled: true
-            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester2.xml
+            OutputPath: $(WHISKEY_OUTPUT_DIRECTORY)\pester_$(WHISKEY_BUILD_STARTED_AT.ToString('yyyyMMddHHmmss')).xml
             TestSuiteName: BuildMasterAutomation
         Output:
             Verbosity: Detailed

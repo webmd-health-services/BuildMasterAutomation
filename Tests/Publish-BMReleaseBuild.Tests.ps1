@@ -134,11 +134,4 @@ Describe 'Publish-BMReleaseBuild' {
                           -ModuleName 'BuildMasterAutomation' `
                           -ParameterFilter { $Parameter['force'] -eq 'true' }
     }
-
-    It 'should export obsolete Publish-BMReleasePackage' {
-        GivenBMReleaseBuild
-        $script:deployment = Publish-BMReleasePackage -Session $script:session -Package $script:build
-        ThenShouldNotThrowErrors
-        ThenBuildShouldBeDeployed -ToStage 'Publish-BMReleaseBuild.Fubar'
-    }
 }

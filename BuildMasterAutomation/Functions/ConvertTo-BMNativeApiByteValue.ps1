@@ -28,6 +28,7 @@ function ConvertTo-BMNativeApiByteValue
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position=0)]
+       [AllowEmptyString()]
         [String] $InputObject
     )
 

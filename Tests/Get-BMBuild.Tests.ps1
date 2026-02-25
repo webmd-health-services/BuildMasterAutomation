@@ -173,12 +173,4 @@ Describe 'Get-BMBuild' {
         ThenReturnedBuilds 'that release''s' $app1Release1Build1,$app1Release1Build2
         ThenDidNotReturn 'other releases''' $app1Release2Build1,$app2Release1Build1, $app2Release1Build2, $app2Release2Build1
     }
-
-    It 'should export obsolete Get-BMPackage' {
-        $warnings = @()
-        $build = GivenABuild -ForAnAppNamed $PSCommandPath -ForReleaseNumber '1.0.0'
-        $script:result = Get-BMPackage -Session $BMTestSession -Package $build -WarningVariable 'warnings'
-        ThenReturnedBuild $build
-        $warnings | Should -Not -BeNullOrEmpty
-    }
 }

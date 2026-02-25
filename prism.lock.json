@@ -2,7 +2,7 @@
   "PSModules": [
     {
       "name": "Carbon",
-      "version": "2.14.1",
+      "version": "2.15.1",
       "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
     },
     {
@@ -12,7 +12,12 @@
     },
     {
       "name": "SqlServer",
-      "version": "22.1.1",
+      "version": "22.4.5.1",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    },
+    {
+      "name": "Yodel",
+      "version": "1.1.0",
       "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
     }
   ]

@@ -12,7 +12,7 @@
     RootModule = 'BuildMasterAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '4.3.0'
+    ModuleVersion = '5.0.0'
 
     # ID used to uniquely identify this module
     GUID = 'cc5a1865-e5f8-45f2-b0d3-317a1611a965'
@@ -88,7 +88,6 @@ take the pain out of creating the proper web requests.
         'Get-BMBuild',
         'Get-BMDeployment',
         'Get-BMEnvironment',
-        'Get-BMPackage',
         'Get-BMRelease',
         'Get-BMObjectName',
         'Get-BMPipeline',
@@ -102,7 +101,6 @@ take the pain out of creating the proper web requests.
         'New-BMApplication',
         'New-BMBuild',
         'New-BMEnvironment',
-        'New-BMPackage',
         'New-BMRelease',
         'New-BMPipelinePostDeploymentOptionsObject',
         'New-BMPipelineStageObject',
@@ -111,7 +109,6 @@ take the pain out of creating the proper web requests.
         'New-BMServer',
         'New-BMServerRole',
         'Publish-BMReleaseBuild',
-        'Publish-BMReleasePackage',
         'Remove-BMApplication',
         'Remove-BMEnvironment',
         'Remove-BMPipeline',
