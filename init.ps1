@@ -100,7 +100,20 @@ $licenseKey = 'C2G2G010-GC100V-7M8X70-0QC1GFNK-H98U'
 $connString = "Server=${SqlServerName}; ${dbCredentials}"
 Write-Verbose "Connection String  ${connString}"
 
-& $hubPath 'install' "BuildMaster:${Version}" --ConnectionString="${connString}" --LicenseKey="${licenseKey}"
+$hubArgs = @(
+    'install',
+    "BuildMaster:${Version}",
+    "--ConnectionString=${connString}",
+    "--LicenseKey=${licenseKey}"
+)
+
+# TODO: Switch to using Postgres for new installs of BuildMaster 2026+ instead of SQL Server.
+if ($Version -like '26.*')
+{
+    $hubArgs += '--UsePostgres=false'
+}
+
+& $hubPath $hubArgs
 
 $bmSvcs = Get-Service -Name 'INEDOBM*'
 
