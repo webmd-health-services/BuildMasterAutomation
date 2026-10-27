@@ -12,28 +12,6 @@ test: false
 environment:
   SQL_INSTANCE_NAME: SQL2017
   matrix:
-  # BuildMaster 2023
-  - job_name: BuildMaster 2023 / Windows PowerShell 5.1 / PowerShell 6 on Windows
-    job_group: ps_and_pwsh
-    appveyor_build_worker_image: Visual Studio 2017
-    BUILDMASTER_VERSION: &bm_2023_version 23.0.22
-
-  - job_name: BuildMaster 2023 / PowerShell 7 on Windows
-    job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2022
-    BUILDMASTER_VERSION: *bm_2023_version
-
-  # BuildMaster 2024
-  - job_name: BuildMaster 2024 / Windows PowerShell 5.1 / PowerShell 6 on Windows
-    job_group: ps_and_pwsh
-    appveyor_build_worker_image: Visual Studio 2017
-    BUILDMASTER_VERSION: &bm_2024_version 24.0.10
-
-  - job_name: BuildMaster 2024 / PowerShell 7 on Windows
-    job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2022
-    BUILDMASTER_VERSION: *bm_2024_version
-
   # BuildMaster 2025
   - job_name: BuildMaster 2025 / Windows PowerShell 5.1 / PowerShell 6 on Windows
     job_group: ps_and_pwsh
