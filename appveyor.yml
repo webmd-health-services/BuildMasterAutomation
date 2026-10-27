@@ -45,6 +45,17 @@ environment:
     appveyor_build_worker_image: Visual Studio 2022
     BUILDMASTER_VERSION: *bm_2025_version
 
+  # BuildMaster 2026
+  - job_name: BuildMaster 2026 / Windows PowerShell 5.1 / PowerShell 6 on Windows
+    job_group: ps_and_pwsh
+    appveyor_build_worker_image: Visual Studio 2017
+    BUILDMASTER_VERSION: &bm_2026_version 26.0.02
+
+  - job_name: BuildMaster 2026 / PowerShell 7 on Windows
+    job_group: pwsh
+    appveyor_build_worker_image: Visual Studio 2022
+    BUILDMASTER_VERSION: *bm_2026_version
+
 artifacts:
 - path: .output\*
 
