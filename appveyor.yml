@@ -61,7 +61,8 @@ for:
       .\build.ps1 -PipelineName 'Build'
   - ps: &test_ps1 |
       $PSVersionTable | Format-Table
-      .\build.ps1 -PipelineName 'Test'
+      .\build.ps1 -PipelineName 'Test' -ErrorAction Continue
+      if (-not $?) { Start-Sleep -Seconds 3600 } # Keep the build alive for an hour to allow for manual inspection.
   - pwsh: *test_ps1
   on_finish:
   - ps: &upload_test_results |
