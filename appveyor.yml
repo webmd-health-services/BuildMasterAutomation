@@ -38,7 +38,7 @@ environment:
   - job_name: BuildMaster 2025 / Windows PowerShell 5.1 / PowerShell 6 on Windows
     job_group: ps_and_pwsh
     appveyor_build_worker_image: Visual Studio 2017
-    BUILDMASTER_VERSION: &bm_2025_version 25.0.11
+    BUILDMASTER_VERSION: &bm_2025_version 25.0.15
 
   - job_name: BuildMaster 2025 / PowerShell 7 on Windows
     job_group: pwsh
